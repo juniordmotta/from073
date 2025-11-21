@@ -291,7 +291,7 @@ export default function Dashboard() {
                         <TableCell className="font-medium text-xs max-w-[150px] truncate">{bet.descricao}</TableCell>
                         <TableCell className={`text-xs ${
                           format(new Date(bet.data_evento), 'dd/MM/yy') === format(new Date(), 'dd/MM/yy')
-                            ? 'border-l-4 border-yellow-400 pl-2'
+                            ? 'border-l-4 border-sky-300 pl-2'
                             : ''
                         }`}>
                           {format(new Date(bet.data_evento), 'dd/MM/yy HH:mm')}
