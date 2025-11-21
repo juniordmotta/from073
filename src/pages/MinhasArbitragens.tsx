@@ -490,11 +490,11 @@ export default function MinhasArbitragens() {
                   <TableRow key={arb.id}>
                     <TableCell className={`text-xs relative ${
                       format(new Date(arb.data_evento), 'dd/MM/yy') === format(new Date(), 'dd/MM/yy')
-                        ? 'border-l-4 border-yellow-400'
+                        ? 'border-l-4 border-sky-300'
                         : ''
                     }`}>
                       {format(new Date(arb.data_evento), 'dd/MM/yy') === format(new Date(), 'dd/MM/yy') && (
-                        <div className="absolute left-0 top-1 bottom-1 w-1 bg-yellow-400 animate-pulse" />
+                        <div className="absolute left-0 top-1 bottom-1 w-1 bg-sky-300 animate-pulse" />
                       )}
                       <div className="flex flex-col pl-2">
                         <span>{format(new Date(arb.created_at), 'dd/MM/yy')}</span>
