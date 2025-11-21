@@ -77,10 +77,16 @@ export default function Dashboard() {
     if (data) {
       const totalArbitragens = data.length;
       const totalInvestido = data.reduce(
-        (sum, arb) => sum + Number(arb.casa_01_valor) + Number(arb.casa_02_valor),
+        (sum, arb) => sum + Number(arb.casa_01_valor) + Number(arb.casa_02_valor) + Number(arb.casa_03_valor || 0),
         0
       );
-      const totalLucro = data.reduce((sum, arb) => sum + Number(arb.lucro_real), 0);
+      
+      // Calcular lucro total: se aguardando usa lucro_projetado, senão usa lucro_real
+      const totalLucro = data.reduce((sum, arb) => {
+        const lucro = arb.status === 'aguardando' ? Number(arb.lucro_projetado) : Number(arb.lucro_real);
+        return sum + lucro;
+      }, 0);
+      
       const greenCount = data.filter(
         (arb) => arb.status === 'green' || arb.status === 'parcial_green'
       ).length;
@@ -183,7 +189,7 @@ export default function Dashboard() {
               <div className="text-2xl font-bold">
                 R$ {stats.totalInvestido.toFixed(2)}
               </div>
-              <p className="text-xs text-muted-foreground">valor total apostado</p>
+              <p className="text-xs text-muted-foreground">em todas as casas</p>
             </CardContent>
           </Card>
 
@@ -204,7 +210,7 @@ export default function Dashboard() {
               >
                 R$ {stats.totalLucro.toFixed(2)}
               </div>
-              <p className="text-xs text-muted-foreground">resultado líquido</p>
+              <p className="text-xs text-muted-foreground">real + projetado</p>
             </CardContent>
           </Card>
 

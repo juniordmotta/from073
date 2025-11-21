@@ -116,6 +116,18 @@ export default function MinhasArbitragens() {
   const endIndex = startIndex + itemsPerPage;
   const paginatedArbitragens = filteredArbitragens.slice(startIndex, endIndex);
 
+  // Calcular totais baseado nos filtros
+  const totais = filteredArbitragens.reduce(
+    (acc, arb) => {
+      const lucro = arb.status === 'aguardando' ? Number(arb.lucro_projetado) : Number(arb.lucro_real);
+      return {
+        totalInvestido: acc.totalInvestido + Number(arb.casa_01_valor) + Number(arb.casa_02_valor) + Number(arb.casa_03_valor || 0),
+        totalLucro: acc.totalLucro + lucro,
+      };
+    },
+    { totalInvestido: 0, totalLucro: 0 }
+  );
+
   useEffect(() => {
     loadArbitragens();
     if (isAdmin) {
@@ -162,7 +174,7 @@ export default function MinhasArbitragens() {
   const loadArbitragens = async () => {
     let query = supabase.from('arbitrages').select(`
       *,
-      profiles:user_id (name)
+      profiles!arbitrages_user_id_fkey (name)
     `).order('created_at', { ascending: false });
 
     if (!isAdmin) {
@@ -424,6 +436,29 @@ export default function MinhasArbitragens() {
           </div>
         </div>
 
+        {/* Card de Totais */}
+        {filteredArbitragens.length > 0 && (
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="rounded-lg border bg-card p-6">
+              <div className="text-sm font-medium text-muted-foreground">Total de Arbitragens</div>
+              <div className="text-2xl font-bold mt-2">{filteredArbitragens.length}</div>
+            </div>
+            <div className="rounded-lg border bg-card p-6">
+              <div className="text-sm font-medium text-muted-foreground">Total Investido</div>
+              <div className="text-2xl font-bold mt-2">R$ {totais.totalInvestido.toFixed(2)}</div>
+            </div>
+            <div className="rounded-lg border bg-card p-6">
+              <div className="text-sm font-medium text-muted-foreground">Lucro Total</div>
+              <div className={`text-2xl font-bold mt-2 ${totais.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
+                R$ {totais.totalLucro.toFixed(2)}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                (Inclui lucro projetado dos aguardando)
+              </div>
+            </div>
+          </div>
+        )}
+
         {arbitragens.length === 0 ? (
           <div className="rounded-lg border p-8 text-center text-muted-foreground">
             <p>Nenhuma arbitragem cadastrada ainda.</p>
@@ -435,6 +470,7 @@ export default function MinhasArbitragens() {
                 <TableRow>
                   <TableHead>Adicionado em</TableHead>
                   <TableHead>Descrição</TableHead>
+                  {isAdmin && <TableHead>Operador</TableHead>}
                   <TableHead>Casa 01</TableHead>
                   <TableHead>Casa 02</TableHead>
                   <TableHead>Casa 03</TableHead>
@@ -471,6 +507,13 @@ export default function MinhasArbitragens() {
                         )}
                       </div>
                     </TableCell>
+                    {isAdmin && (
+                      <TableCell>
+                        <span className="text-sm">
+                          {(arb as any).profiles?.name || 'Desconhecido'}
+                        </span>
+                      </TableCell>
+                    )}
                     <TableCell>
                       <div className="space-y-2">
                         <div className="text-sm">
