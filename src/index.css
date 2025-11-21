@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 5%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 5%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 142.1 76.2% 36.3%;
+    --primary-foreground: 355.7 100% 97.3%;
+
+    --secondary: 240 5.9% 10%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 5.9% 10%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --accent: 142.1 76.2% 36.3%;
+    --accent-foreground: 355.7 100% 97.3%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --success: 142.1 76.2% 36.3%;
+    --success-foreground: 355.7 100% 97.3%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 98%;
+
+    --border: 240 5.9% 15%;
+    --input: 240 5.9% 15%;
+    --ring: 142.1 76.2% 36.3%;
+
+    --chart-1: 142.1 76.2% 36.3%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+
+    --radius: 0.5rem;
+  }
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Geist+Sans:wght@400;500;600;700&display=swap');
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Geist Sans', system-ui, -apple-system, sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold;
+  }
+}
