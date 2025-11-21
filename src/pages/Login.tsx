@@ -72,7 +72,7 @@ export default function Login() {
           <div className="flex justify-center mb-4">
             <TrendingUp className="h-12 w-12 text-success" />
           </div>
-          <CardTitle className="text-2xl">ArbitragemPro</CardTitle>
+          <CardTitle className="text-2xl">Arb From 073</CardTitle>
           <CardDescription>
             Sistema de Gerenciamento de Arbitragens Esportivas
           </CardDescription>
