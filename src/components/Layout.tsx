@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import { LayoutDashboard, TrendingUp, List, Users, LogOut, User } from 'lucide-react';
+import { LayoutDashboard, DollarSign, List, Users, LogOut, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface LayoutProps {
@@ -28,8 +28,8 @@ export const Layout = ({ children }: LayoutProps) => {
 
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, show: true },
-    { path: '/arbitragens', label: 'Arbitragens', icon: TrendingUp, show: true },
     { path: '/minhas-arbitragens', label: 'Minhas Arbitragens', icon: List, show: true },
+    { path: '/custos-operacionais', label: 'Custos Operacionais', icon: DollarSign, show: true },
     { path: '/usuarios', label: 'Gerenciar Usuários', icon: Users, show: isAdminMaster },
   ];
 
@@ -45,7 +45,7 @@ export const Layout = ({ children }: LayoutProps) => {
                 <SidebarTrigger />
                 
                 <Link to="/dashboard" className="flex items-center gap-2">
-                  <TrendingUp className="h-6 w-6 text-success" />
+                  <DollarSign className="h-6 w-6 text-success" />
                   <span className="text-xl font-bold">Arb From 073</span>
                 </Link>
                 
