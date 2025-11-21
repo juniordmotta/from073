@@ -35,29 +35,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (session?.user) {
           // Fetch user role
           setTimeout(async () => {
-            try {
-              const { data, error } = await supabase
-                .from('user_roles')
-                .select('role')
-                .eq('user_id', session.user.id)
-                .single();
-              
-              if (error) {
-                console.error('Error fetching user role:', error);
-                // Se não encontrou a role, fazer logout
-                if (error.code === 'PGRST116') {
-                  console.log('User role not found, logging out...');
-                  await supabase.auth.signOut();
-                }
-                setUserRole(null);
-              } else {
-                console.log('User role found:', data);
-                setUserRole(data);
-              }
-            } catch (error) {
-              console.error('Unexpected error fetching user role:', error);
+          try {
+            const { data, error } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', session.user.id)
+              .single();
+            
+            if (error) {
+              console.error('Error fetching user role:', error);
               setUserRole(null);
+            } else {
+              console.log('User role found:', data);
+              setUserRole(data);
             }
+          } catch (error) {
+            console.error('Unexpected error fetching user role:', error);
+            setUserRole(null);
+          }
           }, 0);
         } else {
           setUserRole(null);
@@ -81,11 +76,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             
             if (error) {
               console.error('Error fetching user role:', error);
-              // Se não encontrou a role, fazer logout
-              if (error.code === 'PGRST116') {
-                console.log('User role not found, logging out...');
-                await supabase.auth.signOut();
-              }
               setUserRole(null);
             } else {
               console.log('User role found:', data);

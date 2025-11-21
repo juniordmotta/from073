@@ -55,18 +55,25 @@ serve(async (req) => {
 
     console.log('Usuário criado com sucesso:', authData.user.id);
 
-    // Atualizar role (o trigger handle_new_user já criou o registro com role padrão)
+    // Aguardar um pouco para garantir que o trigger rodou
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Usar upsert para garantir que a role seja criada/atualizada
     const { error: roleError } = await supabaseAdmin
       .from('user_roles')
-      .update({ role })
-      .eq('user_id', authData.user.id)
+      .upsert({ 
+        user_id: authData.user.id,
+        role 
+      }, {
+        onConflict: 'user_id'
+      })
 
     if (roleError) {
-      console.error('Erro ao atualizar role:', roleError);
+      console.error('Erro ao criar/atualizar role:', roleError);
       throw roleError;
     }
 
-    console.log('Role atualizada com sucesso');
+    console.log('Role criada/atualizada com sucesso');
 
     return new Response(
       JSON.stringify({ success: true }),
