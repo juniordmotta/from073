@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { TrendingUp } from 'lucide-react';
+import { loginSchema, signupSchema } from '@/lib/validations/user';
+import { z } from 'zod';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -28,16 +30,33 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
 
-    const { error } = await signIn(email, password);
+    try {
+      const validatedData = loginSchema.parse({ email, password });
+      const { error } = await signIn(validatedData.email, validatedData.password);
 
-    if (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao fazer login',
-        description: error.message,
-      });
-    } else {
-      navigate('/dashboard');
+      if (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao fazer login',
+          description: error.message,
+        });
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast({
+          variant: 'destructive',
+          title: 'Dados inválidos',
+          description: error.issues[0]?.message || 'Verifique os campos',
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Erro inesperado',
+          description: 'Ocorreu um erro ao processar sua solicitação',
+        });
+      }
     }
 
     setIsLoading(false);
@@ -47,19 +66,36 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
 
-    const { error } = await signUp(email, password, name);
+    try {
+      const validatedData = signupSchema.parse({ email, password, name });
+      const { error } = await signUp(validatedData.email, validatedData.password, validatedData.name);
 
-    if (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao criar conta',
-        description: error.message,
-      });
-    } else {
-      toast({
-        title: 'Conta criada com sucesso!',
-        description: 'Você já pode fazer login.',
-      });
+      if (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao criar conta',
+          description: error.message,
+        });
+      } else {
+        toast({
+          title: 'Conta criada com sucesso!',
+          description: 'Você já pode fazer login.',
+        });
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast({
+          variant: 'destructive',
+          title: 'Dados inválidos',
+          description: error.issues[0]?.message || 'Verifique os campos',
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Erro inesperado',
+          description: 'Ocorreu um erro ao processar sua solicitação',
+        });
+      }
     }
 
     setIsLoading(false);
