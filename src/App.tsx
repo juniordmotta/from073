@@ -7,8 +7,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import Arbitragens from "./pages/Arbitragens";
 import MinhasArbitragens from "./pages/MinhasArbitragens";
+import CustosOperacionais from "./pages/CustosOperacionais";
 import Usuarios from "./pages/Usuarios";
 import DeleteAllUsers from "./pages/DeleteAllUsers";
 import NotFound from "./pages/NotFound";
@@ -34,18 +34,18 @@ const App = () => (
               }
             />
             <Route
-              path="/arbitragens"
-              element={
-                <ProtectedRoute>
-                  <Arbitragens />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/minhas-arbitragens"
               element={
                 <ProtectedRoute>
                   <MinhasArbitragens />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/custos-operacionais"
+              element={
+                <ProtectedRoute>
+                  <CustosOperacionais />
                 </ProtectedRoute>
               }
             />

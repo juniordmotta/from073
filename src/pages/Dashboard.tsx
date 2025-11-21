@@ -31,12 +31,14 @@ export default function Dashboard() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [users, setUsers] = useState<Array<{ id: string; name: string }>>([]);
   const [openBets, setOpenBets] = useState<any[]>([]);
+  const [totalCosts, setTotalCosts] = useState(0);
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
   useEffect(() => {
     loadStats();
     loadOpenBets();
+    loadCosts();
     if (isAdmin) {
       loadUsers();
     }
@@ -140,6 +142,33 @@ export default function Dashboard() {
     }
   };
 
+  const loadCosts = async () => {
+    let query = supabase
+      .from('operational_costs')
+      .select('valor');
+    
+    if (!isAdmin) {
+      query = query.eq('user_id', user?.id);
+    } else if (selectedUser !== 'all') {
+      query = query.eq('user_id', selectedUser);
+    }
+
+    if (startDate) {
+      query = query.gte('data', startDate);
+    }
+
+    if (endDate) {
+      query = query.lte('data', endDate);
+    }
+
+    const { data } = await query;
+
+    if (data) {
+      const total = data.reduce((sum, cost) => sum + Number(cost.valor), 0);
+      setTotalCosts(total);
+    }
+  };
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -207,7 +236,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total de Arbitragens</CardTitle>
@@ -261,6 +290,19 @@ export default function Dashboard() {
             <CardContent>
               <div className="text-2xl font-bold">{stats.taxaSucesso.toFixed(1)}%</div>
               <p className="text-xs text-muted-foreground">arbitragens positivas</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Custos Operacionais</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-destructive">
+                R$ {totalCosts.toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground">período selecionado</p>
             </CardContent>
           </Card>
         </div>
