@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -17,7 +18,7 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Pencil, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -40,12 +41,19 @@ export default function Usuarios() {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
+    role: 'operador',
+  });
+  const [editFormData, setEditFormData] = useState({
+    name: '',
     role: 'operador',
   });
 
@@ -125,6 +133,111 @@ export default function Usuarios() {
     }
 
     setIsLoading(false);
+  };
+
+  const handleEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    
+    setIsLoading(true);
+
+    // Atualizar perfil
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ name: editFormData.name })
+      .eq('id', editingUser.id);
+
+    if (profileError) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao atualizar usuário',
+        description: profileError.message,
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    // Atualizar role
+    const { error: roleError } = await supabase
+      .from('user_roles')
+      .update({ role: editFormData.role as any })
+      .eq('user_id', editingUser.id);
+
+    if (roleError) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao atualizar role',
+        description: roleError.message,
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    toast({
+      title: 'Usuário atualizado!',
+      description: 'As informações foram atualizadas com sucesso.',
+    });
+    
+    setEditOpen(false);
+    setEditingUser(null);
+    loadUsers();
+    setIsLoading(false);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deleteUserId) return;
+    
+    setIsLoading(true);
+
+    // Excluir role
+    const { error: roleError } = await supabase
+      .from('user_roles')
+      .delete()
+      .eq('user_id', deleteUserId);
+
+    if (roleError) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao excluir role',
+        description: roleError.message,
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    // Excluir perfil
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', deleteUserId);
+
+    if (profileError) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao excluir usuário',
+        description: profileError.message,
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    toast({
+      title: 'Usuário excluído!',
+      description: 'O usuário foi removido com sucesso.',
+    });
+    
+    setDeleteUserId(null);
+    loadUsers();
+    setIsLoading(false);
+  };
+
+  const openEditDialog = (user: User) => {
+    setEditingUser(user);
+    setEditFormData({
+      name: user.name,
+      role: user.role || 'operador',
+    });
+    setEditOpen(true);
   };
 
   if (isLoading) {
@@ -224,6 +337,7 @@ export default function Usuarios() {
                 <TableHead>Email</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Data de Cadastro</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -244,6 +358,24 @@ export default function Usuarios() {
                   </TableCell>
                   <TableCell>
                     {format(new Date(user.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => openEditDialog(user)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setDeleteUserId(user.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -280,6 +412,68 @@ export default function Usuarios() {
             </PaginationContent>
           </Pagination>
         )}
+
+        {/* Dialog de Edição */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Usuário</DialogTitle>
+              <DialogDescription>
+                Edite as informações do usuário
+              </DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={handleEditUser} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Nome</Label>
+                <Input
+                  id="edit-name"
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-role">Tipo de Usuário</Label>
+                <Select
+                  value={editFormData.role}
+                  onValueChange={(value) => setEditFormData({ ...editFormData, role: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="operador">Operador</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? 'Salvando...' : 'Salvar Alterações'}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog de Confirmação de Exclusão */}
+        <AlertDialog open={!!deleteUserId} onOpenChange={() => setDeleteUserId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteUser}>
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );
