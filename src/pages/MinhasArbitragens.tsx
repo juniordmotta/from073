@@ -498,9 +498,15 @@ export default function MinhasArbitragens() {
                     </TableCell>
                     <TableCell className="max-w-[200px] text-xs">
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-muted-foreground">
-                          {format(new Date(arb.data_evento), 'dd/MM/yy HH:mm')}
-                        </span>
+                        <div className={`flex items-center gap-2 ${
+                          format(new Date(arb.data_evento), 'dd/MM/yy') === format(new Date(), 'dd/MM/yy')
+                            ? 'border-l-4 border-yellow-400 pl-2'
+                            : ''
+                        }`}>
+                          <span className="text-muted-foreground">
+                            {format(new Date(arb.data_evento), 'dd/MM/yy HH:mm')}
+                          </span>
+                        </div>
                         <span className="font-medium truncate">{arb.descricao}</span>
                         {arb.esporte_liga && (
                           <span className="text-muted-foreground truncate">{arb.esporte_liga}</span>
@@ -516,8 +522,11 @@ export default function MinhasArbitragens() {
                       <div className="space-y-1.5">
                         <div>
                           <div className="font-medium">{arb.casa_01_nome}</div>
+                          {arb.casa_01_mercado && (
+                            <div className="text-muted-foreground text-[10px]">{arb.casa_01_mercado}</div>
+                          )}
                           <div className="text-muted-foreground">
-                            {arb.casa_01_odd}x • R$ {arb.casa_01_valor}
+                            {Number(arb.casa_01_odd).toFixed(3)}x • R$ {arb.casa_01_valor}
                           </div>
                         </div>
                         <DropdownMenu>
@@ -551,8 +560,11 @@ export default function MinhasArbitragens() {
                       <div className="space-y-1.5">
                         <div>
                           <div className="font-medium">{arb.casa_02_nome}</div>
+                          {arb.casa_02_mercado && (
+                            <div className="text-muted-foreground text-[10px]">{arb.casa_02_mercado}</div>
+                          )}
                           <div className="text-muted-foreground">
-                            {arb.casa_02_odd}x • R$ {arb.casa_02_valor}
+                            {Number(arb.casa_02_odd).toFixed(3)}x • R$ {arb.casa_02_valor}
                           </div>
                         </div>
                         <DropdownMenu>
@@ -587,8 +599,11 @@ export default function MinhasArbitragens() {
                         <div className="space-y-1.5">
                           <div>
                             <div className="font-medium">{arb.casa_03_nome}</div>
+                            {arb.casa_03_mercado && (
+                              <div className="text-muted-foreground text-[10px]">{arb.casa_03_mercado}</div>
+                            )}
                             <div className="text-muted-foreground">
-                              {arb.casa_03_odd}x • R$ {arb.casa_03_valor}
+                              {Number(arb.casa_03_odd).toFixed(3)}x • R$ {arb.casa_03_valor}
                             </div>
                           </div>
                           <DropdownMenu>

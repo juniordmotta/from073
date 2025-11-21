@@ -34,7 +34,7 @@ export const Layout = ({ children }: LayoutProps) => {
   ];
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false}>
       <div className="flex min-h-screen w-full">
         <AppSidebar />
         
@@ -46,7 +46,7 @@ export const Layout = ({ children }: LayoutProps) => {
                 
                 <Link to="/dashboard" className="flex items-center gap-2">
                   <TrendingUp className="h-6 w-6 text-success" />
-                  <span className="text-xl font-bold">ArbitragemPro</span>
+                  <span className="text-xl font-bold">Arb From 073</span>
                 </Link>
                 
                 <nav className="hidden md:flex items-center gap-1">
@@ -100,7 +100,7 @@ export const Layout = ({ children }: LayoutProps) => {
           
           <footer className="border-t border-border py-6">
             <div className="container text-center text-sm text-muted-foreground">
-              © 2025 ArbitragemPro. Sistema de Gerenciamento de Arbitragens Esportivas.
+              © 2025 Arb From 073. Sistema de Gerenciamento de Arbitragens Esportivas.
             </div>
           </footer>
         </div>
