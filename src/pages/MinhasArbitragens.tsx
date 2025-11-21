@@ -488,8 +488,15 @@ export default function MinhasArbitragens() {
                   
                   return (
                   <TableRow key={arb.id}>
-                    <TableCell className="text-xs">
-                      <div className="flex flex-col">
+                    <TableCell className={`text-xs relative ${
+                      format(new Date(arb.data_evento), 'dd/MM/yy') === format(new Date(), 'dd/MM/yy')
+                        ? 'border-l-4 border-yellow-400'
+                        : ''
+                    }`}>
+                      {format(new Date(arb.data_evento), 'dd/MM/yy') === format(new Date(), 'dd/MM/yy') && (
+                        <div className="absolute left-0 top-1 bottom-1 w-1 bg-yellow-400 animate-pulse" />
+                      )}
+                      <div className="flex flex-col pl-2">
                         <span>{format(new Date(arb.created_at), 'dd/MM/yy')}</span>
                         <span className="text-muted-foreground">
                           {format(new Date(arb.created_at), 'HH:mm')}
@@ -498,15 +505,9 @@ export default function MinhasArbitragens() {
                     </TableCell>
                     <TableCell className="max-w-[200px] text-xs">
                       <div className="flex flex-col gap-0.5">
-                        <div className={`flex items-center gap-2 ${
-                          format(new Date(arb.data_evento), 'dd/MM/yy') === format(new Date(), 'dd/MM/yy')
-                            ? 'border-l-4 border-yellow-400 pl-2'
-                            : ''
-                        }`}>
-                          <span className="text-muted-foreground">
-                            {format(new Date(arb.data_evento), 'dd/MM/yy HH:mm')}
-                          </span>
-                        </div>
+                        <span className="text-muted-foreground">
+                          {format(new Date(arb.data_evento), 'dd/MM/yy HH:mm')}
+                        </span>
                         <span className="font-medium truncate">{arb.descricao}</span>
                         {arb.esporte_liga && (
                           <span className="text-muted-foreground truncate">{arb.esporte_liga}</span>
