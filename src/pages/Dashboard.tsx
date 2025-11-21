@@ -108,7 +108,12 @@ export default function Dashboard() {
   const loadOpenBets = async () => {
     let query = supabase
       .from('arbitrages')
-      .select('*')
+      .select(`
+        *,
+        profiles:user_id (
+          name
+        )
+      `)
       .eq('status', 'aguardando')
       .order('data_evento', { ascending: true });
     
@@ -272,6 +277,7 @@ export default function Dashboard() {
                     <TableRow>
                       <TableHead>Descrição</TableHead>
                       <TableHead>Data Evento</TableHead>
+                      {isAdmin && <TableHead>Usuário</TableHead>}
                       <TableHead>Casa 1</TableHead>
                       <TableHead>Casa 2</TableHead>
                       <TableHead>Casa 3</TableHead>
@@ -284,6 +290,7 @@ export default function Dashboard() {
                       <TableRow key={bet.id}>
                         <TableCell className="font-medium">{bet.descricao}</TableCell>
                         <TableCell>{format(new Date(bet.data_evento), 'dd/MM/yyyy HH:mm')}</TableCell>
+                        {isAdmin && <TableCell>{bet.profiles?.name || '-'}</TableCell>}
                         <TableCell>
                           <div className="text-sm">
                             <div className="font-medium">{bet.casa_01_nome}</div>
