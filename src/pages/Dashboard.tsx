@@ -6,7 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TrendingUp, TrendingDown, DollarSign, Target } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface Stats {
   totalArbitragens: number;
@@ -28,11 +30,13 @@ export default function Dashboard() {
   const [selectedUser, setSelectedUser] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [users, setUsers] = useState<Array<{ id: string; name: string }>>([]);
+  const [openBets, setOpenBets] = useState<any[]>([]);
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
   useEffect(() => {
     loadStats();
+    loadOpenBets();
     if (isAdmin) {
       loadUsers();
     }
@@ -98,6 +102,36 @@ export default function Dashboard() {
         totalLucro,
         taxaSucesso,
       });
+    }
+  };
+
+  const loadOpenBets = async () => {
+    let query = supabase
+      .from('arbitrages')
+      .select('*')
+      .eq('status', 'aguardando')
+      .order('data_evento', { ascending: true });
+    
+    if (!isAdmin) {
+      query = query.eq('user_id', user?.id);
+    } else if (selectedUser !== 'all') {
+      query = query.eq('user_id', selectedUser);
+    }
+
+    if (startDate) {
+      query = query.gte('created_at', new Date(startDate).toISOString());
+    }
+
+    if (endDate) {
+      const endOfDay = new Date(endDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      query = query.lte('created_at', endOfDay.toISOString());
+    }
+
+    const { data } = await query;
+
+    if (data) {
+      setOpenBets(data);
     }
   };
 
@@ -225,6 +259,73 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {openBets.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Apostas em Aberto ({openBets.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead>Data Evento</TableHead>
+                      <TableHead>Casa 1</TableHead>
+                      <TableHead>Casa 2</TableHead>
+                      <TableHead>Casa 3</TableHead>
+                      <TableHead className="text-right">Investido</TableHead>
+                      <TableHead className="text-right">Lucro Projetado</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {openBets.map((bet) => (
+                      <TableRow key={bet.id}>
+                        <TableCell className="font-medium">{bet.descricao}</TableCell>
+                        <TableCell>{format(new Date(bet.data_evento), 'dd/MM/yyyy HH:mm')}</TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <div className="font-medium">{bet.casa_01_nome}</div>
+                            <div className="text-muted-foreground">
+                              @{Number(bet.casa_01_odd).toFixed(2)} - R$ {Number(bet.casa_01_valor).toFixed(2)}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <div className="font-medium">{bet.casa_02_nome}</div>
+                            <div className="text-muted-foreground">
+                              @{Number(bet.casa_02_odd).toFixed(2)} - R$ {Number(bet.casa_02_valor).toFixed(2)}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {bet.casa_03_nome ? (
+                            <div className="text-sm">
+                              <div className="font-medium">{bet.casa_03_nome}</div>
+                              <div className="text-muted-foreground">
+                                @{Number(bet.casa_03_odd).toFixed(2)} - R$ {Number(bet.casa_03_valor).toFixed(2)}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          R$ {(Number(bet.casa_01_valor) + Number(bet.casa_02_valor) + Number(bet.casa_03_valor || 0)).toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right font-medium text-success">
+                          R$ {Number(bet.lucro_projetado).toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </Layout>
   );
