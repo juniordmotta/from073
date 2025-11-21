@@ -184,11 +184,18 @@ export default function Arbitragens() {
         throw profileError;
       }
 
+      // Converter data_evento para timestamp correto (sem conversão de timezone)
+      // O input datetime-local retorna formato "YYYY-MM-DDTHH:mm"
+      // Precisamos garantir que essa data seja salva exatamente como foi informada
+      const dataEvento = formData.data_evento 
+        ? new Date(formData.data_evento + ':00').toISOString() 
+        : new Date().toISOString();
+
       // Inserir arbitragem
       const arbitrageData: any = {
         user_id: user.id,
         descricao: formData.descricao,
-        data_evento: formData.data_evento || new Date().toISOString(),
+        data_evento: dataEvento,
         esporte_liga: formData.esporte_liga || null,
         casa_01_nome: formData.casa_01_nome,
         casa_01_odd: parseFloat(formData.casa_01_odd),

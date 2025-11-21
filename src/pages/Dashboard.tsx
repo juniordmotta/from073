@@ -275,54 +275,54 @@ export default function Dashboard() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Descrição</TableHead>
-                      <TableHead>Data Evento</TableHead>
-                      {isAdmin && <TableHead>Usuário</TableHead>}
-                      <TableHead>Casa 1</TableHead>
-                      <TableHead>Casa 2</TableHead>
-                      <TableHead>Casa 3</TableHead>
-                      <TableHead className="text-right">Investido</TableHead>
-                      <TableHead className="text-right">Lucro Projetado</TableHead>
+                      <TableHead className="text-xs">Descrição</TableHead>
+                      <TableHead className="text-xs">Data Evento</TableHead>
+                      {isAdmin && <TableHead className="text-xs">Usuário</TableHead>}
+                      <TableHead className="text-xs">Casa 1</TableHead>
+                      <TableHead className="text-xs">Casa 2</TableHead>
+                      <TableHead className="text-xs">Casa 3</TableHead>
+                      <TableHead className="text-right text-xs">Investido</TableHead>
+                      <TableHead className="text-right text-xs">Lucro Proj.</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {openBets.map((bet) => (
                       <TableRow key={bet.id}>
-                        <TableCell className="font-medium">{bet.descricao}</TableCell>
-                        <TableCell>{format(new Date(bet.data_evento), 'dd/MM/yyyy HH:mm')}</TableCell>
-                        {isAdmin && <TableCell>{bet.profiles?.name || '-'}</TableCell>}
-                        <TableCell>
-                          <div className="text-sm">
+                        <TableCell className="font-medium text-xs max-w-[150px] truncate">{bet.descricao}</TableCell>
+                        <TableCell className="text-xs">{format(new Date(bet.data_evento), 'dd/MM/yy HH:mm')}</TableCell>
+                        {isAdmin && <TableCell className="text-xs">{bet.profiles?.name || '-'}</TableCell>}
+                        <TableCell className="text-xs">
+                          <div>
                             <div className="font-medium">{bet.casa_01_nome}</div>
                             <div className="text-muted-foreground">
-                              @{Number(bet.casa_01_odd).toFixed(2)} - R$ {Number(bet.casa_01_valor).toFixed(2)}
+                              @{Number(bet.casa_01_odd).toFixed(2)} • R$ {Number(bet.casa_01_valor).toFixed(2)}
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
+                        <TableCell className="text-xs">
+                          <div>
                             <div className="font-medium">{bet.casa_02_nome}</div>
                             <div className="text-muted-foreground">
-                              @{Number(bet.casa_02_odd).toFixed(2)} - R$ {Number(bet.casa_02_valor).toFixed(2)}
+                              @{Number(bet.casa_02_odd).toFixed(2)} • R$ {Number(bet.casa_02_valor).toFixed(2)}
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-xs">
                           {bet.casa_03_nome ? (
-                            <div className="text-sm">
+                            <div>
                               <div className="font-medium">{bet.casa_03_nome}</div>
                               <div className="text-muted-foreground">
-                                @{Number(bet.casa_03_odd).toFixed(2)} - R$ {Number(bet.casa_03_valor).toFixed(2)}
+                                @{Number(bet.casa_03_odd).toFixed(2)} • R$ {Number(bet.casa_03_valor).toFixed(2)}
                               </div>
                             </div>
                           ) : (
                             <span className="text-muted-foreground">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right text-xs font-medium">
                           R$ {(Number(bet.casa_01_valor) + Number(bet.casa_02_valor) + Number(bet.casa_03_valor || 0)).toFixed(2)}
                         </TableCell>
-                        <TableCell className="text-right font-medium text-success">
+                        <TableCell className="text-right text-xs font-medium text-success">
                           R$ {Number(bet.lucro_projetado).toFixed(2)}
                         </TableCell>
                       </TableRow>

@@ -104,7 +104,7 @@ export default function MinhasArbitragens() {
   const [editArbitrage, setEditArbitrage] = useState<Arbitrage | null>(null);
   const [viewGanhosArbitrage, setViewGanhosArbitrage] = useState<Arbitrage | null>(null);
   const [filterDate, setFilterDate] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('aguardando');
   const [filterUser, setFilterUser] = useState('all');
   const [users, setUsers] = useState<Array<{ id: string; name: string }>>([]);
   const itemsPerPage = 10;
@@ -488,39 +488,36 @@ export default function MinhasArbitragens() {
                   
                   return (
                   <TableRow key={arb.id}>
-                    <TableCell>
+                    <TableCell className="text-xs">
                       <div className="flex flex-col">
-                        <span>{format(new Date(arb.created_at), 'dd/MM/yyyy', { locale: ptBR })}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {format(new Date(arb.created_at), 'HH:mm', { locale: ptBR })}
+                        <span>{format(new Date(arb.created_at), 'dd/MM/yy')}</span>
+                        <span className="text-muted-foreground">
+                          {format(new Date(arb.created_at), 'HH:mm')}
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="max-w-xs">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-xs text-muted-foreground">
-                          {format(new Date(arb.data_evento), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                    <TableCell className="max-w-[200px] text-xs">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-muted-foreground">
+                          {format(new Date(arb.data_evento), 'dd/MM/yy HH:mm')}
                         </span>
-                        <span className="font-medium">{arb.descricao}</span>
+                        <span className="font-medium truncate">{arb.descricao}</span>
                         {arb.esporte_liga && (
-                          <span className="text-xs text-muted-foreground">{arb.esporte_liga}</span>
+                          <span className="text-muted-foreground truncate">{arb.esporte_liga}</span>
                         )}
                       </div>
                     </TableCell>
                     {isAdmin && (
-                      <TableCell>
-                        <span className="text-sm">
-                          {(arb as any).profiles?.name || 'Desconhecido'}
-                        </span>
+                      <TableCell className="text-xs">
+                        {(arb as any).profiles?.name || 'Desconhecido'}
                       </TableCell>
                     )}
-                    <TableCell>
-                      <div className="space-y-2">
-                        <div className="text-sm">
-                          <div>{arb.casa_01_nome}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {arb.casa_01_odd}x - R$ {arb.casa_01_valor}
-                            {arb.casa_01_mercado && ` - ${arb.casa_01_mercado}`}
+                    <TableCell className="text-xs">
+                      <div className="space-y-1.5">
+                        <div>
+                          <div className="font-medium">{arb.casa_01_nome}</div>
+                          <div className="text-muted-foreground">
+                            {arb.casa_01_odd}x • R$ {arb.casa_01_valor}
                           </div>
                         </div>
                         <DropdownMenu>
@@ -528,7 +525,7 @@ export default function MinhasArbitragens() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="gap-2"
+                              className="h-7 text-xs gap-1"
                             >
                               {statusMap[arb.casa_01_resultado as keyof typeof statusMap]?.label ||
                                 'Definir'}
@@ -550,13 +547,12 @@ export default function MinhasArbitragens() {
                         </DropdownMenu>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="space-y-2">
-                        <div className="text-sm">
-                          <div>{arb.casa_02_nome}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {arb.casa_02_odd}x - R$ {arb.casa_02_valor}
-                            {arb.casa_02_mercado && ` - ${arb.casa_02_mercado}`}
+                    <TableCell className="text-xs">
+                      <div className="space-y-1.5">
+                        <div>
+                          <div className="font-medium">{arb.casa_02_nome}</div>
+                          <div className="text-muted-foreground">
+                            {arb.casa_02_odd}x • R$ {arb.casa_02_valor}
                           </div>
                         </div>
                         <DropdownMenu>
@@ -564,7 +560,7 @@ export default function MinhasArbitragens() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="gap-2"
+                              className="h-7 text-xs gap-1"
                             >
                               {statusMap[arb.casa_02_resultado as keyof typeof statusMap]?.label ||
                                 'Definir'}
@@ -586,14 +582,13 @@ export default function MinhasArbitragens() {
                         </DropdownMenu>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-xs">
                       {arb.casa_03_nome ? (
-                        <div className="space-y-2">
-                          <div className="text-sm">
-                            <div>{arb.casa_03_nome}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {arb.casa_03_odd}x - R$ {arb.casa_03_valor}
-                              {arb.casa_03_mercado && ` - ${arb.casa_03_mercado}`}
+                        <div className="space-y-1.5">
+                          <div>
+                            <div className="font-medium">{arb.casa_03_nome}</div>
+                            <div className="text-muted-foreground">
+                              {arb.casa_03_odd}x • R$ {arb.casa_03_valor}
                             </div>
                           </div>
                           <DropdownMenu>
@@ -601,7 +596,7 @@ export default function MinhasArbitragens() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="gap-2"
+                                className="h-7 text-xs gap-1"
                               >
                                 {statusMap[arb.casa_03_resultado as keyof typeof statusMap]?.label ||
                                   'Definir'}
@@ -623,11 +618,11 @@ export default function MinhasArbitragens() {
                           </DropdownMenu>
                         </div>
                       ) : (
-                        <span className="text-sm text-muted-foreground">-</span>
+                        <span className="text-muted-foreground">-</span>
                       )}
                     </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
+                    <TableCell className="text-xs">
+                      <div className="space-y-0.5">
                         <div
                           className={`font-semibold ${
                             arb.lucro_real >= 0 ? 'text-success' : 'text-destructive'
@@ -635,8 +630,8 @@ export default function MinhasArbitragens() {
                         >
                           R$ {Number(arb.lucro_real).toFixed(2)}
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          Projetado: R$ {Number(arb.lucro_projetado).toFixed(2)}
+                        <div className="text-muted-foreground">
+                          Proj: R$ {Number(arb.lucro_projetado).toFixed(2)}
                         </div>
                         <Button
                           variant="link"
@@ -644,7 +639,7 @@ export default function MinhasArbitragens() {
                           className="h-auto p-0 text-xs"
                           onClick={() => setViewGanhosArbitrage(arb)}
                         >
-                          Ver ganhos por casa
+                          Ver ganhos
                         </Button>
                       </div>
                     </TableCell>
@@ -756,7 +751,7 @@ export default function MinhasArbitragens() {
                   <Input
                     type="datetime-local"
                     value={format(new Date(editArbitrage.data_evento), "yyyy-MM-dd'T'HH:mm")}
-                    onChange={(e) => setEditArbitrage({ ...editArbitrage, data_evento: new Date(e.target.value).toISOString() })}
+                    onChange={(e) => setEditArbitrage({ ...editArbitrage, data_evento: new Date(e.target.value + ':00').toISOString() })}
                   />
                 </div>
                 <div className={`grid gap-4 ${editArbitrage.casa_03_nome ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
