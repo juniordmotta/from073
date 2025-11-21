@@ -289,13 +289,19 @@ export default function Dashboard() {
                     {openBets.map((bet) => (
                       <TableRow key={bet.id}>
                         <TableCell className="font-medium text-xs max-w-[150px] truncate">{bet.descricao}</TableCell>
-                        <TableCell className="text-xs">{format(new Date(bet.data_evento), 'dd/MM/yy HH:mm')}</TableCell>
+                        <TableCell className={`text-xs ${
+                          format(new Date(bet.data_evento), 'dd/MM/yy') === format(new Date(), 'dd/MM/yy')
+                            ? 'border-l-4 border-yellow-400 pl-2'
+                            : ''
+                        }`}>
+                          {format(new Date(bet.data_evento), 'dd/MM/yy HH:mm')}
+                        </TableCell>
                         {isAdmin && <TableCell className="text-xs">{bet.profiles?.name || '-'}</TableCell>}
                         <TableCell className="text-xs">
                           <div>
                             <div className="font-medium">{bet.casa_01_nome}</div>
                             <div className="text-muted-foreground">
-                              @{Number(bet.casa_01_odd).toFixed(2)} • R$ {Number(bet.casa_01_valor).toFixed(2)}
+                              @{Number(bet.casa_01_odd).toFixed(3)} • R$ {Number(bet.casa_01_valor).toFixed(2)}
                             </div>
                           </div>
                         </TableCell>
@@ -303,7 +309,7 @@ export default function Dashboard() {
                           <div>
                             <div className="font-medium">{bet.casa_02_nome}</div>
                             <div className="text-muted-foreground">
-                              @{Number(bet.casa_02_odd).toFixed(2)} • R$ {Number(bet.casa_02_valor).toFixed(2)}
+                              @{Number(bet.casa_02_odd).toFixed(3)} • R$ {Number(bet.casa_02_valor).toFixed(2)}
                             </div>
                           </div>
                         </TableCell>
@@ -312,7 +318,7 @@ export default function Dashboard() {
                             <div>
                               <div className="font-medium">{bet.casa_03_nome}</div>
                               <div className="text-muted-foreground">
-                                @{Number(bet.casa_03_odd).toFixed(2)} • R$ {Number(bet.casa_03_valor).toFixed(2)}
+                                @{Number(bet.casa_03_odd).toFixed(3)} • R$ {Number(bet.casa_03_valor).toFixed(2)}
                               </div>
                             </div>
                           ) : (
