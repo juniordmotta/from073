@@ -12,22 +12,58 @@ serve(async (req) => {
   }
 
   try {
+    // Get auth token from request
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Authorization required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create client with user's token to verify authentication
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    // Verify user is authenticated
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check if user has admin_master role
+    const { data: roleData, error: roleError } = await supabaseClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
+
+    if (roleError || !roleData || roleData.role !== 'admin_master') {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: admin_master role required' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Now use admin client for actual deletion
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    )
+    );
 
-    console.log('Iniciando deleção de todos os usuários...');
-
-    // Listar todos os usuários
+    // List all users
     const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
     
     if (listError) {
-      console.error('Erro ao listar usuários:', listError);
+      console.error('Error listing users');
       throw listError;
     }
-
-    console.log(`Encontrados ${users.length} usuários para deletar`);
 
     // Deletar cada usuário
     const deletePromises = users.map(user => 
@@ -35,8 +71,6 @@ serve(async (req) => {
     );
 
     await Promise.all(deletePromises);
-
-    console.log('Todos os usuários foram deletados com sucesso');
 
     return new Response(
       JSON.stringify({ 
@@ -48,7 +82,6 @@ serve(async (req) => {
     )
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erro desconhecido'
-    console.error('Erro ao deletar usuários:', message);
     return new Response(
       JSON.stringify({ error: message }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
