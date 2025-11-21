@@ -1,4 +1,4 @@
-import { LayoutDashboard, TrendingUp, List, Users } from 'lucide-react';
+import { LayoutDashboard, DollarSign, List, Users } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -22,8 +22,8 @@ export function AppSidebar() {
 
   const items = [
     { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard, show: true },
-    { title: 'Arbitragens', url: '/arbitragens', icon: TrendingUp, show: true },
     { title: 'Minhas Arbitragens', url: '/minhas-arbitragens', icon: List, show: true },
+    { title: 'Custos Operacionais', url: '/custos-operacionais', icon: DollarSign, show: true },
     { title: 'Gerenciar Usuários', url: '/usuarios', icon: Users, show: isAdmin },
   ];
 

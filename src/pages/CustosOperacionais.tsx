@@ -1,0 +1,343 @@
+import { useEffect, useState } from 'react';
+import { Layout } from '@/components/Layout';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useToast } from '@/hooks/use-toast';
+import { Plus, DollarSign, Trash2 } from 'lucide-react';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
+interface OperationalCost {
+  id: string;
+  descricao: string;
+  valor: number;
+  data: string;
+  created_at: string;
+  user_id: string;
+}
+
+interface Profile {
+  id: string;
+  name: string;
+}
+
+export default function CustosOperacionais() {
+  const { user, userRole } = useAuth();
+  const { toast } = useToast();
+  const [costs, setCosts] = useState<OperationalCost[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, Profile>>({});
+  const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
+  const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
+  const [formData, setFormData] = useState({
+    descricao: '',
+    valor: '',
+    data: format(new Date(), 'yyyy-MM-dd'),
+  });
+
+  const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
+
+  useEffect(() => {
+    loadCosts();
+    if (isAdmin) {
+      loadProfiles();
+    }
+  }, [startDate, endDate, isAdmin]);
+
+  const loadProfiles = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, name');
+    
+    if (data) {
+      const profilesMap = data.reduce((acc, profile) => {
+        acc[profile.id] = profile;
+        return acc;
+      }, {} as Record<string, Profile>);
+      setProfiles(profilesMap);
+    }
+  };
+
+  const loadCosts = async () => {
+    let query = supabase
+      .from('operational_costs')
+      .select('*')
+      .order('data', { ascending: false });
+
+    if (!isAdmin) {
+      query = query.eq('user_id', user?.id);
+    }
+
+    if (startDate) {
+      query = query.gte('data', startDate);
+    }
+
+    if (endDate) {
+      query = query.lte('data', endDate);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao carregar custos',
+        description: error.message,
+      });
+      return;
+    }
+
+    if (data) {
+      setCosts(data);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!user?.id) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro de autenticação',
+        description: 'Usuário não autenticado.',
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase.from('operational_costs').insert({
+        user_id: user.id,
+        descricao: formData.descricao,
+        valor: parseFloat(formData.valor),
+        data: formData.data,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Custo adicionado!',
+        description: 'O custo operacional foi registrado com sucesso.',
+      });
+
+      setOpen(false);
+      setFormData({
+        descricao: '',
+        valor: '',
+        data: format(new Date(), 'yyyy-MM-dd'),
+      });
+      loadCosts();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao adicionar custo',
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('operational_costs')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Custo removido!',
+        description: 'O custo operacional foi removido com sucesso.',
+      });
+
+      loadCosts();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao remover custo',
+        description: error.message,
+      });
+    }
+  };
+
+  const totalCosts = costs.reduce((sum, cost) => sum + Number(cost.valor), 0);
+
+  return (
+    <Layout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Custos Operacionais</h1>
+          
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="lg" className="gap-2">
+                <Plus className="h-5 w-5" />
+                Adicionar Custo
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Novo Custo Operacional</DialogTitle>
+                <DialogDescription>
+                  Registre um novo custo operacional
+                </DialogDescription>
+              </DialogHeader>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="descricao">Descrição</Label>
+                  <Input
+                    id="descricao"
+                    placeholder="Ex: Mensalidade plataforma"
+                    value={formData.descricao}
+                    onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="valor">Valor (R$)</Label>
+                  <Input
+                    id="valor"
+                    type="number"
+                    step="0.01"
+                    placeholder="Ex: 50.00"
+                    value={formData.valor}
+                    onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="data">Data</Label>
+                  <Input
+                    id="data"
+                    type="date"
+                    value={formData.data}
+                    onChange={(e) => setFormData({ ...formData, data: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Salvando...' : 'Salvar Custo'}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-1">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total de Custos</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                R$ {totalCosts.toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Período selecionado
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Filtros</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="startDate">Data Inicial</Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="endDate">Data Final</Label>
+                <Input
+                  id="endDate"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Lista de Custos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead>Valor</TableHead>
+                    {isAdmin && <TableHead>Usuário</TableHead>}
+                    <TableHead className="w-[50px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {costs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={isAdmin ? 5 : 4} className="text-center text-muted-foreground">
+                        Nenhum custo encontrado
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    costs.map((cost) => (
+                      <TableRow key={cost.id}>
+                        <TableCell className="font-medium">
+                          {format(new Date(cost.data), 'dd/MM/yyyy', { locale: ptBR })}
+                        </TableCell>
+                        <TableCell>{cost.descricao}</TableCell>
+                        <TableCell className="font-semibold">
+                          R$ {Number(cost.valor).toFixed(2)}
+                        </TableCell>
+                        {isAdmin && (
+                          <TableCell>
+                            {profiles[cost.user_id]?.name || 'N/A'}
+                          </TableCell>
+                        )}
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(cost.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </Layout>
+  );
+}
