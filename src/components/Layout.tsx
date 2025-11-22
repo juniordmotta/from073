@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import { LayoutDashboard, DollarSign, List, Users, LogOut, User } from 'lucide-react';
+import { LayoutDashboard, DollarSign, List, Users, LogOut, User, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface LayoutProps {
@@ -30,6 +30,7 @@ export const Layout = ({ children }: LayoutProps) => {
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, show: true },
     { path: '/minhas-arbitragens', label: 'Minhas Arbitragens', icon: List, show: true },
     { path: '/custos-operacionais', label: 'Custos Operacionais', icon: DollarSign, show: true },
+    { path: '/relatorio-casas', label: 'Relatório Casas', icon: TrendingUp, show: true },
     { path: '/usuarios', label: 'Gerenciar Usuários', icon: Users, show: isAdminMaster },
   ];
 
