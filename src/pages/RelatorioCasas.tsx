@@ -69,7 +69,8 @@ export default function RelatorioCasas() {
     try {
       let query = supabase
         .from('arbitrages')
-        .select('*');
+        .select('*')
+        .order('data_evento', { ascending: true });
 
       // Filtro de usuário
       if (!isAdmin || (usuarioFiltro !== 'todos' && usuarioFiltro)) {
