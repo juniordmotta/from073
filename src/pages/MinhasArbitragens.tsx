@@ -294,7 +294,7 @@ export default function MinhasArbitragens() {
         const retorno1 = valor1 * odd1;
         const retorno2 = valor2 * odd2;
         const retorno3 = valor3 * odd3;
-        const retornoPrevisto = Math.min(retorno1, retorno2, retorno3);
+        const retornoPrevisto = Math.max(retorno1, retorno2, retorno3);
         const lucroProjetado = retornoPrevisto - totalApostado;
 
         setFormData(prev => ({
@@ -310,7 +310,7 @@ export default function MinhasArbitragens() {
         const totalApostado = valor1 + valor2;
         const retorno1 = valor1 * odd1;
         const retorno2 = valor2 * odd2;
-        const retornoPrevisto = Math.min(retorno1, retorno2);
+        const retornoPrevisto = Math.max(retorno1, retorno2);
         const lucroProjetado = retornoPrevisto - totalApostado;
 
         setFormData(prev => ({
