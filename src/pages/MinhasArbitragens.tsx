@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Layout } from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useGameNotifications } from '@/hooks/useGameNotifications';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -116,6 +117,11 @@ export default function MinhasArbitragens() {
   const [users, setUsers] = useState<Array<{ id: string; name: string }>>([]);
   const itemsPerPage = 10;
   
+  // Debounce dos filtros para evitar queries excessivas
+  const debouncedFilterDate = useDebounce(filterDate, 300);
+  const debouncedFilterStatus = useDebounce(filterStatus, 300);
+  const debouncedFilterUser = useDebounce(filterUser, 300);
+  
   // Estados para adicionar arbitragem
   const [openAdd, setOpenAdd] = useState(false);
   const [isLoadingAdd, setIsLoadingAdd] = useState(false);
@@ -153,17 +159,19 @@ export default function MinhasArbitragens() {
   const endIndex = startIndex + itemsPerPage;
   const paginatedArbitragens = filteredArbitragens.slice(startIndex, endIndex);
 
-  // Calcular totais baseado nos filtros
-  const totais = filteredArbitragens.reduce(
-    (acc, arb) => {
-      const lucro = arb.status === 'aguardando' ? Number(arb.lucro_projetado) : Number(arb.lucro_real);
-      return {
-        totalInvestido: acc.totalInvestido + Number(arb.casa_01_valor) + Number(arb.casa_02_valor) + Number(arb.casa_03_valor || 0),
-        totalLucro: acc.totalLucro + lucro,
-      };
-    },
-    { totalInvestido: 0, totalLucro: 0 }
-  );
+  // Calcular totais baseado nos filtros (memoizado)
+  const totais = useMemo(() => {
+    return filteredArbitragens.reduce(
+      (acc, arb) => {
+        const lucro = arb.status === 'aguardando' ? Number(arb.lucro_projetado) : Number(arb.lucro_real);
+        return {
+          totalInvestido: acc.totalInvestido + Number(arb.casa_01_valor) + Number(arb.casa_02_valor) + Number(arb.casa_03_valor || 0),
+          totalLucro: acc.totalLucro + lucro,
+        };
+      },
+      { totalInvestido: 0, totalLucro: 0 }
+    );
+  }, [filteredArbitragens]);
 
   useEffect(() => {
     loadArbitragens();
@@ -174,7 +182,7 @@ export default function MinhasArbitragens() {
 
   useEffect(() => {
     applyFilters();
-  }, [arbitragens, filterDate, filterStatus, filterUser]);
+  }, [arbitragens, debouncedFilterDate, debouncedFilterStatus, debouncedFilterUser]);
 
   const loadUsers = async () => {
     const { data } = await supabase
@@ -187,30 +195,57 @@ export default function MinhasArbitragens() {
     }
   };
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = [...arbitragens];
 
-    if (filterDate) {
+    if (debouncedFilterDate) {
       filtered = filtered.filter((arb) => 
-        format(new Date(arb.created_at), 'yyyy-MM-dd') === filterDate
+        format(new Date(arb.created_at), 'yyyy-MM-dd') === debouncedFilterDate
       );
     }
 
-    if (filterStatus !== 'all') {
-      filtered = filtered.filter((arb) => arb.status === filterStatus);
+    if (debouncedFilterStatus !== 'all') {
+      filtered = filtered.filter((arb) => arb.status === debouncedFilterStatus);
     }
 
-    if (filterUser !== 'all') {
-      filtered = filtered.filter((arb) => arb.user_id === filterUser);
+    if (debouncedFilterUser !== 'all') {
+      filtered = filtered.filter((arb) => arb.user_id === debouncedFilterUser);
     }
 
     setFilteredArbitragens(filtered);
     setCurrentPage(1);
-  };
+  }, [arbitragens, debouncedFilterDate, debouncedFilterStatus, debouncedFilterUser]);
 
-  const loadArbitragens = async () => {
+  const loadArbitragens = useCallback(async () => {
     let query = supabase.from('arbitrages').select(`
-      *,
+      id,
+      descricao,
+      data_evento,
+      created_at,
+      esporte_liga,
+      casa_01_nome,
+      casa_01_odd,
+      casa_01_valor,
+      casa_01_resultado,
+      casa_01_mercado,
+      casa_01_valor_resultado,
+      casa_02_nome,
+      casa_02_odd,
+      casa_02_valor,
+      casa_02_resultado,
+      casa_02_mercado,
+      casa_02_valor_resultado,
+      casa_03_nome,
+      casa_03_odd,
+      casa_03_valor,
+      casa_03_resultado,
+      casa_03_mercado,
+      casa_03_valor_resultado,
+      porcentagem,
+      lucro_projetado,
+      lucro_real,
+      status,
+      user_id,
       profiles!arbitrages_user_id_fkey (name)
     `).order('data_evento', { ascending: true });
 
@@ -231,7 +266,7 @@ export default function MinhasArbitragens() {
     }
 
     setIsLoading(false);
-  };
+  }, [user?.id, isAdmin, toast]);
 
   // Funções para adicionar arbitragem
   const handleParsePaste = () => {
