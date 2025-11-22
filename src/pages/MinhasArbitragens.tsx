@@ -173,28 +173,6 @@ export default function MinhasArbitragens() {
     );
   }, [filteredArbitragens]);
 
-  useEffect(() => {
-    loadArbitragens();
-    if (isAdmin) {
-      loadUsers();
-    }
-  }, [user, isAdmin]);
-
-  useEffect(() => {
-    applyFilters();
-  }, [arbitragens, debouncedFilterDate, debouncedFilterStatus, debouncedFilterUser]);
-
-  const loadUsers = async () => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, name')
-      .order('name');
-    
-    if (data) {
-      setUsers(data);
-    }
-  };
-
   const applyFilters = useCallback(() => {
     let filtered = [...arbitragens];
 
@@ -216,7 +194,33 @@ export default function MinhasArbitragens() {
     setCurrentPage(1);
   }, [arbitragens, debouncedFilterDate, debouncedFilterStatus, debouncedFilterUser]);
 
+  useEffect(() => {
+    if (user) {
+      loadArbitragens();
+      if (isAdmin) {
+        loadUsers();
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]);
+
+  const loadUsers = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, name')
+      .order('name');
+    
+    if (data) {
+      setUsers(data);
+    }
+  };
+
   const loadArbitragens = useCallback(async () => {
+    if (!user?.id) return;
+    
     let query = supabase.from('arbitrages').select(`
       id,
       descricao,
@@ -250,7 +254,7 @@ export default function MinhasArbitragens() {
     `).order('data_evento', { ascending: true });
 
     if (!isAdmin) {
-      query = query.eq('user_id', user?.id);
+      query = query.eq('user_id', user.id);
     }
 
     const { data, error } = await query;
@@ -266,7 +270,7 @@ export default function MinhasArbitragens() {
     }
 
     setIsLoading(false);
-  }, [user?.id, isAdmin, toast]);
+  }, [user?.id, isAdmin]);
 
   // Funções para adicionar arbitragem
   const handleParsePaste = () => {
