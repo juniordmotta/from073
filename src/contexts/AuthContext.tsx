@@ -25,67 +25,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing session first
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        try {
-          const { data, error } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
-          
-          if (error) {
-            console.error('Error fetching user role:', error);
-            setUserRole(null);
-          } else if (data) {
-            console.log('User role found:', data);
-            setUserRole(data);
-          } else {
-            console.log('No role found for user');
-            setUserRole(null);
-          }
-        } catch (error) {
-          console.error('Unexpected error fetching user role:', error);
-          setUserRole(null);
-        }
-      }
-      
-      setIsLoading(false);
-    });
-
-    // Setup auth state listener
+    // Setup auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('Auth state change:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
+        // Defer Supabase calls with setTimeout to prevent deadlock
         if (session?.user) {
-          try {
-            const { data, error } = await supabase
+          setTimeout(() => {
+            supabase
               .from('user_roles')
               .select('role')
               .eq('user_id', session.user.id)
-              .maybeSingle();
-            
-            if (error) {
-              console.error('Error fetching user role:', error);
-              setUserRole(null);
-            } else if (data) {
-              console.log('User role found:', data);
-              setUserRole(data);
-            } else {
-              console.log('No role found for user');
-              setUserRole(null);
-            }
-          } catch (error) {
-            console.error('Unexpected error fetching user role:', error);
-            setUserRole(null);
-          }
+              .maybeSingle()
+              .then(({ data, error }) => {
+                if (error) {
+                  console.error('Error fetching user role:', error);
+                  setUserRole(null);
+                } else if (data) {
+                  console.log('User role found:', data);
+                  setUserRole(data);
+                } else {
+                  console.log('No role found for user');
+                  setUserRole(null);
+                }
+              });
+          }, 0);
         } else {
           setUserRole(null);
         }
@@ -93,6 +60,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsLoading(false);
       }
     );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        setTimeout(() => {
+          supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .maybeSingle()
+            .then(({ data, error }) => {
+              if (error) {
+                console.error('Error fetching user role:', error);
+                setUserRole(null);
+              } else if (data) {
+                console.log('User role found:', data);
+                setUserRole(data);
+              } else {
+                console.log('No role found for user');
+                setUserRole(null);
+              }
+            });
+        }, 0);
+      }
+      
+      setIsLoading(false);
+    });
 
     return () => subscription.unsubscribe();
   }, []);
