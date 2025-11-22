@@ -250,15 +250,15 @@ export default function MinhasArbitragens() {
       casa_01_nome: parsed.casa_01_nome,
       casa_01_odd: parsed.casa_01_odd,
       casa_01_valor: parsed.casa_01_valor,
-      casa_01_mercado: parsed.casa_01_mercado || '',
+      casa_01_mercado: parsed.casa_01_mercado || 'Mercado não especificado',
       casa_02_nome: parsed.casa_02_nome,
       casa_02_odd: parsed.casa_02_odd,
       casa_02_valor: parsed.casa_02_valor,
-      casa_02_mercado: parsed.casa_02_mercado || '',
+      casa_02_mercado: parsed.casa_02_mercado || 'Mercado não especificado',
       casa_03_nome: parsed.casa_03_nome || '',
       casa_03_odd: parsed.casa_03_odd || '',
       casa_03_valor: parsed.casa_03_valor || '',
-      casa_03_mercado: parsed.casa_03_mercado || '',
+      casa_03_mercado: parsed.casa_03_mercado || (hasCasa03 ? 'Mercado não especificado' : ''),
       porcentagem: parsed.porcentagem,
       retorno_previsto: '',
       lucro_projetado: '',
@@ -362,11 +362,11 @@ export default function MinhasArbitragens() {
         casa_01_nome: formData.casa_01_nome,
         casa_01_odd: parseFloat(formData.casa_01_odd),
         casa_01_valor: parseFloat(formData.casa_01_valor),
-        casa_01_mercado: formData.casa_01_mercado || null,
+        casa_01_mercado: formData.casa_01_mercado || 'Mercado não especificado',
         casa_02_nome: formData.casa_02_nome,
         casa_02_odd: parseFloat(formData.casa_02_odd),
         casa_02_valor: parseFloat(formData.casa_02_valor),
-        casa_02_mercado: formData.casa_02_mercado || null,
+        casa_02_mercado: formData.casa_02_mercado || 'Mercado não especificado',
         porcentagem: parseFloat(formData.porcentagem),
         retorno_previsto: parseFloat(formData.retorno_previsto),
         lucro_projetado: parseFloat(formData.lucro_projetado),
@@ -376,7 +376,7 @@ export default function MinhasArbitragens() {
         arbitrageData.casa_03_nome = formData.casa_03_nome;
         arbitrageData.casa_03_odd = parseFloat(formData.casa_03_odd);
         arbitrageData.casa_03_valor = parseFloat(formData.casa_03_valor);
-        arbitrageData.casa_03_mercado = formData.casa_03_mercado || null;
+        arbitrageData.casa_03_mercado = formData.casa_03_mercado || 'Mercado não especificado';
       }
 
       const { error: insertError } = await supabase.from('arbitrages').insert(arbitrageData);
@@ -1425,6 +1425,7 @@ export default function MinhasArbitragens() {
                         placeholder="Ex: Casa - Vitória"
                         value={formData.casa_01_mercado}
                         onChange={(e) => setFormData({ ...formData, casa_01_mercado: e.target.value })}
+                        required
                       />
                     </div>
                   </div>
@@ -1472,6 +1473,7 @@ export default function MinhasArbitragens() {
                         placeholder="Ex: Fora - Vitória"
                         value={formData.casa_02_mercado}
                         onChange={(e) => setFormData({ ...formData, casa_02_mercado: e.target.value })}
+                        required
                       />
                     </div>
                   </div>
@@ -1520,6 +1522,7 @@ export default function MinhasArbitragens() {
                           placeholder="Ex: Empate"
                           value={formData.casa_03_mercado}
                           onChange={(e) => setFormData({ ...formData, casa_03_mercado: e.target.value })}
+                          required={useTresCasas}
                         />
                       </div>
                     </div>
