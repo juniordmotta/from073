@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Layout } from '@/components/Layout';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -38,10 +39,16 @@ export default function RelatorioCasas() {
   const [usuarioFiltro, setUsuarioFiltro] = useState<string>('todos');
   const [statusFiltro, setStatusFiltro] = useState<string>('todos');
   const [usuarios, setUsuarios] = useState<any[]>([]);
+  
+  // Debounce dos filtros
+  const debouncedDataInicio = useDebounce(dataInicio, 300);
+  const debouncedDataFim = useDebounce(dataFim, 300);
+  const debouncedUsuarioFiltro = useDebounce(usuarioFiltro, 300);
+  const debouncedStatusFiltro = useDebounce(statusFiltro, 300);
 
   useEffect(() => {
     loadData();
-  }, [user, dataInicio, dataFim, usuarioFiltro, statusFiltro]);
+  }, [user, debouncedDataInicio, debouncedDataFim, debouncedUsuarioFiltro, debouncedStatusFiltro]);
 
   useEffect(() => {
     if (isAdmin) {
@@ -63,34 +70,47 @@ export default function RelatorioCasas() {
     }
   };
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user?.id) return;
 
     setLoading(true);
     try {
       let query = supabase
         .from('arbitrages')
-        .select('*')
+        .select(`
+          casa_01_nome,
+          casa_01_valor,
+          casa_01_resultado,
+          casa_01_valor_resultado,
+          casa_02_nome,
+          casa_02_valor,
+          casa_02_resultado,
+          casa_02_valor_resultado,
+          casa_03_nome,
+          casa_03_valor,
+          casa_03_resultado,
+          casa_03_valor_resultado
+        `)
         .order('data_evento', { ascending: true });
 
       // Filtro de usuário
-      if (!isAdmin || (usuarioFiltro !== 'todos' && usuarioFiltro)) {
-        query = query.eq('user_id', isAdmin && usuarioFiltro !== 'todos' ? usuarioFiltro : user.id);
+      if (!isAdmin || (debouncedUsuarioFiltro !== 'todos' && debouncedUsuarioFiltro)) {
+        query = query.eq('user_id', isAdmin && debouncedUsuarioFiltro !== 'todos' ? debouncedUsuarioFiltro : user.id);
       }
 
       // Filtro de data
-      if (dataInicio) {
-        query = query.gte('data_evento', new Date(dataInicio).toISOString());
+      if (debouncedDataInicio) {
+        query = query.gte('data_evento', new Date(debouncedDataInicio).toISOString());
       }
-      if (dataFim) {
-        const dataFimISO = new Date(dataFim);
+      if (debouncedDataFim) {
+        const dataFimISO = new Date(debouncedDataFim);
         dataFimISO.setHours(23, 59, 59, 999);
         query = query.lte('data_evento', dataFimISO.toISOString());
       }
 
       // Filtro de status
-      if (statusFiltro !== 'todos') {
-        query = query.eq('status', statusFiltro as any);
+      if (debouncedStatusFiltro !== 'todos') {
+        query = query.eq('status', debouncedStatusFiltro as any);
       } else {
         // Mostrar apenas apostas que deram lucro ou prejuízo (excluir aguardando e devolvido)
         query = query.not('status', 'in', '("aguardando","devolvido")');
@@ -124,7 +144,7 @@ export default function RelatorioCasas() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id, isAdmin, debouncedDataInicio, debouncedDataFim, debouncedUsuarioFiltro, debouncedStatusFiltro]);
 
   const processarCasa = (
     casasMap: Map<string, CasaStats>,

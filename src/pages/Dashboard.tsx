@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Layout } from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -33,6 +34,12 @@ export default function Dashboard() {
   const [users, setUsers] = useState<Array<{ id: string; name: string }>>([]);
   const [openBets, setOpenBets] = useState<any[]>([]);
   const [totalCosts, setTotalCosts] = useState(0);
+  
+  // Debounce dos filtros
+  const debouncedStartDate = useDebounce(startDate, 300);
+  const debouncedEndDate = useDebounce(endDate, 300);
+  const debouncedSelectedUser = useDebounce(selectedUser, 300);
+  const debouncedSelectedStatus = useDebounce(selectedStatus, 300);
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
@@ -43,7 +50,7 @@ export default function Dashboard() {
     if (isAdmin) {
       loadUsers();
     }
-  }, [selectedUser, selectedStatus, startDate, endDate, isAdmin]);
+  }, [debouncedSelectedUser, debouncedSelectedStatus, debouncedStartDate, debouncedEndDate, isAdmin]);
 
   const loadUsers = async () => {
     const { data } = await supabase
@@ -56,25 +63,25 @@ export default function Dashboard() {
     }
   };
 
-  const loadStats = async () => {
-    let query = supabase.from('arbitrages').select('*');
+  const loadStats = useCallback(async () => {
+    let query = supabase.from('arbitrages').select('status, lucro_projetado, lucro_real, casa_01_valor, casa_02_valor, casa_03_valor');
     
     if (!isAdmin) {
       query = query.eq('user_id', user?.id);
-    } else if (selectedUser !== 'all') {
-      query = query.eq('user_id', selectedUser);
+    } else if (debouncedSelectedUser !== 'all') {
+      query = query.eq('user_id', debouncedSelectedUser);
     }
 
-    if (selectedStatus !== 'all') {
-      query = query.eq('status', selectedStatus as any);
+    if (debouncedSelectedStatus !== 'all') {
+      query = query.eq('status', debouncedSelectedStatus as any);
     }
 
-    if (startDate) {
-      query = query.gte('created_at', new Date(startDate).toISOString());
+    if (debouncedStartDate) {
+      query = query.gte('created_at', new Date(debouncedStartDate).toISOString());
     }
 
-    if (endDate) {
-      const endOfDay = new Date(endDate);
+    if (debouncedEndDate) {
+      const endOfDay = new Date(debouncedEndDate);
       endOfDay.setHours(23, 59, 59, 999);
       query = query.lte('created_at', endOfDay.toISOString());
     }
@@ -106,32 +113,43 @@ export default function Dashboard() {
         taxaSucesso,
       });
     }
-  };
+  }, [isAdmin, user?.id, debouncedSelectedUser, debouncedSelectedStatus, debouncedStartDate, debouncedEndDate]);
 
-  const loadOpenBets = async () => {
+  const loadOpenBets = useCallback(async () => {
     let query = supabase
       .from('arbitrages')
       .select(`
-        *,
-        profiles:user_id (
-          name
-        )
+        id,
+        descricao,
+        data_evento,
+        casa_01_nome,
+        casa_01_odd,
+        casa_01_valor,
+        casa_02_nome,
+        casa_02_odd,
+        casa_02_valor,
+        casa_03_nome,
+        casa_03_odd,
+        casa_03_valor,
+        lucro_projetado,
+        profiles:user_id (name)
       `)
       .eq('status', 'aguardando')
-      .order('data_evento', { ascending: true });
+      .order('data_evento', { ascending: true })
+      .limit(50);
     
     if (!isAdmin) {
       query = query.eq('user_id', user?.id);
-    } else if (selectedUser !== 'all') {
-      query = query.eq('user_id', selectedUser);
+    } else if (debouncedSelectedUser !== 'all') {
+      query = query.eq('user_id', debouncedSelectedUser);
     }
 
-    if (startDate) {
-      query = query.gte('created_at', new Date(startDate).toISOString());
+    if (debouncedStartDate) {
+      query = query.gte('created_at', new Date(debouncedStartDate).toISOString());
     }
 
-    if (endDate) {
-      const endOfDay = new Date(endDate);
+    if (debouncedEndDate) {
+      const endOfDay = new Date(debouncedEndDate);
       endOfDay.setHours(23, 59, 59, 999);
       query = query.lte('created_at', endOfDay.toISOString());
     }
@@ -141,25 +159,25 @@ export default function Dashboard() {
     if (data) {
       setOpenBets(data);
     }
-  };
+  }, [isAdmin, user?.id, debouncedSelectedUser, debouncedStartDate, debouncedEndDate]);
 
-  const loadCosts = async () => {
+  const loadCosts = useCallback(async () => {
     let query = supabase
       .from('operational_costs')
       .select('valor');
     
     if (!isAdmin) {
       query = query.eq('user_id', user?.id);
-    } else if (selectedUser !== 'all') {
-      query = query.eq('user_id', selectedUser);
+    } else if (debouncedSelectedUser !== 'all') {
+      query = query.eq('user_id', debouncedSelectedUser);
     }
 
-    if (startDate) {
-      query = query.gte('data', startDate);
+    if (debouncedStartDate) {
+      query = query.gte('data', debouncedStartDate);
     }
 
-    if (endDate) {
-      query = query.lte('data', endDate);
+    if (debouncedEndDate) {
+      query = query.lte('data', debouncedEndDate);
     }
 
     const { data } = await query;
@@ -168,7 +186,7 @@ export default function Dashboard() {
       const total = data.reduce((sum, cost) => sum + Number(cost.valor), 0);
       setTotalCosts(total);
     }
-  };
+  }, [isAdmin, user?.id, debouncedSelectedUser, debouncedStartDate, debouncedEndDate]);
 
   return (
     <Layout>
