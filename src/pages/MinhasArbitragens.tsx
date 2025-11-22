@@ -88,6 +88,7 @@ const statusMap = {
 };
 
 const resultOptions = [
+  { value: 'aguardando', label: 'Aguardando' },
   { value: 'green', label: 'Ganhou' },
   { value: 'red', label: 'Perdeu' },
   { value: 'parcial_green', label: 'Ganho Parcial' },

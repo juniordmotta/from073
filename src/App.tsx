@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import MinhasArbitragens from "./pages/MinhasArbitragens";
+import RelatorioCasas from "./pages/RelatorioCasas";
 import CustosOperacionais from "./pages/CustosOperacionais";
 import Usuarios from "./pages/Usuarios";
 import DeleteAllUsers from "./pages/DeleteAllUsers";
@@ -38,6 +39,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <MinhasArbitragens />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/relatorio-casas"
+              element={
+                <ProtectedRoute>
+                  <RelatorioCasas />
                 </ProtectedRoute>
               }
             />
