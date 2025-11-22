@@ -91,8 +91,8 @@ export default function RelatorioCasas() {
       if (statusFiltro !== 'todos') {
         query = query.eq('status', statusFiltro as any);
       } else {
-        // Mostrar apenas apostas fechadas (não aguardando)
-        query = query.neq('status', 'aguardando');
+        // Mostrar apenas apostas que deram lucro ou prejuízo (excluir aguardando e devolvido)
+        query = query.not('status', 'in', '("aguardando","devolvido")');
       }
 
       const { data, error } = await query;
@@ -132,8 +132,9 @@ export default function RelatorioCasas() {
     resultado: string,
     valorResultado: number | null
   ) => {
-    // Ignorar apostas aguardando
-    if (resultado?.toLowerCase() === 'aguardando') {
+    // Ignorar apostas aguardando e devolvidas (só mostrar lucro/prejuízo real)
+    const resultadoLower = resultado?.toLowerCase();
+    if (resultadoLower === 'aguardando' || resultadoLower === 'devolvido') {
       return;
     }
 
@@ -161,7 +162,6 @@ export default function RelatorioCasas() {
     stats.lucroReal += ganho;
 
     // Contar resultados
-    const resultadoLower = resultado?.toLowerCase() || 'aguardando';
     switch (resultadoLower) {
       case 'green':
         stats.green++;
