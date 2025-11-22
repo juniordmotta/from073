@@ -90,6 +90,9 @@ export default function RelatorioCasas() {
       // Filtro de status
       if (statusFiltro !== 'todos') {
         query = query.eq('status', statusFiltro as any);
+      } else {
+        // Mostrar apenas apostas fechadas (não aguardando)
+        query = query.neq('status', 'aguardando');
       }
 
       const { data, error } = await query;
@@ -129,6 +132,11 @@ export default function RelatorioCasas() {
     resultado: string,
     valorResultado: number | null
   ) => {
+    // Ignorar apostas aguardando
+    if (resultado?.toLowerCase() === 'aguardando') {
+      return;
+    }
+
     if (!casasMap.has(nome)) {
       casasMap.set(nome, {
         nome,
