@@ -194,30 +194,6 @@ export default function MinhasArbitragens() {
     setCurrentPage(1);
   }, [arbitragens, debouncedFilterDate, debouncedFilterStatus, debouncedFilterUser]);
 
-  useEffect(() => {
-    if (user) {
-      loadArbitragens();
-      if (isAdmin) {
-        loadUsers();
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    applyFilters();
-  }, [applyFilters]);
-
-  const loadUsers = async () => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, name')
-      .order('name');
-    
-    if (data) {
-      setUsers(data);
-    }
-  };
-
   const loadArbitragens = useCallback(async () => {
     if (!user?.id) return;
     
@@ -271,6 +247,30 @@ export default function MinhasArbitragens() {
 
     setIsLoading(false);
   }, [user?.id, isAdmin]);
+
+  const loadUsers = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, name')
+      .order('name');
+    
+    if (data) {
+      setUsers(data);
+    }
+  };
+
+  useEffect(() => {
+    if (!user) return;
+
+    loadArbitragens();
+    if (isAdmin) {
+      loadUsers();
+    }
+  }, [user?.id, isAdmin, loadArbitragens]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]);
 
   // Funções para adicionar arbitragem
   const handleParsePaste = () => {
