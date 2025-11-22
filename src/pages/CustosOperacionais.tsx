@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, DollarSign, Trash2 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { formatCurrency } from '@/lib/utils';
 
 interface OperationalCost {
   id: string;
@@ -245,7 +246,7 @@ export default function CustosOperacionais() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                R$ {totalCosts.toFixed(2)}
+                R$ {formatCurrency(totalCosts)}
               </div>
               <p className="text-xs text-muted-foreground">
                 Período selecionado
@@ -313,7 +314,7 @@ export default function CustosOperacionais() {
                         </TableCell>
                         <TableCell>{cost.descricao}</TableCell>
                         <TableCell className="font-semibold">
-                          R$ {Number(cost.valor).toFixed(2)}
+                          R$ {formatCurrency(cost.valor)}
                         </TableCell>
                         {isAdmin && (
                           <TableCell>

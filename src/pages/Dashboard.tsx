@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TrendingUp, TrendingDown, DollarSign, Target } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatCurrency } from '@/lib/utils';
 
 interface Stats {
   totalArbitragens: number;
@@ -255,7 +256,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                R$ {stats.totalInvestido.toFixed(2)}
+                R$ {formatCurrency(stats.totalInvestido)}
               </div>
               <p className="text-xs text-muted-foreground">em todas as casas</p>
             </CardContent>
@@ -276,7 +277,7 @@ export default function Dashboard() {
                   stats.totalLucro >= 0 ? 'text-success' : 'text-destructive'
                 }`}
               >
-                R$ {stats.totalLucro.toFixed(2)}
+                R$ {formatCurrency(stats.totalLucro)}
               </div>
               <p className="text-xs text-muted-foreground">real + projetado</p>
             </CardContent>
@@ -300,7 +301,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-destructive">
-                R$ {totalCosts.toFixed(2)}
+                R$ {formatCurrency(totalCosts)}
               </div>
               <p className="text-xs text-muted-foreground">período selecionado</p>
             </CardContent>
@@ -343,7 +344,7 @@ export default function Dashboard() {
                           <div>
                             <div className="font-medium">{bet.casa_01_nome}</div>
                             <div className="text-muted-foreground">
-                              @{Number(bet.casa_01_odd).toFixed(3)} • R$ {Number(bet.casa_01_valor).toFixed(2)}
+                              @{Number(bet.casa_01_odd).toFixed(3)} • R$ {formatCurrency(bet.casa_01_valor)}
                             </div>
                           </div>
                         </TableCell>
@@ -351,7 +352,7 @@ export default function Dashboard() {
                           <div>
                             <div className="font-medium">{bet.casa_02_nome}</div>
                             <div className="text-muted-foreground">
-                              @{Number(bet.casa_02_odd).toFixed(3)} • R$ {Number(bet.casa_02_valor).toFixed(2)}
+                              @{Number(bet.casa_02_odd).toFixed(3)} • R$ {formatCurrency(bet.casa_02_valor)}
                             </div>
                           </div>
                         </TableCell>
@@ -360,7 +361,7 @@ export default function Dashboard() {
                             <div>
                               <div className="font-medium">{bet.casa_03_nome}</div>
                               <div className="text-muted-foreground">
-                                @{Number(bet.casa_03_odd).toFixed(3)} • R$ {Number(bet.casa_03_valor).toFixed(2)}
+                                @{Number(bet.casa_03_odd).toFixed(3)} • R$ {formatCurrency(bet.casa_03_valor)}
                               </div>
                             </div>
                           ) : (
@@ -368,10 +369,10 @@ export default function Dashboard() {
                           )}
                         </TableCell>
                         <TableCell className="text-right text-xs font-medium">
-                          R$ {(Number(bet.casa_01_valor) + Number(bet.casa_02_valor) + Number(bet.casa_03_valor || 0)).toFixed(2)}
+                          R$ {formatCurrency(Number(bet.casa_01_valor) + Number(bet.casa_02_valor) + Number(bet.casa_03_valor || 0))}
                         </TableCell>
                         <TableCell className="text-right text-xs font-medium text-success">
-                          R$ {Number(bet.lucro_projetado).toFixed(2)}
+                          R$ {formatCurrency(bet.lucro_projetado)}
                         </TableCell>
                       </TableRow>
                     ))}

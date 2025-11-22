@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatCurrency } from '@/lib/utils';
 
 interface CasaStats {
   nome: string;
@@ -269,7 +270,7 @@ export default function RelatorioCasas() {
               <CardTitle className="text-sm font-medium">Total Apostado</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">R$ {totalGeralApostado.toFixed(2)}</div>
+              <div className="text-2xl font-bold">R$ {formatCurrency(totalGeralApostado)}</div>
               <p className="text-xs text-muted-foreground">{totalApostas} apostas</p>
             </CardContent>
           </Card>
@@ -279,10 +280,10 @@ export default function RelatorioCasas() {
             </CardHeader>
             <CardContent>
               <div className={`text-2xl font-bold ${totalGeralLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
-                R$ {totalGeralLucro.toFixed(2)}
+                R$ {formatCurrency(totalGeralLucro)}
               </div>
               <p className="text-xs text-muted-foreground">
-                {totalGeralApostado > 0 ? `${((totalGeralLucro / totalGeralApostado) * 100).toFixed(2)}% ROI` : '0% ROI'}
+                {totalGeralApostado > 0 ? `${formatCurrency((totalGeralLucro / totalGeralApostado) * 100)}% ROI` : '0% ROI'}
               </p>
             </CardContent>
           </Card>
@@ -326,16 +327,16 @@ export default function RelatorioCasas() {
                     <TableRow key={casa.nome}>
                       <TableCell className="font-medium">{casa.nome}</TableCell>
                       <TableCell className="text-right">{casa.totalApostas}</TableCell>
-                      <TableCell className="text-right">R$ {casa.valorApostado.toFixed(2)}</TableCell>
+                      <TableCell className="text-right">R$ {formatCurrency(casa.valorApostado)}</TableCell>
                       <TableCell className="text-right">
                         <div className={`flex items-center justify-end gap-1 font-semibold ${casa.lucroReal >= 0 ? 'text-success' : 'text-destructive'}`}>
                           {casa.lucroReal >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-                          R$ {casa.lucroReal.toFixed(2)}
+                          R$ {formatCurrency(casa.lucroReal)}
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <span className={casa.lucroReal >= 0 ? 'text-success' : 'text-destructive'}>
-                          {((casa.lucroReal / casa.valorApostado) * 100).toFixed(2)}%
+                          {formatCurrency((casa.lucroReal / casa.valorApostado) * 100)}%
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
