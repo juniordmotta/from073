@@ -25,6 +25,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Check for existing session first
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        try {
+          const { data, error } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+          
+          if (error) {
+            console.error('Error fetching user role:', error);
+            setUserRole(null);
+          } else if (data) {
+            console.log('User role found:', data);
+            setUserRole(data);
+          } else {
+            console.log('No role found for user');
+            setUserRole(null);
+          }
+        } catch (error) {
+          console.error('Unexpected error fetching user role:', error);
+          setUserRole(null);
+        }
+      }
+      
+      setIsLoading(false);
+    });
+
     // Setup auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -33,64 +65,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user role
-          setTimeout(async () => {
           try {
             const { data, error } = await supabase
               .from('user_roles')
               .select('role')
               .eq('user_id', session.user.id)
-              .single();
+              .maybeSingle();
             
             if (error) {
               console.error('Error fetching user role:', error);
               setUserRole(null);
-            } else {
+            } else if (data) {
               console.log('User role found:', data);
               setUserRole(data);
+            } else {
+              console.log('No role found for user');
+              setUserRole(null);
             }
           } catch (error) {
             console.error('Unexpected error fetching user role:', error);
             setUserRole(null);
           }
-          }, 0);
         } else {
           setUserRole(null);
         }
-      }
-    );
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        setTimeout(async () => {
-          try {
-            const { data, error } = await supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', session.user.id)
-              .single();
-            
-            if (error) {
-              console.error('Error fetching user role:', error);
-              setUserRole(null);
-            } else {
-              console.log('User role found:', data);
-              setUserRole(data);
-            }
-          } catch (error) {
-            console.error('Unexpected error fetching user role:', error);
-            setUserRole(null);
-          }
-          setIsLoading(false);
-        }, 0);
-      } else {
+        
         setIsLoading(false);
       }
-    });
+    );
 
     return () => subscription.unsubscribe();
   }, []);
