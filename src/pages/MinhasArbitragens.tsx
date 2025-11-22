@@ -48,6 +48,7 @@ import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText } from 'lucide-react
 import { format, differenceInMilliseconds } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
+import { formatCurrency } from '@/lib/utils';
 import { parseArbitrageText } from '@/utils/arbitrageParser';
 
 interface Arbitrage {
@@ -299,9 +300,9 @@ export default function MinhasArbitragens() {
 
         setFormData(prev => ({
           ...prev,
-          porcentagem: porcentagem.toFixed(2),
-          retorno_previsto: retornoPrevisto.toFixed(2),
-          lucro_projetado: lucroProjetado.toFixed(2),
+          porcentagem: formatCurrency(porcentagem),
+          retorno_previsto: formatCurrency(retornoPrevisto),
+          lucro_projetado: formatCurrency(lucroProjetado),
         }));
       }
     } else {
@@ -315,9 +316,9 @@ export default function MinhasArbitragens() {
 
         setFormData(prev => ({
           ...prev,
-          porcentagem: porcentagem.toFixed(2),
-          retorno_previsto: retornoPrevisto.toFixed(2),
-          lucro_projetado: lucroProjetado.toFixed(2),
+          porcentagem: formatCurrency(porcentagem),
+          retorno_previsto: formatCurrency(retornoPrevisto),
+          lucro_projetado: formatCurrency(lucroProjetado),
         }));
       }
     }
@@ -682,12 +683,12 @@ export default function MinhasArbitragens() {
             </div>
             <div className="rounded-lg border bg-card p-6">
               <div className="text-sm font-medium text-muted-foreground">Total Investido</div>
-              <div className="text-2xl font-bold mt-2">R$ {totais.totalInvestido.toFixed(2)}</div>
+              <div className="text-2xl font-bold mt-2">R$ {formatCurrency(totais.totalInvestido)}</div>
             </div>
             <div className="rounded-lg border bg-card p-6">
               <div className="text-sm font-medium text-muted-foreground">Lucro Total</div>
               <div className={`text-2xl font-bold mt-2 ${totais.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
-                R$ {totais.totalLucro.toFixed(2)}
+                R$ {formatCurrency(totais.totalLucro)}
               </div>
               <div className="text-xs text-muted-foreground mt-1">
                 (Inclui lucro projetado dos aguardando)
@@ -764,7 +765,7 @@ export default function MinhasArbitragens() {
                             <div className="text-muted-foreground text-[10px]">{arb.casa_01_mercado}</div>
                           )}
                           <div className="text-muted-foreground">
-                            {Number(arb.casa_01_odd).toFixed(3)}x • R$ {arb.casa_01_valor}
+                            {Number(arb.casa_01_odd).toFixed(3)}x • R$ {formatCurrency(arb.casa_01_valor)}
                           </div>
                         </div>
                         <DropdownMenu>
@@ -802,7 +803,7 @@ export default function MinhasArbitragens() {
                             <div className="text-muted-foreground text-[10px]">{arb.casa_02_mercado}</div>
                           )}
                           <div className="text-muted-foreground">
-                            {Number(arb.casa_02_odd).toFixed(3)}x • R$ {arb.casa_02_valor}
+                            {Number(arb.casa_02_odd).toFixed(3)}x • R$ {formatCurrency(arb.casa_02_valor)}
                           </div>
                         </div>
                         <DropdownMenu>
@@ -841,7 +842,7 @@ export default function MinhasArbitragens() {
                               <div className="text-muted-foreground text-[10px]">{arb.casa_03_mercado}</div>
                             )}
                             <div className="text-muted-foreground">
-                              {Number(arb.casa_03_odd).toFixed(3)}x • R$ {arb.casa_03_valor}
+                              {Number(arb.casa_03_odd).toFixed(3)}x • R$ {formatCurrency(arb.casa_03_valor)}
                             </div>
                           </div>
                           <DropdownMenu>
@@ -881,10 +882,10 @@ export default function MinhasArbitragens() {
                             arb.lucro_real >= 0 ? 'text-success' : 'text-destructive'
                           }`}
                         >
-                          R$ {Number(arb.lucro_real).toFixed(2)}
+                          R$ {formatCurrency(arb.lucro_real)}
                         </div>
                         <div className="text-muted-foreground">
-                          Proj: R$ {Number(arb.lucro_projetado).toFixed(2)}
+                          Proj: R$ {formatCurrency(arb.lucro_projetado)}
                         </div>
                         <Button
                           variant="link"
@@ -1152,7 +1153,7 @@ export default function MinhasArbitragens() {
                 <h3 className="font-semibold">{viewGanhosArbitrage.casa_01_nome}</h3>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div className="text-muted-foreground">Aposta:</div>
-                  <div>R$ {viewGanhosArbitrage.casa_01_valor.toFixed(2)}</div>
+                  <div>R$ {formatCurrency(viewGanhosArbitrage.casa_01_valor)}</div>
                   <div className="text-muted-foreground">Odd:</div>
                   <div>{viewGanhosArbitrage.casa_01_odd}x</div>
                   <div className="text-muted-foreground">Resultado:</div>
@@ -1182,7 +1183,7 @@ export default function MinhasArbitragens() {
                 <h3 className="font-semibold">{viewGanhosArbitrage.casa_02_nome}</h3>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div className="text-muted-foreground">Aposta:</div>
-                  <div>R$ {viewGanhosArbitrage.casa_02_valor.toFixed(2)}</div>
+                  <div>R$ {formatCurrency(viewGanhosArbitrage.casa_02_valor)}</div>
                   <div className="text-muted-foreground">Odd:</div>
                   <div>{viewGanhosArbitrage.casa_02_odd}x</div>
                   <div className="text-muted-foreground">Resultado:</div>
@@ -1199,11 +1200,11 @@ export default function MinhasArbitragens() {
                       viewGanhosArbitrage.casa_02_resultado
                     ) >= 0 ? 'text-success' : 'text-destructive'
                   }`}>
-                    R$ {calcularGanhoPorCasa(
+                    R$ {formatCurrency(calcularGanhoPorCasa(
                       viewGanhosArbitrage.casa_02_valor,
                       viewGanhosArbitrage.casa_02_odd,
                       viewGanhosArbitrage.casa_02_resultado
-                    ).toFixed(2)}
+                    ))}
                   </div>
                 </div>
               </div>
@@ -1213,7 +1214,7 @@ export default function MinhasArbitragens() {
                   <h3 className="font-semibold">{viewGanhosArbitrage.casa_03_nome}</h3>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="text-muted-foreground">Aposta:</div>
-                    <div>R$ {viewGanhosArbitrage.casa_03_valor?.toFixed(2)}</div>
+                    <div>R$ {formatCurrency(viewGanhosArbitrage.casa_03_valor || 0)}</div>
                     <div className="text-muted-foreground">Odd:</div>
                     <div>{viewGanhosArbitrage.casa_03_odd}x</div>
                     <div className="text-muted-foreground">Resultado:</div>
@@ -1230,11 +1231,11 @@ export default function MinhasArbitragens() {
                         viewGanhosArbitrage.casa_03_resultado || 'aguardando'
                       ) >= 0 ? 'text-success' : 'text-destructive'
                     }`}>
-                      R$ {calcularGanhoPorCasa(
+                      R$ {formatCurrency(calcularGanhoPorCasa(
                         viewGanhosArbitrage.casa_03_valor || 0,
                         viewGanhosArbitrage.casa_03_odd || 0,
                         viewGanhosArbitrage.casa_03_resultado || 'aguardando'
-                      ).toFixed(2)}
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -1260,7 +1261,7 @@ export default function MinhasArbitragens() {
                       viewGanhosArbitrage.casa_03_resultado || 'aguardando'
                     )) >= 0 ? 'text-success' : 'text-destructive'
                   }`}>
-                    R$ {(
+                    R$ {formatCurrency(
                       calcularGanhoPorCasa(
                         viewGanhosArbitrage.casa_01_valor,
                         viewGanhosArbitrage.casa_01_odd,
@@ -1276,7 +1277,7 @@ export default function MinhasArbitragens() {
                         viewGanhosArbitrage.casa_03_odd || 0,
                         viewGanhosArbitrage.casa_03_resultado || 'aguardando'
                       )
-                    ).toFixed(2)}
+                    )}
                   </div>
                 </div>
               </div>
