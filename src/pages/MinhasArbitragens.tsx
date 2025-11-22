@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Layout } from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useGameNotifications } from '@/hooks/useGameNotifications';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -143,6 +144,9 @@ export default function MinhasArbitragens() {
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
+  // Ativar notificações de jogos
+  useGameNotifications({ userId: user?.id, enabled: true });
+
   const totalPages = Math.ceil(filteredArbitragens.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -207,7 +211,7 @@ export default function MinhasArbitragens() {
     let query = supabase.from('arbitrages').select(`
       *,
       profiles!arbitrages_user_id_fkey (name)
-    `).order('created_at', { ascending: false });
+    `).order('data_evento', { ascending: true });
 
     if (!isAdmin) {
       query = query.eq('user_id', user?.id);
@@ -738,7 +742,7 @@ export default function MinhasArbitragens() {
                     </TableCell>
                     <TableCell className="max-w-[200px] text-xs">
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-muted-foreground">
+                        <span className={`${new Date(arb.data_evento) < new Date() ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
                           {format(new Date(arb.data_evento), 'dd/MM/yy HH:mm')}
                         </span>
                         <span className="font-medium truncate">{arb.descricao}</span>
