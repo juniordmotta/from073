@@ -70,7 +70,7 @@ export type Database = {
       }
       arbitrages: {
         Row: {
-          casa_01_mercado: string | null
+          casa_01_mercado: string
           casa_01_nome: string
           casa_01_odd: number
           casa_01_resultado:
@@ -78,7 +78,7 @@ export type Database = {
             | null
           casa_01_valor: number
           casa_01_valor_resultado: number | null
-          casa_02_mercado: string | null
+          casa_02_mercado: string
           casa_02_nome: string
           casa_02_odd: number
           casa_02_resultado:
@@ -108,7 +108,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          casa_01_mercado?: string | null
+          casa_01_mercado?: string
           casa_01_nome: string
           casa_01_odd: number
           casa_01_resultado?:
@@ -116,7 +116,7 @@ export type Database = {
             | null
           casa_01_valor: number
           casa_01_valor_resultado?: number | null
-          casa_02_mercado?: string | null
+          casa_02_mercado?: string
           casa_02_nome: string
           casa_02_odd: number
           casa_02_resultado?:
@@ -146,7 +146,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          casa_01_mercado?: string | null
+          casa_01_mercado?: string
           casa_01_nome?: string
           casa_01_odd?: number
           casa_01_resultado?:
@@ -154,7 +154,7 @@ export type Database = {
             | null
           casa_01_valor?: number
           casa_01_valor_resultado?: number | null
-          casa_02_mercado?: string | null
+          casa_02_mercado?: string
           casa_02_nome?: string
           casa_02_odd?: number
           casa_02_resultado?:
