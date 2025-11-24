@@ -87,13 +87,13 @@ interface Arbitrage {
 }
 
 const statusMap = {
-  aguardando: { label: 'AGUARDANDO', variant: 'secondary' as const },
+  aguardando: { label: 'Aguardando', variant: 'secondary' as const },
   green: { label: 'Green', variant: 'default' as const },
   red: { label: 'Red', variant: 'destructive' as const },
   parcial_green: { label: 'Ganho Parcial', variant: 'default' as const },
   parcial_red: { label: 'Perda Parcial', variant: 'destructive' as const },
   perda_total: { label: 'Perda Total', variant: 'destructive' as const },
-  devolvido: { label: 'DEVOLVIDO', variant: 'secondary' as const },
+  devolvido: { label: 'Devolvido', variant: 'secondary' as const },
 };
 
 const resultOptions = [
