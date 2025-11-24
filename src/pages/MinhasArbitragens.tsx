@@ -246,7 +246,7 @@ export default function MinhasArbitragens() {
     }
 
     setIsLoading(false);
-  }, [user?.id, isAdmin]);
+  }, [user?.id, isAdmin, toast]);
 
   const loadUsers = async () => {
     const { data } = await supabase
@@ -259,18 +259,21 @@ export default function MinhasArbitragens() {
     }
   };
 
+  // Carregar dados inicialmente
   useEffect(() => {
-    if (!user) return;
-
+    if (!user?.id) return;
+    
     loadArbitragens();
     if (isAdmin) {
       loadUsers();
     }
-  }, [user?.id, isAdmin, loadArbitragens]);
+    // Apenas uma vez quando user.id ou isAdmin mudar
+  }, [user?.id, isAdmin]);
 
+  // Aplicar filtros quando arbitragens ou filtros mudarem
   useEffect(() => {
     applyFilters();
-  }, [applyFilters]);
+  }, [arbitragens, debouncedFilterDate, debouncedFilterStatus, debouncedFilterUser]);
 
   // Funções para adicionar arbitragem
   const handleParsePaste = () => {
