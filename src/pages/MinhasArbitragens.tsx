@@ -90,9 +90,6 @@ const statusMap = {
   aguardando: { label: 'Aguardando', variant: 'secondary' as const },
   green: { label: 'Green', variant: 'default' as const },
   red: { label: 'Red', variant: 'destructive' as const },
-  parcial_green: { label: 'Ganho Parcial', variant: 'default' as const },
-  parcial_red: { label: 'Perda Parcial', variant: 'destructive' as const },
-  perda_total: { label: 'Perda Total', variant: 'destructive' as const },
   devolvido: { label: 'Devolvido', variant: 'secondary' as const },
 };
 
@@ -100,9 +97,6 @@ const resultOptions = [
   { value: 'aguardando', label: 'Aguardando' },
   { value: 'green', label: 'Ganhou' },
   { value: 'red', label: 'Perdeu' },
-  { value: 'parcial_green', label: 'Ganho Parcial' },
-  { value: 'parcial_red', label: 'Perda Parcial' },
-  { value: 'perda_total', label: 'Perda Total' },
   { value: 'devolvido', label: 'Devolvido' },
 ];
 
@@ -212,7 +206,30 @@ export default function MinhasArbitragens() {
     }
 
     if (debouncedFilterStatus !== 'all') {
-      filtered = filtered.filter((arb) => arb.status === debouncedFilterStatus);
+      filtered = filtered.filter((arb) => {
+        // Consolidar status para filtros
+        if (debouncedFilterStatus === 'green') {
+          // Green inclui: green, parcial_green, devolvido e parcial_red com lucro positivo
+          if (arb.status === 'green' || arb.status === 'parcial_green' || arb.status === 'devolvido') {
+            return true;
+          }
+          if (arb.status === 'parcial_red' && arb.lucro_real > 0) {
+            return true;
+          }
+          return false;
+        } else if (debouncedFilterStatus === 'red') {
+          // Red inclui: red, perda_total e parcial_red com lucro negativo ou zero
+          if (arb.status === 'red' || arb.status === 'perda_total') {
+            return true;
+          }
+          if (arb.status === 'parcial_red' && arb.lucro_real <= 0) {
+            return true;
+          }
+          return false;
+        }
+        // Para outros status (aguardando), comparação direta
+        return arb.status === debouncedFilterStatus;
+      });
     }
 
     if (debouncedFilterUser.length > 0) {
@@ -537,22 +554,12 @@ export default function MinhasArbitragens() {
     const odd = casa === 'casa_01' ? arb.casa_01_odd : casa === 'casa_02' ? arb.casa_02_odd : arb.casa_03_odd || 0;
     const valorApostado = casa === 'casa_01' ? arb.casa_01_valor : casa === 'casa_02' ? arb.casa_02_valor : arb.casa_03_valor || 0;
 
-    // Cálculo conforme as novas regras
+    // Cálculo simplificado
     if (resultado === 'green') {
       // Ganhou: valor apostado * odd
       valorResultado = valorApostado * odd;
     } else if (resultado === 'red') {
       // Perdeu: 0
-      valorResultado = 0;
-    } else if (resultado === 'parcial_green') {
-      // Ganho parcial: metade devolvida + (metade * odd)
-      const metade = valorApostado / 2;
-      valorResultado = metade + (metade * odd);
-    } else if (resultado === 'parcial_red') {
-      // Perda parcial: metade devolvida
-      valorResultado = valorApostado / 2;
-    } else if (resultado === 'perda_total') {
-      // Perda total: 0 para esta casa
       valorResultado = 0;
     } else if (resultado === 'devolvido') {
       // Devolvido: aposta devolvida
@@ -570,18 +577,6 @@ export default function MinhasArbitragens() {
       [updateField]: resultado,
       [valorField]: valorResultado,
     };
-
-    // Se for perda total, marcar todas as casas também como perda total
-    if (resultado === 'perda_total') {
-      updateData.casa_01_resultado = 'perda_total';
-      updateData.casa_01_valor_resultado = 0;
-      updateData.casa_02_resultado = 'perda_total';
-      updateData.casa_02_valor_resultado = 0;
-      if (arb.casa_03_nome) {
-        updateData.casa_03_resultado = 'perda_total';
-        updateData.casa_03_valor_resultado = 0;
-      }
-    }
 
     // Calcular os valores resultados de todas as casas
     const casa01ValorResultado = casa === 'casa_01' ? valorResultado : (arb as any).casa_01_valor_resultado || 0;
@@ -606,8 +601,8 @@ export default function MinhasArbitragens() {
       const totalRetorno = Number(casa01ValorResultado) + Number(casa02ValorResultado) + Number(casa03ValorResultado);
       lucroReal = totalRetorno - totalInvestido;
 
-      // Status: green se lucro >= 0, red se lucro < 0
-      statusGeral = lucroReal >= 0 ? 'green' : 'red';
+      // Status: green se lucro > 0, red se lucro <= 0
+      statusGeral = lucroReal > 0 ? 'green' : 'red';
     }
 
     updateData.status = statusGeral;
@@ -772,20 +767,9 @@ export default function MinhasArbitragens() {
     } else if (resultado === 'red') {
       // Perdeu = valor negativo
       return -aposta;
-    } else if (resultado === 'parcial_green') {
-      // Meio green: metade devolvida + (metade × odd) - aposta total
-      const metade = aposta / 2;
-      return metade + (metade * odd) - aposta;
-    } else if (resultado === 'parcial_red') {
-      // Meio red: metade devolvida - aposta total
-      const metade = aposta / 2;
-      return metade - aposta;
     } else if (resultado === 'devolvido') {
       // Devolvido: lucro 0
       return 0;
-    } else if (resultado === 'perda_total') {
-      // Perda total
-      return -aposta;
     } else {
       // Aguardando
       return 0;
