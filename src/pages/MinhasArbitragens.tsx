@@ -922,7 +922,7 @@ export default function MinhasArbitragens() {
 
         {/* Card de Totais */}
         {filteredArbitragens.length > 0 && (
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-4">
             <div className="rounded-lg border bg-card p-6">
               <div className="text-sm font-medium text-muted-foreground">Total de Arbitragens</div>
               <div className="text-2xl font-bold mt-2">{filteredArbitragens.length}</div>
@@ -938,6 +938,15 @@ export default function MinhasArbitragens() {
               </div>
               <div className="text-xs text-muted-foreground mt-1">
                 (Inclui lucro projetado dos aguardando)
+              </div>
+            </div>
+            <div className="rounded-lg border bg-card p-6">
+              <div className="text-sm font-medium text-muted-foreground">ROI</div>
+              <div className={`text-2xl font-bold mt-2 ${totais.totalInvestido > 0 && (totais.totalLucro / totais.totalInvestido) >= 0 ? 'text-success' : 'text-destructive'}`}>
+                {totais.totalInvestido > 0 ? formatCurrency((totais.totalLucro / totais.totalInvestido) * 100) : '0'}%
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                Retorno sobre investimento
               </div>
             </div>
           </div>
