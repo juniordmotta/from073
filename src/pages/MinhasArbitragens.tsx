@@ -47,7 +47,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter } from 'lucide-react';
+import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter, X } from 'lucide-react';
 import { format, differenceInMilliseconds } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -890,6 +890,20 @@ export default function MinhasArbitragens() {
                 </PopoverContent>
               </Popover>
             )}
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setFilterDate('');
+                setFilterStatus('all');
+                setFilterUser(users.map(u => u.id));
+              }}
+              className="h-10"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Limpar
+            </Button>
 
             <Dialog open={openAdd} onOpenChange={setOpenAdd}>
               <DialogTrigger asChild>

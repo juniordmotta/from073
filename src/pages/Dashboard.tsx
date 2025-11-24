@@ -5,10 +5,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TrendingUp, TrendingDown, DollarSign, Target } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Target, Filter, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/lib/utils';
 
@@ -29,7 +32,7 @@ export default function Dashboard() {
   });
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [selectedUser, setSelectedUser] = useState<string>('all');
+  const [selectedUser, setSelectedUser] = useState<string[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [users, setUsers] = useState<Array<{ id: string; name: string }>>([]);
   const [openBets, setOpenBets] = useState<any[]>([]);
@@ -60,6 +63,10 @@ export default function Dashboard() {
     
     if (data) {
       setUsers(data);
+      // Inicializar com todos os usuários selecionados
+      if (selectedUser.length === 0 && isAdmin) {
+        setSelectedUser(data.map(u => u.id));
+      }
     }
   };
 
@@ -68,8 +75,8 @@ export default function Dashboard() {
     
     if (!isAdmin) {
       query = query.eq('user_id', user?.id);
-    } else if (debouncedSelectedUser !== 'all') {
-      query = query.eq('user_id', debouncedSelectedUser);
+    } else if (debouncedSelectedUser.length > 0) {
+      query = query.in('user_id', debouncedSelectedUser);
     }
 
     if (debouncedSelectedStatus !== 'all') {
@@ -140,8 +147,8 @@ export default function Dashboard() {
     
     if (!isAdmin) {
       query = query.eq('user_id', user?.id);
-    } else if (debouncedSelectedUser !== 'all') {
-      query = query.eq('user_id', debouncedSelectedUser);
+    } else if (debouncedSelectedUser.length > 0) {
+      query = query.in('user_id', debouncedSelectedUser);
     }
 
     if (debouncedStartDate) {
@@ -168,8 +175,8 @@ export default function Dashboard() {
     
     if (!isAdmin) {
       query = query.eq('user_id', user?.id);
-    } else if (debouncedSelectedUser !== 'all') {
-      query = query.eq('user_id', debouncedSelectedUser);
+    } else if (debouncedSelectedUser.length > 0) {
+      query = query.in('user_id', debouncedSelectedUser);
     }
 
     if (debouncedStartDate) {
@@ -218,19 +225,68 @@ export default function Dashboard() {
             {isAdmin && (
               <div className="space-y-1">
                 <Label className="text-xs">Operador</Label>
-                <Select value={selectedUser} onValueChange={setSelectedUser}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Todos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    {users.map((u) => (
-                      <SelectItem key={u.id} value={u.id}>
-                        {u.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-52 justify-between">
+                      <span className="truncate">
+                        {selectedUser.length === 0 
+                          ? 'Todos os operadores' 
+                          : selectedUser.length === users.length
+                          ? 'Todos os operadores'
+                          : `${selectedUser.length} operador(es)`
+                        }
+                      </span>
+                      <Filter className="h-4 w-4 ml-2 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-3 bg-background z-50" align="start">
+                    <div className="space-y-3">
+                      <div className="font-semibold text-sm">Filtrar por Operador</div>
+                      <div className="flex items-center space-x-2 pb-2 border-b">
+                        <Checkbox
+                          id="select-all-dashboard"
+                          checked={selectedUser.length === users.length}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedUser(users.map(u => u.id));
+                            } else {
+                              setSelectedUser([]);
+                            }
+                          }}
+                        />
+                        <label
+                          htmlFor="select-all-dashboard"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          Selecionar Todos
+                        </label>
+                      </div>
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {users.map((u) => (
+                          <div key={u.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`dashboard-${u.id}`}
+                              checked={selectedUser.includes(u.id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedUser([...selectedUser, u.id]);
+                                } else {
+                                  setSelectedUser(selectedUser.filter(id => id !== u.id));
+                                }
+                              }}
+                            />
+                            <label
+                              htmlFor={`dashboard-${u.id}`}
+                              className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                            >
+                              {u.name}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
             )}
 
@@ -251,6 +307,23 @@ export default function Dashboard() {
                   <SelectItem value="devolvido">Devolvido</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-1 flex items-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setStartDate('');
+                  setEndDate('');
+                  setSelectedUser(users.map(u => u.id));
+                  setSelectedStatus('all');
+                }}
+                className="h-10"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Limpar Filtros
+              </Button>
             </div>
           </div>
         </div>
