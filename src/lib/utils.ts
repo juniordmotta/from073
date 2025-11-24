@@ -10,7 +10,10 @@ export function cn(...inputs: ClassValue[]) {
  * Remove o terceiro dígito se for zero
  * Exemplos: 100.50 → "100.50", 100.123 → "100.123", 100.120 → "100.12"
  */
-export function formatCurrency(value: number | string): string {
+export function formatCurrency(value: number | string | null | undefined): string {
+  // Verifica se o valor é null ou undefined
+  if (value === null || value === undefined) return "0.00";
+  
   const num = typeof value === "string" ? parseFloat(value) : value;
   if (isNaN(num)) return "0.00";
   
