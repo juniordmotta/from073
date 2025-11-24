@@ -328,7 +328,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total de Arbitragens</CardTitle>
@@ -371,6 +371,27 @@ export default function Dashboard() {
                 R$ {formatCurrency(stats.totalLucro)}
               </div>
               <p className="text-xs text-muted-foreground">real + projetado</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">ROI</CardTitle>
+              {stats.totalInvestido > 0 && (stats.totalLucro / stats.totalInvestido) >= 0 ? (
+                <TrendingUp className="h-4 w-4 text-success" />
+              ) : (
+                <TrendingDown className="h-4 w-4 text-destructive" />
+              )}
+            </CardHeader>
+            <CardContent>
+              <div
+                className={`text-2xl font-bold ${
+                  stats.totalInvestido > 0 && (stats.totalLucro / stats.totalInvestido) >= 0 ? 'text-success' : 'text-destructive'
+                }`}
+              >
+                {stats.totalInvestido > 0 ? formatCurrency((stats.totalLucro / stats.totalInvestido) * 100) : '0'}%
+              </div>
+              <p className="text-xs text-muted-foreground">retorno sobre investimento</p>
             </CardContent>
           </Card>
 
