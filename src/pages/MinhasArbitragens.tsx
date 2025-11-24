@@ -107,15 +107,26 @@ export default function MinhasArbitragens() {
   const [arbitragens, setArbitragens] = useState<Arbitrage[]>([]);
   const [filteredArbitragens, setFilteredArbitragens] = useState<Arbitrage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editArbitrage, setEditArbitrage] = useState<Arbitrage | null>(null);
   const [viewGanhosArbitrage, setViewGanhosArbitrage] = useState<Arbitrage | null>(null);
-  const [filterDate, setFilterDate] = useState('');
-  const [filterStatus, setFilterStatus] = useState('aguardando');
-  const [filterUser, setFilterUser] = useState('all');
   const [users, setUsers] = useState<Array<{ id: string; name: string }>>([]);
   const itemsPerPage = 10;
+  
+  // Restaurar filtros do sessionStorage ou usar valores padrão
+  const [filterDate, setFilterDate] = useState(() => 
+    sessionStorage.getItem('arbitragens_filterDate') || ''
+  );
+  const [filterStatus, setFilterStatus] = useState(() => 
+    sessionStorage.getItem('arbitragens_filterStatus') || 'aguardando'
+  );
+  const [filterUser, setFilterUser] = useState(() => 
+    sessionStorage.getItem('arbitragens_filterUser') || 'all'
+  );
+  const [currentPage, setCurrentPage] = useState(() => {
+    const saved = sessionStorage.getItem('arbitragens_currentPage');
+    return saved ? parseInt(saved) : 1;
+  });
   
   // Debounce dos filtros para evitar queries excessivas
   const debouncedFilterDate = useDebounce(filterDate, 300);
@@ -274,6 +285,23 @@ export default function MinhasArbitragens() {
   useEffect(() => {
     applyFilters();
   }, [arbitragens, debouncedFilterDate, debouncedFilterStatus, debouncedFilterUser]);
+
+  // Salvar filtros no sessionStorage sempre que mudarem
+  useEffect(() => {
+    sessionStorage.setItem('arbitragens_filterDate', filterDate);
+  }, [filterDate]);
+
+  useEffect(() => {
+    sessionStorage.setItem('arbitragens_filterStatus', filterStatus);
+  }, [filterStatus]);
+
+  useEffect(() => {
+    sessionStorage.setItem('arbitragens_filterUser', filterUser);
+  }, [filterUser]);
+
+  useEffect(() => {
+    sessionStorage.setItem('arbitragens_currentPage', currentPage.toString());
+  }, [currentPage]);
 
   // Funções para adicionar arbitragem
   const handleParsePaste = () => {
