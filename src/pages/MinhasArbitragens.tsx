@@ -633,6 +633,9 @@ export default function MinhasArbitragens() {
   const handleEdit = async () => {
     if (!editArbitrage) return;
 
+    console.log('=== INICIANDO EDIÇÃO ===');
+    console.log('editArbitrage:', editArbitrage);
+
     // Recalcular retorno_previsto e lucro_projetado
     const valor1 = Number(editArbitrage.casa_01_valor);
     const odd1 = Number(editArbitrage.casa_01_odd);
@@ -674,10 +677,19 @@ export default function MinhasArbitragens() {
       updateData.casa_03_valor = editArbitrage.casa_03_valor;
     }
 
-    const { error } = await supabase
+    console.log('=== DADOS PARA UPDATE ===');
+    console.log('updateData:', updateData);
+    console.log('ID da arbitragem:', editArbitrage.id);
+
+    const { error, data } = await supabase
       .from('arbitrages')
       .update(updateData)
-      .eq('id', editArbitrage.id);
+      .eq('id', editArbitrage.id)
+      .select();
+
+    console.log('=== RESPOSTA DO UPDATE ===');
+    console.log('error:', error);
+    console.log('data:', data);
 
     if (error) {
       toast({
