@@ -84,10 +84,6 @@ const statusMap = {
   aguardando: { label: 'Aguardando', variant: 'secondary' as const },
   green: { label: 'Green', variant: 'default' as const },
   red: { label: 'Red', variant: 'destructive' as const },
-  parcial_green: { label: 'Parcial Green', variant: 'default' as const },
-  parcial_red: { label: 'Parcial Red', variant: 'destructive' as const },
-  perda_total: { label: 'Perda Total', variant: 'destructive' as const },
-  devolvido: { label: 'Devolvido', variant: 'secondary' as const },
 };
 
 const resultOptions = [
@@ -532,17 +528,21 @@ export default function MinhasArbitragens() {
     } else if (resultado === 'devolvido') {
       // Devolvido: aposta devolvida
       valorResultado = valorApostado;
+    } else if (resultado === 'aguardando') {
+      // Aguardando: ainda sem resultado
+      valorResultado = 0;
     }
 
     const updateField = casa === 'casa_01' ? 'casa_01_resultado' : casa === 'casa_02' ? 'casa_02_resultado' : 'casa_03_resultado';
     const valorField = casa === 'casa_01' ? 'casa_01_valor_resultado' : casa === 'casa_02' ? 'casa_02_valor_resultado' : 'casa_03_valor_resultado';
     
-    // Se for perda total, marcar todas as casas também como perda total
+    // Atualizar o resultado individual da casa
     const updateData: any = {
       [updateField]: resultado,
       [valorField]: valorResultado,
     };
 
+    // Se for perda total, marcar todas as casas também como perda total
     if (resultado === 'perda_total') {
       updateData.casa_01_resultado = 'perda_total';
       updateData.casa_01_valor_resultado = 0;
@@ -553,6 +553,36 @@ export default function MinhasArbitragens() {
         updateData.casa_03_valor_resultado = 0;
       }
     }
+
+    // Calcular os valores resultados de todas as casas
+    const casa01ValorResultado = casa === 'casa_01' ? valorResultado : (arb as any).casa_01_valor_resultado || 0;
+    const casa02ValorResultado = casa === 'casa_02' ? valorResultado : (arb as any).casa_02_valor_resultado || 0;
+    const casa03ValorResultado = casa === 'casa_03' ? valorResultado : (arb as any).casa_03_valor_resultado || 0;
+
+    const casa01Resultado = casa === 'casa_01' ? resultado : arb.casa_01_resultado;
+    const casa02Resultado = casa === 'casa_02' ? resultado : arb.casa_02_resultado;
+    const casa03Resultado = casa === 'casa_03' ? resultado : arb.casa_03_resultado || 'aguardando';
+
+    // Verificar se ainda há casas aguardando
+    const todasDefinidas = casa01Resultado !== 'aguardando' && 
+                           casa02Resultado !== 'aguardando' && 
+                           (!arb.casa_03_nome || casa03Resultado !== 'aguardando');
+
+    // Calcular status geral e lucro real
+    let statusGeral = 'aguardando';
+    let lucroReal = 0;
+
+    if (todasDefinidas) {
+      const totalInvestido = Number(arb.casa_01_valor) + Number(arb.casa_02_valor) + Number(arb.casa_03_valor || 0);
+      const totalRetorno = Number(casa01ValorResultado) + Number(casa02ValorResultado) + Number(casa03ValorResultado);
+      lucroReal = totalRetorno - totalInvestido;
+
+      // Status: green se lucro >= 0, red se lucro < 0
+      statusGeral = lucroReal >= 0 ? 'green' : 'red';
+    }
+
+    updateData.status = statusGeral;
+    updateData.lucro_real = lucroReal;
 
     const { error } = await supabase
       .from('arbitrages')
@@ -710,10 +740,6 @@ export default function MinhasArbitragens() {
                 <SelectItem value="aguardando">Aguardando</SelectItem>
                 <SelectItem value="green">Green</SelectItem>
                 <SelectItem value="red">Red</SelectItem>
-                <SelectItem value="parcial_green">Parcial Green</SelectItem>
-                <SelectItem value="parcial_red">Parcial Red</SelectItem>
-                <SelectItem value="perda_total">Perda Total</SelectItem>
-                <SelectItem value="devolvido">Devolvido</SelectItem>
               </SelectContent>
             </Select>
 
