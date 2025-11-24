@@ -124,7 +124,18 @@ export default function MinhasArbitragens() {
   );
   const [filterUser, setFilterUser] = useState<string[]>(() => {
     const saved = sessionStorage.getItem('arbitragens_filterUser');
-    return saved ? JSON.parse(saved) : [];
+    if (!saved) return [];
+    
+    try {
+      // Tentar parsear como array (novo formato)
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      // Se falhar, é o formato antigo (string única ou "all")
+      // Limpar o valor antigo e começar vazio
+      sessionStorage.removeItem('arbitragens_filterUser');
+      return [];
+    }
   });
   const [currentPage, setCurrentPage] = useState(() => {
     const saved = sessionStorage.getItem('arbitragens_currentPage');
