@@ -632,6 +632,26 @@ export default function MinhasArbitragens() {
   const handleEdit = async () => {
     if (!editArbitrage) return;
 
+    // Recalcular retorno_previsto e lucro_projetado
+    const valor1 = Number(editArbitrage.casa_01_valor);
+    const odd1 = Number(editArbitrage.casa_01_odd);
+    const valor2 = Number(editArbitrage.casa_02_valor);
+    const odd2 = Number(editArbitrage.casa_02_odd);
+    const valor3 = Number(editArbitrage.casa_03_valor || 0);
+    const odd3 = Number(editArbitrage.casa_03_odd || 0);
+
+    const retorno1 = valor1 * odd1;
+    const retorno2 = valor2 * odd2;
+    const retorno3 = editArbitrage.casa_03_nome ? valor3 * odd3 : 0;
+    const retornoPrevisto = Math.max(retorno1, retorno2, retorno3);
+
+    const totalApostado = valor1 + valor2 + (editArbitrage.casa_03_nome ? valor3 : 0);
+    const lucroProjetado = retornoPrevisto - totalApostado;
+
+    const porcentagem = editArbitrage.casa_03_nome 
+      ? ((1 / odd1 + 1 / odd2 + 1 / odd3) - 1) * 100
+      : ((1 / odd1 + 1 / odd2) - 1) * 100;
+
     const updateData: any = {
       descricao: editArbitrage.descricao,
       data_evento: editArbitrage.data_evento,
@@ -641,8 +661,9 @@ export default function MinhasArbitragens() {
       casa_02_nome: editArbitrage.casa_02_nome,
       casa_02_odd: editArbitrage.casa_02_odd,
       casa_02_valor: editArbitrage.casa_02_valor,
-      porcentagem: editArbitrage.porcentagem,
-      lucro_projetado: editArbitrage.lucro_projetado,
+      porcentagem: porcentagem,
+      retorno_previsto: retornoPrevisto,
+      lucro_projetado: lucroProjetado,
     };
 
     // Incluir casa_03 se existir
