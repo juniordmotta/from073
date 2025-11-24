@@ -45,7 +45,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText } from 'lucide-react';
+import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy } from 'lucide-react';
 import { format, differenceInMilliseconds } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -63,17 +63,21 @@ interface Arbitrage {
   casa_01_valor: number;
   casa_01_resultado: string;
   casa_01_mercado?: string;
+  casa_01_valor_resultado?: number;
   casa_02_nome: string;
   casa_02_odd: number;
   casa_02_valor: number;
   casa_02_resultado: string;
   casa_02_mercado?: string;
+  casa_02_valor_resultado?: number;
   casa_03_nome?: string;
   casa_03_odd?: number;
   casa_03_valor?: number;
   casa_03_resultado?: string;
   casa_03_mercado?: string;
+  casa_03_valor_resultado?: number;
   porcentagem: number;
+  retorno_previsto: number;
   lucro_projetado: number;
   lucro_real: number;
   status: string;
@@ -697,6 +701,42 @@ export default function MinhasArbitragens() {
     await loadArbitragens();
   };
 
+  const handleDuplicate = (arb: Arbitrage) => {
+    // Preencher o formulário com os dados da arbitragem
+    setFormData({
+      data_evento: format(new Date(arb.data_evento), "yyyy-MM-dd'T'HH:mm"),
+      descricao: arb.descricao,
+      esporte_liga: arb.esporte_liga || '',
+      casa_01_nome: arb.casa_01_nome,
+      casa_01_odd: String(arb.casa_01_odd),
+      casa_01_valor: String(arb.casa_01_valor),
+      casa_01_mercado: arb.casa_01_mercado || 'Mercado não especificado',
+      casa_02_nome: arb.casa_02_nome,
+      casa_02_odd: String(arb.casa_02_odd),
+      casa_02_valor: String(arb.casa_02_valor),
+      casa_02_mercado: arb.casa_02_mercado || 'Mercado não especificado',
+      casa_03_nome: arb.casa_03_nome || '',
+      casa_03_odd: arb.casa_03_odd ? String(arb.casa_03_odd) : '',
+      casa_03_valor: arb.casa_03_valor ? String(arb.casa_03_valor) : '',
+      casa_03_mercado: arb.casa_03_mercado || '',
+      porcentagem: String(arb.porcentagem),
+      retorno_previsto: String(arb.retorno_previsto),
+      lucro_projetado: String(arb.lucro_projetado),
+    });
+
+    // Definir se usa 3 casas baseado nos dados
+    setUseTresCasas(!!arb.casa_03_nome);
+    
+    // Abrir o dialog na aba manual
+    setActiveTab('manual');
+    setOpenAdd(true);
+
+    toast({
+      title: 'Arbitragem duplicada!',
+      description: 'Edite os dados e salve como uma nova arbitragem.',
+    });
+  };
+
   const calcularGanhoPorCasa = (
     aposta: number,
     odd: number,
@@ -1028,14 +1068,24 @@ export default function MinhasArbitragens() {
                             variant="ghost"
                             size="sm"
                             onClick={() => setEditArbitrage(arb)}
+                            title="Editar arbitragem"
                           >
                             <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDuplicate(arb)}
+                            title="Duplicar arbitragem"
+                          >
+                            <Copy className="h-4 w-4" />
                           </Button>
                           {isAdmin && (
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => setDeleteId(arb.id)}
+                              title="Excluir arbitragem"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
