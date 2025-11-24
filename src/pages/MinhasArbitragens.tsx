@@ -229,6 +229,7 @@ export default function MinhasArbitragens() {
       casa_03_mercado,
       casa_03_valor_resultado,
       porcentagem,
+      retorno_previsto,
       lucro_projetado,
       lucro_real,
       status,
@@ -684,15 +685,16 @@ export default function MinhasArbitragens() {
         title: 'Erro ao atualizar arbitragem',
         description: error.message,
       });
-    } else {
-      toast({
-        title: 'Arbitragem atualizada!',
-        description: 'As alterações foram salvas com sucesso.',
-      });
-      loadArbitragens();
+      return;
     }
 
+    toast({
+      title: 'Arbitragem atualizada!',
+      description: 'As alterações foram salvas com sucesso.',
+    });
+    
     setEditArbitrage(null);
+    await loadArbitragens();
   };
 
   const calcularGanhoPorCasa = (
