@@ -1018,7 +1018,7 @@ export default function MinhasArbitragens() {
                               className="h-7 text-xs gap-1"
                             >
                               {statusMap[arb.casa_01_resultado as keyof typeof statusMap]?.label ||
-                                'Definir'}
+                                (arb.status === 'aguardando' ? 'AGUARDANDO' : 'Definir')}
                               <ChevronDown className="h-3 w-3" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -1056,7 +1056,7 @@ export default function MinhasArbitragens() {
                               className="h-7 text-xs gap-1"
                             >
                               {statusMap[arb.casa_02_resultado as keyof typeof statusMap]?.label ||
-                                'Definir'}
+                                (arb.status === 'aguardando' ? 'AGUARDANDO' : 'Definir')}
                               <ChevronDown className="h-3 w-3" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -1095,7 +1095,7 @@ export default function MinhasArbitragens() {
                                 className="h-7 text-xs gap-1"
                               >
                                 {statusMap[arb.casa_03_resultado as keyof typeof statusMap]?.label ||
-                                  'Definir'}
+                                  (arb.status === 'aguardando' ? 'AGUARDANDO' : 'Definir')}
                                 <ChevronDown className="h-3 w-3" />
                               </Button>
                             </DropdownMenuTrigger>
