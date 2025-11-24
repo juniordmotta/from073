@@ -43,9 +43,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy } from 'lucide-react';
+import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter } from 'lucide-react';
 import { format, differenceInMilliseconds } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -120,9 +122,10 @@ export default function MinhasArbitragens() {
   const [filterStatus, setFilterStatus] = useState(() => 
     sessionStorage.getItem('arbitragens_filterStatus') || 'aguardando'
   );
-  const [filterUser, setFilterUser] = useState(() => 
-    sessionStorage.getItem('arbitragens_filterUser') || 'all'
-  );
+  const [filterUser, setFilterUser] = useState<string[]>(() => {
+    const saved = sessionStorage.getItem('arbitragens_filterUser');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [currentPage, setCurrentPage] = useState(() => {
     const saved = sessionStorage.getItem('arbitragens_currentPage');
     return saved ? parseInt(saved) : 1;
@@ -197,8 +200,8 @@ export default function MinhasArbitragens() {
       filtered = filtered.filter((arb) => arb.status === debouncedFilterStatus);
     }
 
-    if (debouncedFilterUser !== 'all') {
-      filtered = filtered.filter((arb) => arb.user_id === debouncedFilterUser);
+    if (debouncedFilterUser.length > 0) {
+      filtered = filtered.filter((arb) => debouncedFilterUser.includes(arb.user_id));
     }
 
     setFilteredArbitragens(filtered);
@@ -268,6 +271,12 @@ export default function MinhasArbitragens() {
     
     if (data) {
       setUsers(data);
+      
+      // Se não há filtro salvo, inicializar com todos os usuários
+      const savedFilter = sessionStorage.getItem('arbitragens_filterUser');
+      if (!savedFilter && isAdmin) {
+        setFilterUser(data.map(u => u.id));
+      }
     }
   };
 
@@ -297,7 +306,7 @@ export default function MinhasArbitragens() {
   }, [filterStatus]);
 
   useEffect(() => {
-    sessionStorage.setItem('arbitragens_filterUser', filterUser);
+    sessionStorage.setItem('arbitragens_filterUser', JSON.stringify(filterUser));
   }, [filterUser]);
 
   useEffect(() => {
@@ -807,19 +816,68 @@ export default function MinhasArbitragens() {
             </Select>
 
             {isAdmin && (
-              <Select value={filterUser} onValueChange={setFilterUser}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Operador" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  {users.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-52 justify-between">
+                    <span className="truncate">
+                      {filterUser.length === 0 
+                        ? 'Todos os operadores' 
+                        : filterUser.length === users.length
+                        ? 'Todos os operadores'
+                        : `${filterUser.length} operador(es)`
+                      }
+                    </span>
+                    <Filter className="h-4 w-4 ml-2 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-3 bg-background z-50" align="start">
+                  <div className="space-y-3">
+                    <div className="font-semibold text-sm">Filtrar por Operador</div>
+                    <div className="flex items-center space-x-2 pb-2 border-b">
+                      <Checkbox
+                        id="select-all"
+                        checked={filterUser.length === users.length}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFilterUser(users.map(u => u.id));
+                          } else {
+                            setFilterUser([]);
+                          }
+                        }}
+                      />
+                      <label
+                        htmlFor="select-all"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        Selecionar Todos
+                      </label>
+                    </div>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {users.map((u) => (
+                        <div key={u.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={u.id}
+                            checked={filterUser.includes(u.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setFilterUser([...filterUser, u.id]);
+                              } else {
+                                setFilterUser(filterUser.filter(id => id !== u.id));
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor={u.id}
+                            className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                          >
+                            {u.name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
             )}
 
             <Dialog open={openAdd} onOpenChange={setOpenAdd}>
