@@ -423,6 +423,8 @@ export default function Dashboard() {
                           onCheckedChange={(checked) => {
                             if (checked) {
                               setSelectedStatus(['all']);
+                            } else {
+                              setSelectedStatus([]);
                             }
                           }}
                         />
@@ -434,15 +436,18 @@ export default function Dashboard() {
                         <div key={status} className="flex items-center space-x-2">
                           <Checkbox
                             id={`dashboard-status-${status}`}
-                            checked={selectedStatus.includes(status)}
-                            disabled={selectedStatus.includes('all')}
+                            checked={!selectedStatus.includes('all') && selectedStatus.includes(status)}
                             onCheckedChange={(checked) => {
-                              const newStatus = selectedStatus.filter(s => s !== 'all');
-                              if (checked) {
-                                setSelectedStatus([...newStatus, status]);
+                              if (selectedStatus.includes('all')) {
+                                setSelectedStatus([status]);
                               } else {
-                                const filtered = newStatus.filter(s => s !== status);
-                                setSelectedStatus(filtered.length === 0 ? ['all'] : filtered);
+                                if (checked) {
+                                  const newStatus = [...selectedStatus, status];
+                                  setSelectedStatus(newStatus);
+                                } else {
+                                  const filtered = selectedStatus.filter(s => s !== status);
+                                  setSelectedStatus(filtered.length === 0 ? ['all'] : filtered);
+                                }
                               }
                             }}
                           />
