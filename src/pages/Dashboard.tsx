@@ -34,7 +34,7 @@ export default function Dashboard() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedUser, setSelectedUser] = useState<string[]>([]);
-  const [selectedStatus, setSelectedStatus] = useState<string[]>(['all']);
+  const [selectedStatus, setSelectedStatus] = useState<string[]>(['aguardando']);
   const [users, setUsers] = useState<Array<{ id: string; name: string }>>([]);
   const [openBets, setOpenBets] = useState<any[]>([]);
   const [totalCosts, setTotalCosts] = useState(0);
