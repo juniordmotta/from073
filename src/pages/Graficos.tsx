@@ -321,7 +321,8 @@ export default function Graficos() {
               </Select>
             </div>
 
-            <div className="space-y-1 flex items-end">
+            <div className="space-y-1">
+              <Label className="text-xs opacity-0">Ações</Label>
               <Button
                 variant="outline"
                 size="sm"

@@ -825,70 +825,77 @@ export default function MinhasArbitragens() {
           <h1 className="text-3xl font-bold">Minhas Arbitragens</h1>
           
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="w-40">
+            <div className="space-y-1">
+              <Label className="text-xs">Data</Label>
               <Input
                 type="date"
                 value={filterDate}
                 onChange={(e) => setFilterDate(e.target.value)}
                 placeholder="Filtrar por data"
+                className="w-40"
               />
             </div>
 
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-40 justify-between">
-                  <span className="truncate">
-                    {filterStatus.includes('all') ? 'Todos' : `${filterStatus.length} selecionado(s)`}
-                  </span>
-                  <Filter className="h-4 w-4 ml-2 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-64 p-3 bg-background z-50" align="start">
-                <div className="space-y-3">
-                  <div className="font-semibold text-sm">Filtrar por Status</div>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="arb-status-all"
-                        checked={filterStatus.includes('all')}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setFilterStatus(['all']);
-                          }
-                        }}
-                      />
-                      <label htmlFor="arb-status-all" className="text-sm font-medium cursor-pointer">
-                        Todos
-                      </label>
-                    </div>
-                    {['aguardando', 'green', 'red'].map((status) => (
-                      <div key={status} className="flex items-center space-x-2">
+            <div className="space-y-1">
+              <Label className="text-xs">Status</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-40 justify-between">
+                    <span className="truncate">
+                      {filterStatus.includes('all') ? 'Todos' : `${filterStatus.length} selecionado(s)`}
+                    </span>
+                    <Filter className="h-4 w-4 ml-2 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-3 bg-background z-50" align="start">
+                  <div className="space-y-3">
+                    <div className="font-semibold text-sm">Filtrar por Status</div>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
                         <Checkbox
-                          id={`arb-status-${status}`}
-                          checked={filterStatus.includes(status)}
-                          disabled={filterStatus.includes('all')}
+                          id="arb-status-all"
+                          checked={filterStatus.includes('all')}
                           onCheckedChange={(checked) => {
-                            const newStatus = filterStatus.filter(s => s !== 'all');
                             if (checked) {
-                              setFilterStatus([...newStatus, status]);
-                            } else {
-                              const filtered = newStatus.filter(s => s !== status);
-                              setFilterStatus(filtered.length === 0 ? ['all'] : filtered);
+                              setFilterStatus(['all']);
                             }
                           }}
                         />
-                        <label htmlFor={`arb-status-${status}`} className="text-sm cursor-pointer capitalize">
-                          {status === 'aguardando' ? 'Aguardando' : status === 'green' ? 'Green' : 'Red'}
+                        <label htmlFor="arb-status-all" className="text-sm font-medium cursor-pointer">
+                          Todos
                         </label>
                       </div>
-                    ))}
+                      {['aguardando', 'green', 'red'].map((status) => (
+                        <div key={status} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`arb-status-${status}`}
+                            checked={filterStatus.includes(status)}
+                            disabled={filterStatus.includes('all')}
+                            onCheckedChange={(checked) => {
+                              const newStatus = filterStatus.filter(s => s !== 'all');
+                              if (checked) {
+                                setFilterStatus([...newStatus, status]);
+                              } else {
+                                const filtered = newStatus.filter(s => s !== status);
+                                setFilterStatus(filtered.length === 0 ? ['all'] : filtered);
+                              }
+                            }}
+                          />
+                          <label htmlFor={`arb-status-${status}`} className="text-sm cursor-pointer capitalize">
+                            {status === 'aguardando' ? 'Aguardando' : status === 'green' ? 'Green' : 'Red'}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+                </PopoverContent>
+              </Popover>
+            </div>
 
             {isAdmin && (
-              <Popover>
+              <div className="space-y-1">
+                <Label className="text-xs">Operador</Label>
+                <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-52 justify-between">
                     <span className="truncate">
@@ -949,22 +956,26 @@ export default function MinhasArbitragens() {
                     </div>
                   </div>
                 </PopoverContent>
-              </Popover>
+                </Popover>
+              </div>
             )}
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setFilterDate('');
-                setFilterStatus(['all']);
-                setFilterUser(users.map(u => u.id));
-              }}
-              className="h-10"
-            >
-              <X className="h-4 w-4 mr-2" />
-              Limpar
-            </Button>
+            <div className="space-y-1">
+              <Label className="text-xs opacity-0">Ações</Label>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setFilterDate('');
+                  setFilterStatus(['all']);
+                  setFilterUser(users.map(u => u.id));
+                }}
+                className="h-10"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Limpar
+              </Button>
+            </div>
 
             <Dialog open={openAdd} onOpenChange={setOpenAdd}>
               <DialogTrigger asChild>
