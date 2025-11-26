@@ -1098,7 +1098,7 @@ export default function MinhasArbitragens() {
                     <TableCell className="text-xs">
                       <div className="space-y-1.5">
                         <div>
-                          <div className="font-medium">{arb.casa_01_nome}</div>
+                          <div className="font-medium break-words whitespace-normal">{arb.casa_01_nome}</div>
                           {arb.casa_01_mercado && (
                             <div className="text-muted-foreground text-[10px]">{arb.casa_01_mercado}</div>
                           )}
@@ -1135,7 +1135,7 @@ export default function MinhasArbitragens() {
                     <TableCell className="text-xs">
                       <div className="space-y-1.5">
                         <div>
-                          <div className="font-medium">{arb.casa_02_nome}</div>
+                          <div className="font-medium break-words whitespace-normal">{arb.casa_02_nome}</div>
                           {arb.casa_02_mercado && (
                             <div className="text-muted-foreground text-[10px]">{arb.casa_02_mercado}</div>
                           )}
@@ -1173,7 +1173,7 @@ export default function MinhasArbitragens() {
                       {arb.casa_03_nome ? (
                         <div className="space-y-1.5">
                           <div>
-                            <div className="font-medium">{arb.casa_03_nome}</div>
+                            <div className="font-medium break-words whitespace-normal">{arb.casa_03_nome}</div>
                             {arb.casa_03_mercado && (
                               <div className="text-muted-foreground text-[10px]">{arb.casa_03_mercado}</div>
                             )}
