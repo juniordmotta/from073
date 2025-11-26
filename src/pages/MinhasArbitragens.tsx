@@ -111,7 +111,7 @@ export default function MinhasArbitragens() {
   const [editArbitrage, setEditArbitrage] = useState<Arbitrage | null>(null);
   const [viewGanhosArbitrage, setViewGanhosArbitrage] = useState<Arbitrage | null>(null);
   const [users, setUsers] = useState<Array<{ id: string; name: string }>>([]);
-  const itemsPerPage = 10;
+  const itemsPerPage = 30;
   
   // Restaurar filtros do sessionStorage ou usar valores padrão
   const [filterDate, setFilterDate] = useState(() => 
@@ -234,6 +234,22 @@ export default function MinhasArbitragens() {
 
     if (debouncedFilterUser.length > 0) {
       filtered = filtered.filter((arb) => debouncedFilterUser.includes(arb.user_id));
+    }
+
+    // Ordenação especial quando status = "all"
+    if (debouncedFilterStatus === 'all') {
+      // Separar aguardando e fechadas
+      const aguardando = filtered.filter(arb => arb.status === 'aguardando');
+      const fechadas = filtered.filter(arb => arb.status !== 'aguardando');
+      
+      // Ordenar aguardando por data_evento
+      aguardando.sort((a, b) => new Date(a.data_evento).getTime() - new Date(b.data_evento).getTime());
+      
+      // Ordenar fechadas por created_at (mais recentes primeiro)
+      fechadas.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      
+      // Combinar: aguardando primeiro, depois fechadas
+      filtered = [...aguardando, ...fechadas];
     }
 
     setFilteredArbitragens(filtered);
