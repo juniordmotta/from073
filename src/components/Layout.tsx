@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,7 +73,10 @@ export const Layout = ({ children }: LayoutProps) => {
                 </nav>
               </div>
 
-              <DropdownMenu>
+              <div className="flex items-center gap-2">
+                <ThemeToggle />
+                
+                <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="gap-2">
                     <User className="h-4 w-4" />
@@ -95,6 +99,7 @@ export const Layout = ({ children }: LayoutProps) => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              </div>
             </div>
           </header>
 
