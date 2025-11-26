@@ -117,9 +117,17 @@ export default function MinhasArbitragens() {
   const [filterDate, setFilterDate] = useState(() => 
     sessionStorage.getItem('arbitragens_filterDate') || ''
   );
-  const [filterStatus, setFilterStatus] = useState(() => 
-    sessionStorage.getItem('arbitragens_filterStatus') || 'aguardando'
-  );
+  const [filterStatus, setFilterStatus] = useState<string[]>(() => {
+    const saved = sessionStorage.getItem('arbitragens_filterStatus');
+    if (!saved) return ['aguardando'];
+    
+    try {
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : ['aguardando'];
+    } catch {
+      return saved === 'all' ? ['all'] : [saved];
+    }
+  });
   const [filterUser, setFilterUser] = useState<string[]>(() => {
     const saved = sessionStorage.getItem('arbitragens_filterUser');
     if (!saved) return [];
@@ -205,30 +213,38 @@ export default function MinhasArbitragens() {
       );
     }
 
-    if (debouncedFilterStatus !== 'all') {
+    if (!debouncedFilterStatus.includes('all')) {
       filtered = filtered.filter((arb) => {
         // Consolidar status para filtros
-        if (debouncedFilterStatus === 'green') {
+        let shouldInclude = false;
+        
+        if (debouncedFilterStatus.includes('green')) {
           // Green inclui: green, parcial_green, devolvido e parcial_red com lucro positivo
           if (arb.status === 'green' || arb.status === 'parcial_green' || arb.status === 'devolvido') {
-            return true;
+            shouldInclude = true;
           }
           if (arb.status === 'parcial_red' && arb.lucro_real > 0) {
-            return true;
+            shouldInclude = true;
           }
-          return false;
-        } else if (debouncedFilterStatus === 'red') {
+        }
+        
+        if (debouncedFilterStatus.includes('red')) {
           // Red inclui: red, perda_total e parcial_red com lucro negativo ou zero
           if (arb.status === 'red' || arb.status === 'perda_total') {
-            return true;
+            shouldInclude = true;
           }
           if (arb.status === 'parcial_red' && arb.lucro_real <= 0) {
-            return true;
+            shouldInclude = true;
           }
-          return false;
         }
-        // Para outros status (aguardando), comparação direta
-        return arb.status === debouncedFilterStatus;
+        
+        if (debouncedFilterStatus.includes('aguardando')) {
+          if (arb.status === 'aguardando') {
+            shouldInclude = true;
+          }
+        }
+        
+        return shouldInclude;
       });
     }
 
@@ -237,7 +253,7 @@ export default function MinhasArbitragens() {
     }
 
     // Ordenação especial quando status = "all"
-    if (debouncedFilterStatus === 'all') {
+    if (debouncedFilterStatus.includes('all')) {
       // Separar aguardando e fechadas
       const aguardando = filtered.filter(arb => arb.status === 'aguardando');
       const fechadas = filtered.filter(arb => arb.status !== 'aguardando');
@@ -350,7 +366,7 @@ export default function MinhasArbitragens() {
   }, [filterDate]);
 
   useEffect(() => {
-    sessionStorage.setItem('arbitragens_filterStatus', filterStatus);
+    sessionStorage.setItem('arbitragens_filterStatus', JSON.stringify(filterStatus));
   }, [filterStatus]);
 
   useEffect(() => {
@@ -818,17 +834,58 @@ export default function MinhasArbitragens() {
               />
             </div>
 
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="aguardando">Aguardando</SelectItem>
-                <SelectItem value="green">Green</SelectItem>
-                <SelectItem value="red">Red</SelectItem>
-              </SelectContent>
-            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-40 justify-between">
+                  <span className="truncate">
+                    {filterStatus.includes('all') ? 'Todos' : `${filterStatus.length} selecionado(s)`}
+                  </span>
+                  <Filter className="h-4 w-4 ml-2 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-3 bg-background z-50" align="start">
+                <div className="space-y-3">
+                  <div className="font-semibold text-sm">Filtrar por Status</div>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="arb-status-all"
+                        checked={filterStatus.includes('all')}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFilterStatus(['all']);
+                          }
+                        }}
+                      />
+                      <label htmlFor="arb-status-all" className="text-sm font-medium cursor-pointer">
+                        Todos
+                      </label>
+                    </div>
+                    {['aguardando', 'green', 'red'].map((status) => (
+                      <div key={status} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`arb-status-${status}`}
+                          checked={filterStatus.includes(status)}
+                          disabled={filterStatus.includes('all')}
+                          onCheckedChange={(checked) => {
+                            const newStatus = filterStatus.filter(s => s !== 'all');
+                            if (checked) {
+                              setFilterStatus([...newStatus, status]);
+                            } else {
+                              const filtered = newStatus.filter(s => s !== status);
+                              setFilterStatus(filtered.length === 0 ? ['all'] : filtered);
+                            }
+                          }}
+                        />
+                        <label htmlFor={`arb-status-${status}`} className="text-sm cursor-pointer capitalize">
+                          {status === 'aguardando' ? 'Aguardando' : status === 'green' ? 'Green' : 'Red'}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
 
             {isAdmin && (
               <Popover>
@@ -900,7 +957,7 @@ export default function MinhasArbitragens() {
               size="sm"
               onClick={() => {
                 setFilterDate('');
-                setFilterStatus('all');
+                setFilterStatus(['all']);
                 setFilterUser(users.map(u => u.id));
               }}
               className="h-10"
