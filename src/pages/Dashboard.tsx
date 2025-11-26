@@ -11,9 +11,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TrendingUp, TrendingDown, DollarSign, Target, Filter, X } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Target, Filter, X, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/lib/utils';
+import * as XLSX from 'xlsx';
 
 interface Stats {
   totalArbitragens: number;
@@ -33,10 +34,11 @@ export default function Dashboard() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedUser, setSelectedUser] = useState<string[]>([]);
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string[]>(['all']);
   const [users, setUsers] = useState<Array<{ id: string; name: string }>>([]);
   const [openBets, setOpenBets] = useState<any[]>([]);
   const [totalCosts, setTotalCosts] = useState(0);
+  const [allArbitrages, setAllArbitrages] = useState<any[]>([]);
   
   // Debounce dos filtros
   const debouncedStartDate = useDebounce(startDate, 300);
@@ -50,6 +52,7 @@ export default function Dashboard() {
     loadStats();
     loadOpenBets();
     loadCosts();
+    loadAllArbitrages();
     if (isAdmin) {
       loadUsers();
     }
@@ -79,16 +82,21 @@ export default function Dashboard() {
       query = query.in('user_id', debouncedSelectedUser);
     }
 
-    if (debouncedSelectedStatus !== 'all') {
-      if (debouncedSelectedStatus === 'green') {
-        // Green inclui: green, parcial_green, devolvido
-        query = query.or('status.eq.green,status.eq.parcial_green,status.eq.devolvido');
-      } else if (debouncedSelectedStatus === 'red') {
-        // Red inclui: red, parcial_red, perda_total
-        query = query.or('status.eq.red,status.eq.parcial_red,status.eq.perda_total');
-      } else {
-        // aguardando
-        query = query.eq('status', debouncedSelectedStatus as any);
+    if (!debouncedSelectedStatus.includes('all')) {
+      const conditions: string[] = [];
+      
+      if (debouncedSelectedStatus.includes('green')) {
+        conditions.push('status.eq.green', 'status.eq.parcial_green', 'status.eq.devolvido');
+      }
+      if (debouncedSelectedStatus.includes('red')) {
+        conditions.push('status.eq.red', 'status.eq.parcial_red', 'status.eq.perda_total');
+      }
+      if (debouncedSelectedStatus.includes('aguardando')) {
+        conditions.push('status.eq.aguardando');
+      }
+      
+      if (conditions.length > 0) {
+        query = query.or(conditions.join(','));
       }
     }
 
@@ -130,6 +138,100 @@ export default function Dashboard() {
       });
     }
   }, [isAdmin, user?.id, debouncedSelectedUser, debouncedSelectedStatus, debouncedStartDate, debouncedEndDate]);
+
+  const loadAllArbitrages = useCallback(async () => {
+    let query = supabase
+      .from('arbitrages')
+      .select(`
+        *,
+        profiles:user_id (name)
+      `)
+      .order('created_at', { ascending: false });
+    
+    if (!isAdmin) {
+      query = query.eq('user_id', user?.id);
+    } else if (debouncedSelectedUser.length > 0) {
+      query = query.in('user_id', debouncedSelectedUser);
+    }
+
+    if (!debouncedSelectedStatus.includes('all')) {
+      const conditions: string[] = [];
+      
+      if (debouncedSelectedStatus.includes('green')) {
+        conditions.push('status.eq.green', 'status.eq.parcial_green', 'status.eq.devolvido');
+      }
+      if (debouncedSelectedStatus.includes('red')) {
+        conditions.push('status.eq.red', 'status.eq.parcial_red', 'status.eq.perda_total');
+      }
+      if (debouncedSelectedStatus.includes('aguardando')) {
+        conditions.push('status.eq.aguardando');
+      }
+      
+      if (conditions.length > 0) {
+        query = query.or(conditions.join(','));
+      }
+    }
+
+    if (debouncedStartDate) {
+      query = query.gte('created_at', new Date(debouncedStartDate).toISOString());
+    }
+
+    if (debouncedEndDate) {
+      const endOfDay = new Date(debouncedEndDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      query = query.lte('created_at', endOfDay.toISOString());
+    }
+
+    const { data } = await query;
+
+    if (data) {
+      setAllArbitrages(data);
+    }
+  }, [isAdmin, user?.id, debouncedSelectedUser, debouncedSelectedStatus, debouncedStartDate, debouncedEndDate]);
+
+  const handleExportExcel = () => {
+    if (allArbitrages.length === 0) {
+      return;
+    }
+
+    const exportData = allArbitrages.map((arb) => ({
+      'Data Criação': format(new Date(arb.created_at), 'dd/MM/yyyy HH:mm'),
+      'Data Evento': format(new Date(arb.data_evento), 'dd/MM/yyyy HH:mm'),
+      'Descrição': arb.descricao,
+      'Esporte/Liga': arb.esporte_liga || '-',
+      'Usuário': arb.profiles?.name || '-',
+      'Casa 01': arb.casa_01_nome,
+      'Casa 01 Mercado': arb.casa_01_mercado || '-',
+      'Casa 01 Odd': arb.casa_01_odd,
+      'Casa 01 Valor': arb.casa_01_valor,
+      'Casa 01 Resultado': arb.casa_01_resultado || 'aguardando',
+      'Casa 01 Valor Resultado': arb.casa_01_valor_resultado || 0,
+      'Casa 02': arb.casa_02_nome,
+      'Casa 02 Mercado': arb.casa_02_mercado || '-',
+      'Casa 02 Odd': arb.casa_02_odd,
+      'Casa 02 Valor': arb.casa_02_valor,
+      'Casa 02 Resultado': arb.casa_02_resultado || 'aguardando',
+      'Casa 02 Valor Resultado': arb.casa_02_valor_resultado || 0,
+      'Casa 03': arb.casa_03_nome || '-',
+      'Casa 03 Mercado': arb.casa_03_mercado || '-',
+      'Casa 03 Odd': arb.casa_03_odd || 0,
+      'Casa 03 Valor': arb.casa_03_valor || 0,
+      'Casa 03 Resultado': arb.casa_03_resultado || '-',
+      'Casa 03 Valor Resultado': arb.casa_03_valor_resultado || 0,
+      'Porcentagem': arb.porcentagem,
+      'Retorno Previsto': arb.retorno_previsto,
+      'Lucro Projetado': arb.lucro_projetado,
+      'Lucro Real': arb.lucro_real || 0,
+      'Status': arb.status,
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Arbitragens');
+    
+    const fileName = `arbitragens_${format(new Date(), 'dd-MM-yyyy_HH-mm')}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
 
   const loadOpenBets = useCallback(async () => {
     let query = supabase
@@ -301,17 +403,71 @@ export default function Dashboard() {
 
             <div className="space-y-1">
               <Label className="text-xs">Status</Label>
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Todos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="aguardando">Aguardando</SelectItem>
-                  <SelectItem value="green">Green</SelectItem>
-                  <SelectItem value="red">Red</SelectItem>
-                </SelectContent>
-              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-40 justify-between">
+                    <span className="truncate">
+                      {selectedStatus.includes('all') ? 'Todos' : `${selectedStatus.length} selecionado(s)`}
+                    </span>
+                    <Filter className="h-4 w-4 ml-2 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-3 bg-background z-50" align="start">
+                  <div className="space-y-3">
+                    <div className="font-semibold text-sm">Filtrar por Status</div>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="dashboard-status-all"
+                          checked={selectedStatus.includes('all')}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedStatus(['all']);
+                            }
+                          }}
+                        />
+                        <label htmlFor="dashboard-status-all" className="text-sm font-medium cursor-pointer">
+                          Todos
+                        </label>
+                      </div>
+                      {['aguardando', 'green', 'red'].map((status) => (
+                        <div key={status} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`dashboard-status-${status}`}
+                            checked={selectedStatus.includes(status)}
+                            disabled={selectedStatus.includes('all')}
+                            onCheckedChange={(checked) => {
+                              const newStatus = selectedStatus.filter(s => s !== 'all');
+                              if (checked) {
+                                setSelectedStatus([...newStatus, status]);
+                              } else {
+                                const filtered = newStatus.filter(s => s !== status);
+                                setSelectedStatus(filtered.length === 0 ? ['all'] : filtered);
+                              }
+                            }}
+                          />
+                          <label htmlFor={`dashboard-status-${status}`} className="text-sm cursor-pointer capitalize">
+                            {status === 'aguardando' ? 'Aguardando' : status === 'green' ? 'Green' : 'Red'}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-1 flex items-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportExcel}
+                disabled={allArbitrages.length === 0}
+                className="h-10"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Exportar Excel
+              </Button>
             </div>
 
             <div className="space-y-1 flex items-end">
@@ -322,7 +478,7 @@ export default function Dashboard() {
                   setStartDate('');
                   setEndDate('');
                   setSelectedUser(users.map(u => u.id));
-                  setSelectedStatus('all');
+                  setSelectedStatus(['all']);
                 }}
                 className="h-10"
               >
