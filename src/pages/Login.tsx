@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { useToast } from '@/hooks/use-toast';
 import { TrendingUp } from 'lucide-react';
 import { loginSchema, signupSchema } from '@/lib/validations/user';
@@ -102,7 +103,10 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 bg-background">
+    <div className="relative flex min-h-screen items-center justify-center p-4 bg-background">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
