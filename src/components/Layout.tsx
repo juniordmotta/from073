@@ -39,13 +39,19 @@ export const Layout = ({ children }: LayoutProps) => {
   return (
     <SidebarProvider defaultOpen={false}>
       <div className="flex min-h-screen w-full">
-        <AppSidebar />
+        {/* Sidebar apenas no mobile */}
+        <div className="md:hidden">
+          <AppSidebar />
+        </div>
         
         <div className="flex flex-1 flex-col">
           <header className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
             <div className="container flex h-16 items-center justify-between">
               <div className="flex items-center gap-4">
-                <SidebarTrigger />
+                {/* SidebarTrigger apenas no mobile */}
+                <div className="md:hidden">
+                  <SidebarTrigger />
+                </div>
                 
                 <Link to="/dashboard" className="flex items-center gap-2">
                   <DollarSign className="h-6 w-6 text-success" />
