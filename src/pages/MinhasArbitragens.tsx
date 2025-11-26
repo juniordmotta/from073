@@ -90,6 +90,8 @@ const statusMap = {
   aguardando: { label: 'Aguardando', variant: 'secondary' as const },
   green: { label: 'Green', variant: 'default' as const },
   red: { label: 'Red', variant: 'destructive' as const },
+  parcial_green: { label: 'Meio Green', variant: 'default' as const },
+  parcial_red: { label: 'Meio Red', variant: 'destructive' as const },
   devolvido: { label: 'Devolvido', variant: 'secondary' as const },
 };
 
