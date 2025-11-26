@@ -80,7 +80,16 @@ export default function Dashboard() {
     }
 
     if (debouncedSelectedStatus !== 'all') {
-      query = query.eq('status', debouncedSelectedStatus as any);
+      if (debouncedSelectedStatus === 'green') {
+        // Green inclui: green, parcial_green, devolvido
+        query = query.or('status.eq.green,status.eq.parcial_green,status.eq.devolvido');
+      } else if (debouncedSelectedStatus === 'red') {
+        // Red inclui: red, parcial_red, perda_total
+        query = query.or('status.eq.red,status.eq.parcial_red,status.eq.perda_total');
+      } else {
+        // aguardando
+        query = query.eq('status', debouncedSelectedStatus as any);
+      }
     }
 
     if (debouncedStartDate) {
@@ -301,10 +310,6 @@ export default function Dashboard() {
                   <SelectItem value="aguardando">Aguardando</SelectItem>
                   <SelectItem value="green">Green</SelectItem>
                   <SelectItem value="red">Red</SelectItem>
-                  <SelectItem value="parcial_green">Parcial Green</SelectItem>
-                  <SelectItem value="parcial_red">Parcial Red</SelectItem>
-                  <SelectItem value="perda_total">Perda Total</SelectItem>
-                  <SelectItem value="devolvido">Devolvido</SelectItem>
                 </SelectContent>
               </Select>
             </div>
