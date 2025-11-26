@@ -95,8 +95,10 @@ const statusMap = {
 
 const resultOptions = [
   { value: 'aguardando', label: 'Aguardando' },
-  { value: 'green', label: 'Ganhou' },
-  { value: 'red', label: 'Perdeu' },
+  { value: 'green', label: 'Green' },
+  { value: 'red', label: 'Red' },
+  { value: 'parcial_green', label: 'Meio Green' },
+  { value: 'parcial_red', label: 'Meio Red' },
   { value: 'devolvido', label: 'Devolvido' },
 ];
 
@@ -586,13 +588,19 @@ export default function MinhasArbitragens() {
     const odd = casa === 'casa_01' ? arb.casa_01_odd : casa === 'casa_02' ? arb.casa_02_odd : arb.casa_03_odd || 0;
     const valorApostado = casa === 'casa_01' ? arb.casa_01_valor : casa === 'casa_02' ? arb.casa_02_valor : arb.casa_03_valor || 0;
 
-    // Cálculo simplificado
+    // Cálculo dos resultados
     if (resultado === 'green') {
       // Ganhou: valor apostado * odd
       valorResultado = valorApostado * odd;
     } else if (resultado === 'red') {
       // Perdeu: 0
       valorResultado = 0;
+    } else if (resultado === 'parcial_green') {
+      // Meio Green: (stake/2) + (stake/2 * odd)
+      valorResultado = (valorApostado / 2) + (valorApostado / 2 * odd);
+    } else if (resultado === 'parcial_red') {
+      // Meio Red: (stake/2)
+      valorResultado = valorApostado / 2;
     } else if (resultado === 'devolvido') {
       // Devolvido: aposta devolvida
       valorResultado = valorApostado;
@@ -633,8 +641,8 @@ export default function MinhasArbitragens() {
       const totalRetorno = Number(casa01ValorResultado) + Number(casa02ValorResultado) + Number(casa03ValorResultado);
       lucroReal = totalRetorno - totalInvestido;
 
-      // Status: green se lucro > 0, red se lucro <= 0
-      statusGeral = lucroReal > 0 ? 'green' : 'red';
+      // Status: green se lucro >= 0 (positivo ou zerado), red se lucro < 0 (negativo)
+      statusGeral = lucroReal >= 0 ? 'green' : 'red';
     }
 
     updateData.status = statusGeral;
