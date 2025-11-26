@@ -1220,6 +1220,9 @@ export default function MinhasArbitragens() {
                           R$ {formatCurrency(arb.lucro_real)}
                         </div>
                         <div className="text-muted-foreground">
+                          {arb.porcentagem.toFixed(2)}% • R$ {formatCurrency(arb.retorno_previsto)}
+                        </div>
+                        <div className="text-muted-foreground">
                           Proj: R$ {formatCurrency(arb.lucro_projetado)}
                         </div>
                         <Button
