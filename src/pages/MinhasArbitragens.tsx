@@ -858,6 +858,8 @@ export default function MinhasArbitragens() {
                           onCheckedChange={(checked) => {
                             if (checked) {
                               setFilterStatus(['all']);
+                            } else {
+                              setFilterStatus([]);
                             }
                           }}
                         />
@@ -869,15 +871,18 @@ export default function MinhasArbitragens() {
                         <div key={status} className="flex items-center space-x-2">
                           <Checkbox
                             id={`arb-status-${status}`}
-                            checked={filterStatus.includes(status)}
-                            disabled={filterStatus.includes('all')}
+                            checked={!filterStatus.includes('all') && filterStatus.includes(status)}
                             onCheckedChange={(checked) => {
-                              const newStatus = filterStatus.filter(s => s !== 'all');
-                              if (checked) {
-                                setFilterStatus([...newStatus, status]);
+                              if (filterStatus.includes('all')) {
+                                setFilterStatus([status]);
                               } else {
-                                const filtered = newStatus.filter(s => s !== status);
-                                setFilterStatus(filtered.length === 0 ? ['all'] : filtered);
+                                if (checked) {
+                                  const newStatus = [...filterStatus, status];
+                                  setFilterStatus(newStatus);
+                                } else {
+                                  const filtered = filterStatus.filter(s => s !== status);
+                                  setFilterStatus(filtered.length === 0 ? ['all'] : filtered);
+                                }
                               }
                             }}
                           />
