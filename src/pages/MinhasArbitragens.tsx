@@ -438,7 +438,7 @@ export default function MinhasArbitragens() {
 
     if (useTresCasas) {
       if (odd1 > 0 && valor1 > 0 && odd2 > 0 && valor2 > 0 && odd3 > 0 && valor3 > 0) {
-        const porcentagem = ((1 / odd1 + 1 / odd2 + 1 / odd3) - 1) * 100;
+        const porcentagem = ((1 / odd1 + 1 / odd2 + 1 / odd3) - 1) * -100;
         const totalApostado = valor1 + valor2 + valor3;
         const retorno1 = valor1 * odd1;
         const retorno2 = valor2 * odd2;
@@ -455,7 +455,7 @@ export default function MinhasArbitragens() {
       }
     } else {
       if (odd1 > 0 && valor1 > 0 && odd2 > 0 && valor2 > 0) {
-        const porcentagem = ((1 / odd1 + 1 / odd2) - 1) * 100;
+        const porcentagem = ((1 / odd1 + 1 / odd2) - 1) * -100;
         const totalApostado = valor1 + valor2;
         const retorno1 = valor1 * odd1;
         const retorno2 = valor2 * odd2;
