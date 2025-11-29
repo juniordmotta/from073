@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, Pencil, Trash2, History, TrendingUp, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatUserName } from '@/lib/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 interface Partnership {
@@ -600,10 +600,10 @@ const Parcerias = () => {
                     <TableRow key={partnership.id}>
                       {isAdmin && (
                         <TableCell>
-                          {partnership.profiles?.name || partnership.profiles?.email}
+                          {formatUserName(partnership.profiles?.name) || partnership.profiles?.email}
                         </TableCell>
                       )}
-                      <TableCell>{partnership.nome_completo}</TableCell>
+                      <TableCell>{formatUserName(partnership.nome_completo)}</TableCell>
                       <TableCell>{partnership.cpf}</TableCell>
                       <TableCell className="max-w-xs truncate">{partnership.endereco}</TableCell>
                       <TableCell>{formatCurrency(partnership.valor_banca)}</TableCell>
@@ -676,7 +676,7 @@ const Parcerias = () => {
                         <TableCell>
                           {format(new Date(entry.changed_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                         </TableCell>
-                        <TableCell>{entry.partnerships?.nome_completo || 'N/A'}</TableCell>
+                        <TableCell>{formatUserName(entry.partnerships?.nome_completo) || 'N/A'}</TableCell>
                         <TableCell>{fieldLabels[entry.field_changed] || entry.field_changed}</TableCell>
                         <TableCell className="max-w-xs truncate">
                           {entry.field_changed === 'valor_banca' ? `R$ ${formatCurrency(parseFloat(entry.old_value))}` : entry.old_value}
@@ -684,7 +684,7 @@ const Parcerias = () => {
                         <TableCell className="max-w-xs truncate">
                           {entry.field_changed === 'valor_banca' ? `R$ ${formatCurrency(parseFloat(entry.new_value))}` : entry.new_value}
                         </TableCell>
-                        <TableCell>{entry.profiles?.name || 'Sistema'}</TableCell>
+                        <TableCell>{formatUserName(entry.profiles?.name) || 'Sistema'}</TableCell>
                       </TableRow>
                     ))
                   )}
@@ -707,7 +707,7 @@ const Parcerias = () => {
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                   {reportData.map((data) => (
                     <Card key={data.id} className="p-4">
-                      <h3 className="font-semibold text-sm mb-2 truncate">{data.nome}</h3>
+                      <h3 className="font-semibold text-sm mb-2 truncate">{formatUserName(data.nome)}</h3>
                       <div className="space-y-1 text-sm">
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Total Apostas:</span>
@@ -740,7 +740,7 @@ const Parcerias = () => {
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart data={reportData}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="nome" angle={-45} textAnchor="end" height={100} />
+                        <XAxis dataKey="nome" angle={-45} textAnchor="end" height={100} tickFormatter={formatUserName} />
                         <YAxis />
                         <Tooltip formatter={(value: number) => `R$ ${formatCurrency(value)}`} />
                         <Legend />
@@ -758,7 +758,7 @@ const Parcerias = () => {
                           cx="50%"
                           cy="50%"
                           labelLine={false}
-                          label={({ nome, totalArbitrages }) => `${nome}: ${totalArbitrages}`}
+                          label={({ nome, totalArbitrages }) => `${formatUserName(nome)}: ${totalArbitrages}`}
                           outerRadius={80}
                           fill="#8884d8"
                           dataKey="totalArbitrages"

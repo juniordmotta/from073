@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TrendingUp, TrendingDown, DollarSign, Target, Filter, X, Download } from 'lucide-react';
 import { format } from 'date-fns';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatUserName } from '@/lib/utils';
 import * as XLSX from 'xlsx';
 
 interface Stats {
@@ -199,7 +199,7 @@ export default function Dashboard() {
       'Data Evento': format(new Date(arb.data_evento), 'dd/MM/yyyy HH:mm'),
       'Descrição': arb.descricao,
       'Esporte/Liga': arb.esporte_liga || '-',
-      'Usuário': arb.profiles?.name || '-',
+      'Usuário': formatUserName(arb.profiles?.name) || '-',
       'Casa 01': arb.casa_01_nome,
       'Casa 01 Mercado': arb.casa_01_mercado || '-',
       'Casa 01 Odd': arb.casa_01_odd,
@@ -390,7 +390,7 @@ export default function Dashboard() {
                               htmlFor={`dashboard-${u.id}`}
                               className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                             >
-                              {u.name}
+                              {formatUserName(u.name)}
                             </label>
                           </div>
                         ))}
@@ -608,7 +608,7 @@ export default function Dashboard() {
                         }`}>
                           {format(new Date(bet.data_evento), 'dd/MM/yy HH:mm')}
                         </TableCell>
-                        {isAdmin && <TableCell className="text-xs">{bet.profiles?.name || '-'}</TableCell>}
+                        {isAdmin && <TableCell className="text-xs">{formatUserName(bet.profiles?.name) || '-'}</TableCell>}
                         <TableCell className="text-xs">
                           <div>
                             <div className="font-medium">{bet.casa_01_nome}</div>

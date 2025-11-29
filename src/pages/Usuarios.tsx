@@ -21,6 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { UserPlus, Pencil, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { formatUserName } from '@/lib/utils';
 
 interface User {
   id: string;
@@ -343,7 +344,7 @@ export default function Usuarios() {
             <TableBody>
               {paginatedUsers.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.name}</TableCell>
+                  <TableCell className="font-medium">{formatUserName(user.name)}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
                     <Badge

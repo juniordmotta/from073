@@ -15,7 +15,7 @@ import {
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { LayoutDashboard, DollarSign, List, Users, LogOut, User, BarChart3, Handshake } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatUserName } from '@/lib/utils';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -59,25 +59,6 @@ export const Layout = ({ children }: LayoutProps) => {
     { path: '/graficos', label: 'Gráficos', icon: BarChart3, show: true },
     { path: '/usuarios', label: 'Gerenciar Usuários', icon: Users, show: isAdminMaster },
   ];
-
-  // Formatar nome do usuário: Primeiro Nome + Primeira letra do sobrenome.
-  const formatUserName = (input: string | undefined) => {
-    if (!input) return '';
-    
-    // Dividir o nome em palavras (por espaço, ponto, underline ou hífen)
-    const words = input.split(/[\s._-]+/).filter(word => word.length > 0);
-    
-    if (words.length === 0) return '';
-    
-    const firstName = words[0].charAt(0).toUpperCase() + words[0].slice(1).toLowerCase();
-    
-    if (words.length > 1) {
-      const lastNameInitial = words[words.length - 1].charAt(0).toUpperCase();
-      return `${firstName} ${lastNameInitial}.`;
-    }
-    
-    return firstName;
-  };
 
   return (
     <SidebarProvider defaultOpen={false}>

@@ -24,3 +24,25 @@ export function formatCurrency(value: number | string | null | undefined): strin
   }
   return fixed3;
 }
+
+/**
+ * Formata nome de usuário: Primeiro Nome + Primeira letra do sobrenome.
+ * Exemplos: "João Silva" → "João S.", "Maria" → "Maria", "ADRIANO OLIVEIRA SANTOS" → "Adriano S."
+ */
+export function formatUserName(input: string | undefined): string {
+  if (!input) return '';
+  
+  // Dividir o nome em palavras (por espaço, ponto, underline ou hífen)
+  const words = input.split(/[\s._-]+/).filter(word => word.length > 0);
+  
+  if (words.length === 0) return '';
+  
+  const firstName = words[0].charAt(0).toUpperCase() + words[0].slice(1).toLowerCase();
+  
+  if (words.length > 1) {
+    const lastNameInitial = words[words.length - 1].charAt(0).toUpperCase();
+    return `${firstName} ${lastNameInitial}.`;
+  }
+  
+  return firstName;
+}
