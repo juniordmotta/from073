@@ -1271,41 +1271,64 @@ export default function MinhasArbitragens() {
                 >
                   Mês atual
                 </Button>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant={selectedPeriod === 'custom' && (filterStartDate || filterEndDate) ? 'default' : 'outline'}
+                      size="sm"
+                      className="h-10 px-3"
+                    >
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Selecionar Data
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Selecionar Período</DialogTitle>
+                      <DialogDescription>
+                        Selecione a data inicial e final para filtrar as arbitragens adicionadas nesse período.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="start-date">
+                          Data Início
+                          <span className="text-muted-foreground ml-1">(Adicionado em)</span>
+                        </Label>
+                        <Input
+                          id="start-date"
+                          type="date"
+                          value={filterStartDate}
+                          onChange={(e) => {
+                            setFilterStartDate(e.target.value);
+                            setSelectedPeriod('custom');
+                          }}
+                          className="w-full"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="end-date">
+                          Data Fim
+                          <span className="text-muted-foreground ml-1">(Adicionado em)</span>
+                        </Label>
+                        <Input
+                          id="end-date"
+                          type="date"
+                          value={filterEndDate}
+                          onChange={(e) => {
+                            setFilterEndDate(e.target.value);
+                            setSelectedPeriod('custom');
+                          }}
+                          className="w-full"
+                        />
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        * Preencha ambas as datas para filtrar um período, ou apenas a data fim para filtrar um dia específico.
+                      </p>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
-            </div>
-
-            <div>
-              <Label className="text-xs mb-1 block">
-                Data Início
-                <span className="text-muted-foreground ml-1">(Adicionado em)</span>
-              </Label>
-              <Input
-                type="date"
-                value={filterStartDate}
-                onChange={(e) => {
-                  setFilterStartDate(e.target.value);
-                  setSelectedPeriod('custom');
-                }}
-                className="w-40 h-10"
-                placeholder="Data inicial"
-              />
-            </div>
-
-            <div>
-              <Label className="text-xs mb-1 block">
-                Data Fim
-                <span className="text-muted-foreground ml-1">(Adicionado em)</span>
-              </Label>
-              <Input
-                type="date"
-                value={filterEndDate}
-                onChange={(e) => {
-                  setFilterEndDate(e.target.value);
-                  setSelectedPeriod('custom');
-                }}
-                className="w-40 h-10"
-                placeholder="Data final"
-              />
             </div>
 
             <div>
