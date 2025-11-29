@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TrendingUp, TrendingDown, DollarSign, Target, Filter, X, Download } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Target, Filter, X, Download, Maximize2, Minimize2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatCurrency, formatUserName } from '@/lib/utils';
 import * as XLSX from 'xlsx';
@@ -40,6 +40,7 @@ export default function Dashboard() {
   const [openBets, setOpenBets] = useState<any[]>([]);
   const [totalCosts, setTotalCosts] = useState(0);
   const [allArbitrages, setAllArbitrages] = useState<any[]>([]);
+  const [isExpandedView, setIsExpandedView] = useState(false);
   
   // Debounce dos filtros
   const debouncedStartDate = useDebounce(startDate, 300);
@@ -347,6 +348,24 @@ export default function Dashboard() {
           </div>
           
           <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsExpandedView(!isExpandedView)}
+              className="gap-2"
+            >
+              {isExpandedView ? (
+                <>
+                  <Minimize2 className="h-4 w-4" />
+                  Compacto
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="h-4 w-4" />
+                  Expandido
+                </>
+              )}
+            </Button>
             <div className="space-y-1">
               <Label className="text-xs">Data Início</Label>
               <Input
@@ -603,20 +622,20 @@ export default function Dashboard() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-xs">Descrição</TableHead>
-                      <TableHead className="text-xs">Data Evento</TableHead>
-                      {isAdmin && <TableHead className="text-xs">Usuário</TableHead>}
-                      <TableHead className="text-xs">Casa 1</TableHead>
-                      <TableHead className="text-xs">Casa 2</TableHead>
-                      <TableHead className="text-xs">Casa 3</TableHead>
-                      <TableHead className="text-right text-xs">Investido</TableHead>
-                      <TableHead className="text-right text-xs">Lucro Proj.</TableHead>
+                      <TableHead className={`text-xs ${isExpandedView ? 'min-w-[250px]' : 'min-w-[150px]'}`}>Descrição</TableHead>
+                      <TableHead className={`text-xs ${isExpandedView ? 'min-w-[140px]' : 'min-w-[100px]'}`}>Data Evento</TableHead>
+                      {isAdmin && <TableHead className={`text-xs ${isExpandedView ? 'min-w-[150px]' : 'min-w-[100px]'}`}>Usuário</TableHead>}
+                      <TableHead className={`text-xs ${isExpandedView ? 'min-w-[220px]' : 'min-w-[150px]'}`}>Casa 1</TableHead>
+                      <TableHead className={`text-xs ${isExpandedView ? 'min-w-[220px]' : 'min-w-[150px]'}`}>Casa 2</TableHead>
+                      <TableHead className={`text-xs ${isExpandedView ? 'min-w-[220px]' : 'min-w-[150px]'}`}>Casa 3</TableHead>
+                      <TableHead className={`text-right text-xs ${isExpandedView ? 'min-w-[120px]' : 'min-w-[100px]'}`}>Investido</TableHead>
+                      <TableHead className={`text-right text-xs ${isExpandedView ? 'min-w-[120px]' : 'min-w-[100px]'}`}>Lucro Proj.</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {openBets.map((bet) => (
                       <TableRow key={bet.id}>
-                        <TableCell className="font-medium text-xs max-w-[200px] break-words whitespace-normal">{bet.descricao}</TableCell>
+                        <TableCell className={`font-medium text-xs break-words whitespace-normal ${isExpandedView ? 'max-w-[300px]' : 'max-w-[200px]'}`}>{bet.descricao}</TableCell>
                         <TableCell className={`text-xs ${
                           format(new Date(bet.data_evento), 'dd/MM/yy') === format(new Date(), 'dd/MM/yy')
                             ? 'border-l-4 border-sky-300 pl-2'

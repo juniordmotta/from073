@@ -47,7 +47,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter, X } from 'lucide-react';
+import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter, X, Maximize2, Minimize2 } from 'lucide-react';
 import { format, differenceInMilliseconds } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -191,6 +191,9 @@ export default function MinhasArbitragens() {
     }
   });
   const debouncedFilterPartnership = useDebounce(filterPartnership, 300);
+  
+  // Estado para modo de visualização
+  const [isExpandedView, setIsExpandedView] = useState(false);
   
   // Estados para adicionar arbitragem
   const [openAdd, setOpenAdd] = useState(false);
@@ -1201,6 +1204,25 @@ export default function MinhasArbitragens() {
             </Popover>
             </div>
 
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsExpandedView(!isExpandedView)}
+              className="gap-2"
+            >
+              {isExpandedView ? (
+                <>
+                  <Minimize2 className="h-4 w-4" />
+                  Compacto
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="h-4 w-4" />
+                  Expandido
+                </>
+              )}
+            </Button>
+
             <Dialog open={openAdd} onOpenChange={setOpenAdd}>
               <DialogTrigger asChild>
                 <Button className="gap-2">
@@ -1253,8 +1275,8 @@ export default function MinhasArbitragens() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Adicionado em</TableHead>
-                  <TableHead>
+                  <TableHead className={isExpandedView ? 'min-w-[120px]' : ''}>Adicionado em</TableHead>
+                  <TableHead className={isExpandedView ? 'min-w-[300px]' : 'min-w-[200px]'}>
                     <div className="flex flex-col gap-1">
                       <span>Descrição</span>
                       <div className="flex gap-3 text-[10px] font-normal">
@@ -1269,13 +1291,13 @@ export default function MinhasArbitragens() {
                       </div>
                     </div>
                   </TableHead>
-                  {isAdmin && <TableHead>Operador</TableHead>}
-                  <TableHead>Casa 01</TableHead>
-                  <TableHead>Casa 02</TableHead>
-                  <TableHead>Casa 03</TableHead>
-                  <TableHead>Lucro</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Ações</TableHead>
+                  {isAdmin && <TableHead className={isExpandedView ? 'min-w-[150px]' : 'min-w-[100px]'}>Operador</TableHead>}
+                  <TableHead className={isExpandedView ? 'min-w-[250px]' : 'min-w-[180px]'}>Casa 01</TableHead>
+                  <TableHead className={isExpandedView ? 'min-w-[250px]' : 'min-w-[180px]'}>Casa 02</TableHead>
+                  <TableHead className={isExpandedView ? 'min-w-[250px]' : 'min-w-[180px]'}>Casa 03</TableHead>
+                  <TableHead className={isExpandedView ? 'min-w-[120px]' : ''}>Lucro</TableHead>
+                  <TableHead className={isExpandedView ? 'min-w-[130px]' : ''}>Status</TableHead>
+                  <TableHead className={isExpandedView ? 'min-w-[120px]' : ''}>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1314,7 +1336,7 @@ export default function MinhasArbitragens() {
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="max-w-[200px] text-xs">
+                    <TableCell className={`max-w-[200px] text-xs ${isExpandedView ? 'max-w-[350px]' : 'max-w-[250px]'}`}>
                       <div className="flex flex-col gap-0.5">
                         <span className={`${isEventPast && arb.status === 'aguardando' ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
                           {format(new Date(arb.data_evento), 'dd/MM/yy HH:mm')}
