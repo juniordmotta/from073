@@ -48,7 +48,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter, X, Maximize2, Minimize2, Search, LayoutGrid, Table as TableIcon } from 'lucide-react';
+import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter, X, Maximize2, Minimize2, Search, LayoutGrid, Table as TableIcon, Star, Calendar } from 'lucide-react';
 import { format, differenceInMilliseconds } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -98,6 +98,9 @@ interface Partnership {
   id: string;
   nome_completo: string;
   status: string;
+  user_id: string;
+  created_at: string;
+  data_inicio: string;
 }
 
 const statusMap = {
@@ -185,6 +188,16 @@ export default function MinhasArbitragens() {
   const [selectedPartnership01, setSelectedPartnership01] = useState('');
   const [selectedPartnership02, setSelectedPartnership02] = useState('');
   const [selectedPartnership03, setSelectedPartnership03] = useState('');
+  const [defaultPartnershipId, setDefaultPartnershipId] = useState<string | null>(null);
+  
+  // Função helper para verificar se parceria é do mês vigente
+  const isPartnershipFromCurrentMonth = (partnership: Partnership) => {
+    const hoje = new Date();
+    const mesVigente = hoje.getMonth();
+    const anoVigente = hoje.getFullYear();
+    const dataInicio = new Date(partnership.data_inicio);
+    return dataInicio.getMonth() === mesVigente && dataInicio.getFullYear() === anoVigente;
+  };
   
   // Filtro de parcerias
   const [filterPartnership, setFilterPartnership] = useState<string[]>(() => {
@@ -456,6 +469,16 @@ export default function MinhasArbitragens() {
   const loadPartnerships = useCallback(async (userIds?: string[]) => {
     if (!user?.id) return;
     
+    // Buscar parceria padrão do usuário
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('default_partnership_id')
+      .eq('id', user.id)
+      .maybeSingle();
+    
+    // Armazenar parceria padrão no estado
+    setDefaultPartnershipId(profileData?.default_partnership_id || null);
+    
     // TODOS os usuários (incluindo admins) só podem ver suas próprias parcerias ao adicionar apostas
     const query = supabase
       .from('partnerships')
@@ -471,23 +494,48 @@ export default function MinhasArbitragens() {
     } else {
       setPartnerships(data || []);
       
-      // Pré-selecionar a primeira parceria criada no mês vigente
+      // Pré-selecionar parceria com a seguinte prioridade:
+      // 1. Parceria padrão configurada pelo usuário (se ainda estiver ativa)
+      // 2. Primeira parceria criada no mês vigente
+      // 3. Primeira parceria da lista
       if (data && data.length > 0) {
-        const hoje = new Date();
-        const mesVigente = hoje.getMonth();
-        const anoVigente = hoje.getFullYear();
+        let parceiraDefault = data[0].id;
         
-        // Filtrar parcerias criadas no mês vigente
-        const parceriasMesVigente = data.filter(p => {
-          const dataInicio = new Date(p.data_inicio);
-          return dataInicio.getMonth() === mesVigente && dataInicio.getFullYear() === anoVigente;
-        });
-        
-        // Se houver parcerias do mês vigente, selecionar a primeira (mais antiga)
-        // Senão, selecionar a primeira da lista geral
-        const parceiraDefault = parceriasMesVigente.length > 0 
-          ? parceriasMesVigente[0].id 
-          : data[0].id;
+        // Verificar se há parceria padrão configurada e se ela está na lista
+        if (profileData?.default_partnership_id) {
+          const parceiraConfigurada = data.find(p => p.id === profileData.default_partnership_id);
+          if (parceiraConfigurada) {
+            parceiraDefault = parceiraConfigurada.id;
+          } else {
+            // Se a parceria padrão não está ativa, usar lógica de mês vigente
+            const hoje = new Date();
+            const mesVigente = hoje.getMonth();
+            const anoVigente = hoje.getFullYear();
+            
+            const parceriasMesVigente = data.filter(p => {
+              const dataInicio = new Date(p.data_inicio);
+              return dataInicio.getMonth() === mesVigente && dataInicio.getFullYear() === anoVigente;
+            });
+            
+            if (parceriasMesVigente.length > 0) {
+              parceiraDefault = parceriasMesVigente[0].id;
+            }
+          }
+        } else {
+          // Se não há parceria padrão, usar lógica de mês vigente
+          const hoje = new Date();
+          const mesVigente = hoje.getMonth();
+          const anoVigente = hoje.getFullYear();
+          
+          const parceriasMesVigente = data.filter(p => {
+            const dataInicio = new Date(p.data_inicio);
+            return dataInicio.getMonth() === mesVigente && dataInicio.getFullYear() === anoVigente;
+          });
+          
+          if (parceriasMesVigente.length > 0) {
+            parceiraDefault = parceriasMesVigente[0].id;
+          }
+        }
           
         setSelectedPartnership01(parceiraDefault);
         setSelectedPartnership02(parceiraDefault);
@@ -749,6 +797,32 @@ export default function MinhasArbitragens() {
       });
     } finally {
       setIsLoadingAdd(false);
+    }
+  };
+
+  const handleSetDefaultPartnership = async (partnershipId: string) => {
+    if (!user?.id) return;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ default_partnership_id: partnershipId })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      setDefaultPartnershipId(partnershipId);
+      toast({
+        title: 'Parceria padrão atualizada',
+        description: 'Esta parceria será pré-selecionada nas próximas apostas.',
+      });
+    } catch (error: any) {
+      console.error('Erro ao definir parceria padrão:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao atualizar parceria padrão',
+        description: error.message,
+      });
     }
   };
 
@@ -2447,7 +2521,21 @@ export default function MinhasArbitragens() {
                     <h3 className="font-semibold text-lg">Casa 01</h3>
                     {partnerships.length > 1 && (
                       <div className="space-y-2">
-                        <Label htmlFor="parceria_01">Parceria</Label>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="parceria_01">Parceria</Label>
+                          {selectedPartnership01 !== defaultPartnershipId && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 text-xs"
+                              onClick={() => handleSetDefaultPartnership(selectedPartnership01)}
+                            >
+                              <Star className="h-3 w-3 mr-1" />
+                              Definir como padrão
+                            </Button>
+                          )}
+                        </div>
                         <Select
                           value={selectedPartnership01}
                           onValueChange={setSelectedPartnership01}
@@ -2455,10 +2543,23 @@ export default function MinhasArbitragens() {
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-background z-50">
                             {partnerships.map((p) => (
-                              <SelectItem key={p.id} value={p.id}>
-                                {p.nome_completo}
+                              <SelectItem key={p.id} value={p.id} className="cursor-pointer">
+                                <div className="flex items-center gap-2 w-full">
+                                  <span className="flex-1">{p.nome_completo}</span>
+                                  <div className="flex items-center gap-1">
+                                    {defaultPartnershipId === p.id && (
+                                      <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
+                                    )}
+                                    {isPartnershipFromCurrentMonth(p) && (
+                                      <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
+                                        <Calendar className="h-2 w-2 mr-0.5" />
+                                        Mês atual
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -2525,7 +2626,21 @@ export default function MinhasArbitragens() {
                     <h3 className="font-semibold text-lg">Casa 02</h3>
                     {partnerships.length > 1 && (
                       <div className="space-y-2">
-                        <Label htmlFor="parceria_02">Parceria</Label>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="parceria_02">Parceria</Label>
+                          {selectedPartnership02 !== defaultPartnershipId && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 text-xs"
+                              onClick={() => handleSetDefaultPartnership(selectedPartnership02)}
+                            >
+                              <Star className="h-3 w-3 mr-1" />
+                              Definir como padrão
+                            </Button>
+                          )}
+                        </div>
                         <Select
                           value={selectedPartnership02}
                           onValueChange={setSelectedPartnership02}
@@ -2533,10 +2648,23 @@ export default function MinhasArbitragens() {
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-background z-50">
                             {partnerships.map((p) => (
-                              <SelectItem key={p.id} value={p.id}>
-                                {p.nome_completo}
+                              <SelectItem key={p.id} value={p.id} className="cursor-pointer">
+                                <div className="flex items-center gap-2 w-full">
+                                  <span className="flex-1">{p.nome_completo}</span>
+                                  <div className="flex items-center gap-1">
+                                    {defaultPartnershipId === p.id && (
+                                      <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
+                                    )}
+                                    {isPartnershipFromCurrentMonth(p) && (
+                                      <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
+                                        <Calendar className="h-2 w-2 mr-0.5" />
+                                        Mês atual
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -2604,7 +2732,21 @@ export default function MinhasArbitragens() {
                       <h3 className="font-semibold text-lg">Casa 03</h3>
                       {partnerships.length > 1 && (
                         <div className="space-y-2">
-                          <Label htmlFor="parceria_03">Parceria</Label>
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor="parceria_03">Parceria</Label>
+                            {selectedPartnership03 !== defaultPartnershipId && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-xs"
+                                onClick={() => handleSetDefaultPartnership(selectedPartnership03)}
+                              >
+                                <Star className="h-3 w-3 mr-1" />
+                                Definir como padrão
+                              </Button>
+                            )}
+                          </div>
                           <Select
                             value={selectedPartnership03}
                             onValueChange={setSelectedPartnership03}
@@ -2612,10 +2754,23 @@ export default function MinhasArbitragens() {
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-background z-50">
                               {partnerships.map((p) => (
-                                <SelectItem key={p.id} value={p.id}>
-                                  {p.nome_completo}
+                                <SelectItem key={p.id} value={p.id} className="cursor-pointer">
+                                  <div className="flex items-center gap-2 w-full">
+                                    <span className="flex-1">{p.nome_completo}</span>
+                                    <div className="flex items-center gap-1">
+                                       {defaultPartnershipId === p.id && (
+                                        <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
+                                      )}
+                                      {isPartnershipFromCurrentMonth(p) && (
+                                        <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
+                                          <Calendar className="h-2 w-2 mr-0.5" />
+                                          Mês atual
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
                                 </SelectItem>
                               ))}
                             </SelectContent>
