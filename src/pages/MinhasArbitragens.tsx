@@ -216,6 +216,13 @@ export default function MinhasArbitragens() {
   const [isExpandedView, setIsExpandedView] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   
+  // Forçar visualização em cards no mobile
+  useEffect(() => {
+    if (isMobile) {
+      setViewMode('cards');
+    }
+  }, [isMobile]);
+  
   // Estados para adicionar arbitragem
   const [openAdd, setOpenAdd] = useState(false);
   const [isLoadingAdd, setIsLoadingAdd] = useState(false);
@@ -1142,7 +1149,7 @@ export default function MinhasArbitragens() {
               variant="outline"
               size="sm"
               onClick={() => setViewMode(viewMode === 'table' ? 'cards' : 'table')}
-              className="gap-2 h-8"
+              className="gap-2 h-8 hidden md:flex"
             >
               {viewMode === 'table' ? (
                 <>

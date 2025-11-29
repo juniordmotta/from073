@@ -35,9 +35,9 @@ export function AppSidebar() {
       className={isCollapsed ? 'w-14' : 'w-60'}
       collapsible="icon"
     >
-      <SidebarContent className="bg-primary/0">
+      <SidebarContent className="bg-success/90 md:bg-primary/0">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-foreground">Navegação</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-black md:text-foreground">Navegação</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {visibleItems.map((item) => (
@@ -46,11 +46,11 @@ export function AppSidebar() {
                     <NavLink 
                       to={item.url} 
                       end 
-                      className="hover:bg-accent/50 text-foreground" 
-                      activeClassName="bg-accent text-accent-foreground font-medium"
+                      className="hover:bg-accent/50 text-black md:text-foreground" 
+                      activeClassName="bg-accent text-black md:text-accent-foreground font-medium"
                     >
                       <item.icon className="h-4 w-4" />
-                      {!isCollapsed && <span>{item.title}</span>}
+                      <span>{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
