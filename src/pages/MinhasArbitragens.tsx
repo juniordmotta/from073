@@ -1279,7 +1279,15 @@ export default function MinhasArbitragens() {
                       className="h-10 px-3"
                     >
                       <Calendar className="h-4 w-4 mr-2" />
-                      Selecionar Data
+                      {filterStartDate && filterEndDate ? (
+                        <>
+                          {format(new Date(filterStartDate), 'dd/MM')} - {format(new Date(filterEndDate), 'dd/MM')}
+                        </>
+                      ) : filterEndDate ? (
+                        format(new Date(filterEndDate), 'dd/MM')
+                      ) : (
+                        'Selecionar Data'
+                      )}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-md">

@@ -508,7 +508,15 @@ export default function Dashboard() {
                       className="h-10 px-3"
                     >
                       <Calendar className="h-4 w-4 mr-2" />
-                      Selecionar Data
+                      {startDate && endDate ? (
+                        <>
+                          {format(new Date(startDate), 'dd/MM')} - {format(new Date(endDate), 'dd/MM')}
+                        </>
+                      ) : endDate ? (
+                        format(new Date(endDate), 'dd/MM')
+                      ) : (
+                        'Selecionar Data'
+                      )}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-md">
