@@ -19,6 +19,10 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import * as XLSX from 'xlsx';
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { formatCpf, unformatCpf } from '@/hooks/useCpfFormat';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { MonthlyGoalCard } from '@/components/MonthlyGoalCard';
 
 interface Partnership {
   id: string;
@@ -89,6 +93,8 @@ const Parcerias = () => {
   const [loadingData, setLoadingData] = useState(false);
   const [selectedPartnershipId, setSelectedPartnershipId] = useState<string | null>(null);
   const [partnershipDetails, setPartnershipDetails] = useState<any>(null);
+  const [banks, setBanks] = useState<Array<{ id: string; nome: string }>>([]);
+  const [selectedBanks, setSelectedBanks] = useState<string[]>([]);
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
@@ -106,11 +112,29 @@ const Parcerias = () => {
     console.log('useEffect disparado - isAdmin:', isAdmin, 'user:', user?.id);
     if (user) {
       fetchPartnerships();
+      fetchBanks();
       if (isAdmin) {
         fetchUsers();
       }
     }
   }, [user, selectedUserId, isAdmin]);
+
+  const fetchBanks = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('banks')
+        .select('id, nome')
+        .eq('user_id', user.id)
+        .order('nome');
+
+      if (error) throw error;
+      setBanks(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar bancos:', error);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -211,8 +235,13 @@ const Parcerias = () => {
 
     try {
       const partnershipData = {
-        ...formData,
+        nome_completo: formData.nome_completo,
+        cpf: unformatCpf(formData.cpf),
+        endereco: formData.endereco,
         valor_banca: parseFloat(formData.valor_banca),
+        bancos_cadastrados: selectedBanks.join(', '),
+        data_inicio: formData.data_inicio,
+        status: formData.status,
         user_id: user?.id,
       };
 
@@ -283,9 +312,11 @@ const Parcerias = () => {
 
   const openEditDialog = (partnership: Partnership) => {
     setEditingPartnership(partnership);
+    const banksArray = partnership.bancos_cadastrados.split(', ').filter(b => b);
+    setSelectedBanks(banksArray);
     setFormData({
       nome_completo: partnership.nome_completo,
-      cpf: partnership.cpf,
+      cpf: formatCpf(partnership.cpf),
       endereco: partnership.endereco,
       valor_banca: partnership.valor_banca.toString(),
       bancos_cadastrados: partnership.bancos_cadastrados,
@@ -297,6 +328,7 @@ const Parcerias = () => {
 
   const resetForm = () => {
     setEditingPartnership(null);
+    setSelectedBanks([]);
     setFormData({
       nome_completo: '',
       cpf: '',
