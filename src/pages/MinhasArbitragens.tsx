@@ -130,8 +130,11 @@ export default function MinhasArbitragens() {
   const itemsPerPage = 30;
   
   // Restaurar filtros do sessionStorage ou usar valores padrão
-  const [filterDate, setFilterDate] = useState(() => 
-    sessionStorage.getItem('arbitragens_filterDate') || ''
+  const [filterStartDate, setFilterStartDate] = useState(() => 
+    sessionStorage.getItem('arbitragens_filterStartDate') || ''
+  );
+  const [filterEndDate, setFilterEndDate] = useState(() => 
+    sessionStorage.getItem('arbitragens_filterEndDate') || ''
   );
   const [filterStatus, setFilterStatus] = useState<string[]>(() => {
     const saved = sessionStorage.getItem('arbitragens_filterStatus');
@@ -165,7 +168,8 @@ export default function MinhasArbitragens() {
   });
   
   // Debounce dos filtros para evitar queries excessivas
-  const debouncedFilterDate = useDebounce(filterDate, 300);
+  const debouncedFilterStartDate = useDebounce(filterStartDate, 300);
+  const debouncedFilterEndDate = useDebounce(filterEndDate, 300);
   const debouncedFilterStatus = useDebounce(filterStatus, 300);
   const debouncedFilterUser = useDebounce(filterUser, 300);
   
@@ -229,9 +233,20 @@ export default function MinhasArbitragens() {
   const applyFilters = useCallback(() => {
     let filtered = [...arbitragens];
 
-    if (debouncedFilterDate) {
+    // Filtrar por data de criação (created_at)
+    if (debouncedFilterStartDate) {
+      const startDate = new Date(debouncedFilterStartDate);
+      startDate.setHours(0, 0, 0, 0);
       filtered = filtered.filter((arb) => 
-        format(new Date(arb.created_at), 'yyyy-MM-dd') === debouncedFilterDate
+        new Date(arb.created_at) >= startDate
+      );
+    }
+
+    if (debouncedFilterEndDate) {
+      const endDate = new Date(debouncedFilterEndDate);
+      endDate.setHours(23, 59, 59, 999);
+      filtered = filtered.filter((arb) => 
+        new Date(arb.created_at) <= endDate
       );
     }
 
@@ -292,7 +307,7 @@ export default function MinhasArbitragens() {
 
     setFilteredArbitragens(filtered);
     setCurrentPage(1);
-  }, [arbitragens, debouncedFilterDate, debouncedFilterStatus, debouncedFilterUser]);
+  }, [arbitragens, debouncedFilterStartDate, debouncedFilterEndDate, debouncedFilterStatus, debouncedFilterUser]);
 
   const loadArbitragens = useCallback(async () => {
     if (!user?.id) return;
@@ -410,12 +425,16 @@ export default function MinhasArbitragens() {
   // Aplicar filtros quando arbitragens ou filtros mudarem
   useEffect(() => {
     applyFilters();
-  }, [arbitragens, debouncedFilterDate, debouncedFilterStatus, debouncedFilterUser]);
+  }, [arbitragens, debouncedFilterStartDate, debouncedFilterEndDate, debouncedFilterStatus, debouncedFilterUser]);
 
   // Salvar filtros no sessionStorage sempre que mudarem
   useEffect(() => {
-    sessionStorage.setItem('arbitragens_filterDate', filterDate);
-  }, [filterDate]);
+    sessionStorage.setItem('arbitragens_filterStartDate', filterStartDate);
+  }, [filterStartDate]);
+
+  useEffect(() => {
+    sessionStorage.setItem('arbitragens_filterEndDate', filterEndDate);
+  }, [filterEndDate]);
 
   useEffect(() => {
     sessionStorage.setItem('arbitragens_filterStatus', JSON.stringify(filterStatus));
@@ -897,12 +916,21 @@ export default function MinhasArbitragens() {
           
           <div className="flex items-center gap-2 flex-wrap">
             <div className="space-y-1">
-              <Label className="text-xs">Data</Label>
+              <Label className="text-xs">Data Início</Label>
               <Input
                 type="date"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-                placeholder="Filtrar por data"
+                value={filterStartDate}
+                onChange={(e) => setFilterStartDate(e.target.value)}
+                className="w-40"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs">Data Fim</Label>
+              <Input
+                type="date"
+                value={filterEndDate}
+                onChange={(e) => setFilterEndDate(e.target.value)}
                 className="w-40"
               />
             </div>
@@ -1042,7 +1070,8 @@ export default function MinhasArbitragens() {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  setFilterDate('');
+                  setFilterStartDate('');
+                  setFilterEndDate('');
                   setFilterStatus(['all']);
                   setFilterUser(users.map(u => u.id));
                 }}
