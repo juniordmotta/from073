@@ -1319,9 +1319,9 @@ export default function MinhasArbitragens() {
                         <span className={`${isEventPast && arb.status === 'aguardando' ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
                           {format(new Date(arb.data_evento), 'dd/MM/yy HH:mm')}
                         </span>
-                        <span className="font-medium truncate">{arb.descricao}</span>
+                        <span className="font-medium break-words whitespace-normal">{arb.descricao}</span>
                         {arb.esporte_liga && (
-                          <span className="text-muted-foreground truncate">{arb.esporte_liga}</span>
+                          <span className="text-muted-foreground break-words whitespace-normal">{arb.esporte_liga}</span>
                         )}
                       </div>
                     </TableCell>
