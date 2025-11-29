@@ -1292,7 +1292,7 @@ export default function MinhasArbitragens() {
                     </TableCell>
                     <TableCell className="max-w-[200px] text-xs">
                       <div className="flex flex-col gap-0.5">
-                        <span className={`${new Date(arb.data_evento) < new Date() ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
+                        <span className={`${arb.status === 'aguardando' && new Date(arb.data_evento) < new Date() ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
                           {format(new Date(arb.data_evento), 'dd/MM/yy HH:mm')}
                         </span>
                         <span className="font-medium truncate">{arb.descricao}</span>
