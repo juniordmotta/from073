@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useGameNotifications } from '@/hooks/useGameNotifications';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -120,6 +121,7 @@ export default function MinhasArbitragens() {
   const { user, userRole } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [arbitragens, setArbitragens] = useState<Arbitrage[]>([]);
   const [filteredArbitragens, setFilteredArbitragens] = useState<Arbitrage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1338,21 +1340,114 @@ export default function MinhasArbitragens() {
           </div>
         ) : viewMode === 'cards' ? (
           // Visualização em Cards
-          <div className="space-y-4">
-            {paginatedArbitragens.map((arb) => {
-              const timeToEvent = differenceInMilliseconds(new Date(arb.data_evento), new Date());
-              const days = Math.floor(timeToEvent / (1000 * 60 * 60 * 24));
-              const hours = Math.floor((timeToEvent % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-              const minutes = Math.floor((timeToEvent % (1000 * 60 * 60)) / (1000 * 60));
+          isMobile ? (
+            // Visualização Mobile Compacta
+            <div className="space-y-3">
+              {paginatedArbitragens.map((arb) => {
+                const eventDate = new Date(arb.data_evento);
+                eventDate.setHours(0, 0, 0, 0);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const isEventPast = eventDate < today;
+                const isEventToday = eventDate.getTime() === today.getTime();
+                
+                return (
+                  <div
+                    key={arb.id}
+                    className={`rounded-lg border bg-card p-3 ${
+                      isEventPast && arb.status === 'aguardando'
+                        ? 'border-l-4 border-red-500'
+                        : isEventToday
+                        ? 'border-l-4 border-sky-300'
+                        : ''
+                    }`}
+                  >
+                    {/* Header Compacto */}
+                    <div className="flex items-center justify-between mb-2">
+                      <Badge variant={statusMap[arb.status as keyof typeof statusMap]?.variant} className="text-[10px]">
+                        {statusMap[arb.status as keyof typeof statusMap]?.label}
+                      </Badge>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditArbitrage(arb)}
+                          className="h-7 w-7 p-0"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDuplicate(arb)}
+                          className="h-7 w-7 p-0"
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Evento */}
+                    <div className="mb-2">
+                      <div className={`text-[10px] mb-0.5 ${isEventPast && arb.status === 'aguardando' ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
+                        <Clock className="inline h-3 w-3 mr-1" />
+                        {format(new Date(arb.data_evento), 'dd/MM/yy HH:mm')}
+                      </div>
+                      <div className="font-medium text-sm line-clamp-2">{arb.descricao}</div>
+                    </div>
+
+                    {/* Casas - Layout Horizontal Compacto */}
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <div className="text-[10px] space-y-0.5">
+                        <div className="font-medium truncate">{arb.casa_01_nome}</div>
+                        <div className="text-muted-foreground">{Number(arb.casa_01_odd).toFixed(2)}x</div>
+                        <div className="text-muted-foreground">R$ {formatCurrency(arb.casa_01_valor)}</div>
+                      </div>
+                      <div className="text-[10px] space-y-0.5">
+                        <div className="font-medium truncate">{arb.casa_02_nome}</div>
+                        <div className="text-muted-foreground">{Number(arb.casa_02_odd).toFixed(2)}x</div>
+                        <div className="text-muted-foreground">R$ {formatCurrency(arb.casa_02_valor)}</div>
+                      </div>
+                    </div>
+
+                    {/* Lucro - Compacto */}
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <div className="text-[10px]">
+                        <span className="text-muted-foreground">Lucro: </span>
+                        <span className={`font-semibold ${arb.lucro_real >= 0 ? 'text-success' : 'text-destructive'}`}>
+                          R$ {formatCurrency(arb.lucro_real)}
+                        </span>
+                      </div>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0 text-[10px]"
+                        onClick={() => setViewGanhosArbitrage(arb)}
+                      >
+                        Ver detalhes
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            // Visualização Desktop Normal
+            <div className="space-y-4">
+              {paginatedArbitragens.map((arb) => {
+                const timeToEvent = differenceInMilliseconds(new Date(arb.data_evento), new Date());
+                const days = Math.floor(timeToEvent / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((timeToEvent % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((timeToEvent % (1000 * 60 * 60)) / (1000 * 60));
+                
+                const eventDate = new Date(arb.data_evento);
+                eventDate.setHours(0, 0, 0, 0);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const isEventPast = eventDate < today;
+                const isEventToday = eventDate.getTime() === today.getTime();
               
-              const eventDate = new Date(arb.data_evento);
-              eventDate.setHours(0, 0, 0, 0);
-              const today = new Date();
-              today.setHours(0, 0, 0, 0);
-              const isEventPast = eventDate < today;
-              const isEventToday = eventDate.getTime() === today.getTime();
-              
-              return (
+                return (
                 <div
                   key={arb.id}
                   className={`rounded-lg border bg-card p-4 ${
@@ -1575,6 +1670,7 @@ export default function MinhasArbitragens() {
               );
             })}
           </div>
+          )
         ) : (
           // Visualização em Tabela
           <div className="rounded-lg border">
