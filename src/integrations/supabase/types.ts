@@ -295,6 +295,47 @@ export type Database = {
         }
         Relationships: []
       }
+      partnerships_history: {
+        Row: {
+          changed_at: string
+          changed_by: string
+          field_changed: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          partnership_id: string
+          user_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by: string
+          field_changed: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          partnership_id: string
+          user_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string
+          field_changed?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          partnership_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partnerships_history_partnership_id_fkey"
+            columns: ["partnership_id"]
+            isOneToOne: false
+            referencedRelation: "partnerships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
