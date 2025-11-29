@@ -1291,53 +1291,53 @@ const Parcerias = () => {
                 ) : partnershipDetails ? (
                   <>
                     {/* Métricas principais */}
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      <Card className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <DollarSign className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">Custos do Mês</span>
+                    <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+                      <Card className="p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <DollarSign className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Custos do Mês</span>
                         </div>
-                        <p className="text-2xl font-bold text-destructive">
+                        <p className="text-xl font-bold text-destructive">
                           R$ {formatCurrency(partnershipDetails.custosMes)}
                         </p>
                       </Card>
 
-                      <Card className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">Lucro Bruto</span>
+                      <Card className="p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <TrendingUp className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Lucro Bruto</span>
                         </div>
-                        <p className={`text-2xl font-bold ${partnershipDetails.lucroBruto >= 0 ? 'text-success' : 'text-destructive'}`}>
+                        <p className={`text-xl font-bold ${partnershipDetails.lucroBruto >= 0 ? 'text-success' : 'text-destructive'}`}>
                           R$ {formatCurrency(partnershipDetails.lucroBruto)}
                         </p>
                       </Card>
 
-                      <Card className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Target className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">Lucro Líquido</span>
+                      <Card className="p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Target className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Lucro Líquido</span>
                         </div>
-                        <p className={`text-2xl font-bold ${partnershipDetails.lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
+                        <p className={`text-xl font-bold ${partnershipDetails.lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
                           R$ {formatCurrency(partnershipDetails.lucroLiquido)}
                         </p>
                       </Card>
 
-                      <Card className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">Total Apostas</span>
+                      <Card className="p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <LayoutDashboard className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Total Apostas</span>
                         </div>
-                        <p className="text-2xl font-bold">
+                        <p className="text-xl font-bold">
                           {partnershipDetails.totalArbitragens}
                         </p>
                       </Card>
 
-                      <Card className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">% Lucro/Banca</span>
+                      <Card className="p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <TrendingUp className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">% Lucro/Banca</span>
                         </div>
-                        <p className={`text-2xl font-bold ${
+                        <p className={`text-xl font-bold ${
                           partnershipDetails.partnership.valor_banca > 0 && 
                           (partnershipDetails.lucroLiquido / partnershipDetails.partnership.valor_banca) * 100 >= 0 
                             ? 'text-success' 
@@ -1347,7 +1347,7 @@ const Parcerias = () => {
                             ? formatCurrency((partnershipDetails.lucroLiquido / partnershipDetails.partnership.valor_banca) * 100)
                             : '0'}%
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-[10px] text-muted-foreground">
                           Banca: R$ {formatCurrency(partnershipDetails.partnership.valor_banca)}
                         </p>
                       </Card>
