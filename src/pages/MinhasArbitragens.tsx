@@ -1276,13 +1276,17 @@ export default function MinhasArbitragens() {
                   return (
                   <TableRow key={arb.id}>
                     <TableCell className={`text-xs relative ${
-                      format(new Date(arb.data_evento), 'dd/MM/yy') === format(new Date(), 'dd/MM/yy')
+                      new Date(arb.data_evento) < new Date() && arb.status === 'aguardando'
+                        ? 'border-l-4 border-red-500'
+                        : format(new Date(arb.data_evento), 'dd/MM/yy') === format(new Date(), 'dd/MM/yy')
                         ? 'border-l-4 border-sky-300'
                         : ''
                     }`}>
-                      {format(new Date(arb.data_evento), 'dd/MM/yy') === format(new Date(), 'dd/MM/yy') && (
+                      {new Date(arb.data_evento) < new Date() && arb.status === 'aguardando' ? (
+                        <div className="absolute left-0 top-1 bottom-1 w-1 bg-red-500 animate-pulse" />
+                      ) : format(new Date(arb.data_evento), 'dd/MM/yy') === format(new Date(), 'dd/MM/yy') ? (
                         <div className="absolute left-0 top-1 bottom-1 w-1 bg-sky-300 animate-pulse" />
-                      )}
+                      ) : null}
                       <div className="flex flex-col pl-2">
                         <span>{format(new Date(arb.created_at), 'dd/MM/yy')}</span>
                         <span className="text-muted-foreground">
