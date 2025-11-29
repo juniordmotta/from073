@@ -23,7 +23,6 @@ export function AppSidebar() {
   const items = [
     { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard, show: true },
     { title: 'Minhas Arbitragens', url: '/minhas-arbitragens', icon: List, show: true },
-    { title: 'Relatório Casas', url: '/relatorio-casas', icon: TrendingUp, show: true },
     { title: 'Custos Operacionais', url: '/custos-operacionais', icon: DollarSign, show: true },
     { title: 'Parcerias', url: '/parcerias', icon: Handshake, show: true },
     { title: 'Gerenciar Usuários', url: '/usuarios', icon: Users, show: isAdmin },

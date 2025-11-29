@@ -2,6 +2,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { supabase } from '@/integrations/supabase/client';
+import * as React from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import { LayoutDashboard, DollarSign, List, Users, LogOut, User, TrendingUp, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, DollarSign, List, Users, LogOut, User, BarChart3, Handshake } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface LayoutProps {
@@ -23,18 +25,59 @@ export const Layout = ({ children }: LayoutProps) => {
   const { user, userRole, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [userName, setUserName] = React.useState<string>('');
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
   const isAdminMaster = userRole?.role === 'admin_master';
+
+  // Buscar nome do usuário do perfil
+  React.useEffect(() => {
+    const fetchUserName = async () => {
+      if (user?.id) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('name')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        if (data?.name) {
+          setUserName(formatUserName(data.name));
+        } else {
+          setUserName(formatUserName(user.email));
+        }
+      }
+    };
+    
+    fetchUserName();
+  }, [user]);
 
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, show: true },
     { path: '/minhas-arbitragens', label: 'Minhas Arbitragens', icon: List, show: true },
     { path: '/custos-operacionais', label: 'Custos Operacionais', icon: DollarSign, show: true },
-    { path: '/relatorio-casas', label: 'Relatório Casas', icon: TrendingUp, show: true },
+    { path: '/parcerias', label: 'Parcerias', icon: Handshake, show: true },
     { path: '/graficos', label: 'Gráficos', icon: BarChart3, show: true },
     { path: '/usuarios', label: 'Gerenciar Usuários', icon: Users, show: isAdminMaster },
   ];
+
+  // Formatar nome do usuário: Primeiro Nome + Primeira letra do sobrenome.
+  const formatUserName = (input: string | undefined) => {
+    if (!input) return '';
+    
+    // Dividir o nome em palavras (por espaço, ponto, underline ou hífen)
+    const words = input.split(/[\s._-]+/).filter(word => word.length > 0);
+    
+    if (words.length === 0) return '';
+    
+    const firstName = words[0].charAt(0).toUpperCase() + words[0].slice(1).toLowerCase();
+    
+    if (words.length > 1) {
+      const lastNameInitial = words[words.length - 1].charAt(0).toUpperCase();
+      return `${firstName} ${lastNameInitial}.`;
+    }
+    
+    return firstName;
+  };
 
   return (
     <SidebarProvider defaultOpen={false}>
@@ -86,7 +129,7 @@ export const Layout = ({ children }: LayoutProps) => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="gap-2">
                     <User className="h-4 w-4" />
-                    <span className="hidden md:inline">{user?.email}</span>
+                    <span className="hidden md:inline">{userName || 'Usuário'}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
