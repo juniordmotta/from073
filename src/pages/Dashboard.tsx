@@ -25,6 +25,10 @@ interface Stats {
   taxaSucesso: number;
 }
 
+interface GoalStats {
+  totalLucro: number;
+}
+
 export default function Dashboard() {
   const { userRole, user } = useAuth();
   const [stats, setStats] = useState<Stats>({
@@ -42,6 +46,7 @@ export default function Dashboard() {
   const [totalCosts, setTotalCosts] = useState(0);
   const [allArbitrages, setAllArbitrages] = useState<any[]>([]);
   const [isExpandedView, setIsExpandedView] = useState(false);
+  const [goalStats, setGoalStats] = useState<GoalStats>({ totalLucro: 0 });
   
   // Debounce dos filtros
   const debouncedStartDate = useDebounce(startDate, 300);
@@ -56,6 +61,7 @@ export default function Dashboard() {
     loadOpenBets();
     loadCosts();
     loadAllArbitrages();
+    loadGoalStats();
     if (isAdmin) {
       loadUsers();
     }
@@ -306,6 +312,38 @@ export default function Dashboard() {
     if (data) {
       const total = data.reduce((sum, cost) => sum + Number(cost.valor), 0);
       setTotalCosts(total);
+    }
+  }, [isAdmin, user?.id, debouncedSelectedUser, debouncedStartDate, debouncedEndDate]);
+
+  // Carrega estatísticas apenas para o card de meta (sem filtro de status)
+  const loadGoalStats = useCallback(async () => {
+    let query = supabase.from('arbitrages').select('status, lucro_projetado, lucro_real');
+    
+    if (!isAdmin) {
+      query = query.eq('user_id', user?.id);
+    } else if (debouncedSelectedUser.length > 0) {
+      query = query.in('user_id', debouncedSelectedUser);
+    }
+
+    if (debouncedStartDate) {
+      query = query.gte('created_at', new Date(debouncedStartDate).toISOString());
+    }
+
+    if (debouncedEndDate) {
+      const endOfDay = new Date(debouncedEndDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      query = query.lte('created_at', endOfDay.toISOString());
+    }
+
+    const { data } = await query;
+
+    if (data) {
+      const totalLucro = data.reduce((sum, arb) => {
+        const lucro = arb.status === 'aguardando' ? Number(arb.lucro_projetado) : Number(arb.lucro_real);
+        return sum + lucro;
+      }, 0);
+      
+      setGoalStats({ totalLucro });
     }
   }, [isAdmin, user?.id, debouncedSelectedUser, debouncedStartDate, debouncedEndDate]);
 
@@ -591,7 +629,7 @@ export default function Dashboard() {
           {user?.id && (
             <MonthlyGoalCard
               userId={user.id}
-              currentProfit={stats.totalLucro}
+              currentProfit={goalStats.totalLucro}
               compact
             />
           )}
