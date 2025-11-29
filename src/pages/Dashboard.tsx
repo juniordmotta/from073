@@ -530,90 +530,69 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Arbitragens</CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalArbitragens}</div>
-              <p className="text-xs text-muted-foreground">arbitragens cadastradas</p>
-            </CardContent>
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+          <Card className="p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Target className="h-3 w-3 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Total Arbitragens</span>
+            </div>
+            <div className="text-xl font-bold">{stats.totalArbitragens}</div>
+            <p className="text-[10px] text-muted-foreground">cadastradas</p>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Investido</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                R$ {formatCurrency(stats.totalInvestido)}
-              </div>
-              <p className="text-xs text-muted-foreground">em todas as casas</p>
-            </CardContent>
+          <Card className="p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <DollarSign className="h-3 w-3 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Total Investido</span>
+            </div>
+            <div className="text-xl font-bold">R$ {formatCurrency(stats.totalInvestido)}</div>
+            <p className="text-[10px] text-muted-foreground">em todas as casas</p>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Lucro Total</CardTitle>
+          <Card className="p-3">
+            <div className="flex items-center gap-2 mb-1">
               {stats.totalLucro >= 0 ? (
-                <TrendingUp className="h-4 w-4 text-success" />
+                <TrendingUp className="h-3 w-3 text-success" />
               ) : (
-                <TrendingDown className="h-4 w-4 text-destructive" />
+                <TrendingDown className="h-3 w-3 text-destructive" />
               )}
-            </CardHeader>
-            <CardContent>
-              <div
-                className={`text-2xl font-bold ${
-                  stats.totalLucro >= 0 ? 'text-success' : 'text-destructive'
-                }`}
-              >
-                R$ {formatCurrency(stats.totalLucro)}
-              </div>
-              <p className="text-xs text-muted-foreground">real + projetado</p>
-            </CardContent>
+              <span className="text-xs text-muted-foreground">Lucro Total</span>
+            </div>
+            <div className={`text-xl font-bold ${stats.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
+              R$ {formatCurrency(stats.totalLucro)}
+            </div>
+            <p className="text-[10px] text-muted-foreground">real + projetado</p>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">ROI</CardTitle>
+          <Card className="p-3">
+            <div className="flex items-center gap-2 mb-1">
               {stats.totalInvestido > 0 && (stats.totalLucro / stats.totalInvestido) >= 0 ? (
-                <TrendingUp className="h-4 w-4 text-success" />
+                <TrendingUp className="h-3 w-3 text-success" />
               ) : (
-                <TrendingDown className="h-4 w-4 text-destructive" />
+                <TrendingDown className="h-3 w-3 text-destructive" />
               )}
-            </CardHeader>
-            <CardContent>
-              <div
-                className={`text-2xl font-bold ${
-                  stats.totalInvestido > 0 && (stats.totalLucro / stats.totalInvestido) >= 0 ? 'text-success' : 'text-destructive'
-                }`}
-              >
-                {stats.totalInvestido > 0 ? formatCurrency((stats.totalLucro / stats.totalInvestido) * 100) : '0'}%
-              </div>
-              <p className="text-xs text-muted-foreground">retorno sobre investimento</p>
-            </CardContent>
+              <span className="text-xs text-muted-foreground">ROI</span>
+            </div>
+            <div className={`text-xl font-bold ${stats.totalInvestido > 0 && (stats.totalLucro / stats.totalInvestido) >= 0 ? 'text-success' : 'text-destructive'}`}>
+              {stats.totalInvestido > 0 ? formatCurrency((stats.totalLucro / stats.totalInvestido) * 100) : '0'}%
+            </div>
+            <p className="text-[10px] text-muted-foreground">sobre investimento</p>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Custos Operacionais</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-destructive">
-                R$ {formatCurrency(totalCosts)}
-              </div>
-              <p className="text-xs text-muted-foreground">período selecionado</p>
-            </CardContent>
+          <Card className="p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <DollarSign className="h-3 w-3 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Custos</span>
+            </div>
+            <div className="text-xl font-bold text-destructive">R$ {formatCurrency(totalCosts)}</div>
+            <p className="text-[10px] text-muted-foreground">período selecionado</p>
           </Card>
 
           {user?.id && (
             <MonthlyGoalCard
               userId={user.id}
               currentProfit={stats.totalLucro}
+              compact
             />
           )}
         </div>

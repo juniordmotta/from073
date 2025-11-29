@@ -7,6 +7,7 @@ import { formatCurrency } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
+import { useGoalNotifications } from '@/hooks/useGoalNotifications';
 
 interface MonthlyGoalCardProps {
   userId: string;
@@ -105,45 +106,55 @@ export function MonthlyGoalCard({ userId, partnershipId, currentProfit, compact 
   const progressPercent = goalValue > 0 ? Math.min((currentProfit / goalValue) * 100, 100) : 0;
   const remaining = goalValue - currentProfit;
 
+  // Hook de notificações
+  useGoalNotifications({
+    goalValue,
+    currentProfit,
+    userId,
+    partnershipId,
+  });
+
   if (compact) {
     return (
-      <div className="flex items-center gap-2 p-2 bg-card rounded-lg border">
-        <Target className="h-4 w-4 text-primary" />
-        <div className="flex-1 min-w-0">
-          <div className="text-xs text-muted-foreground">Meta do Mês</div>
-          {isEditing ? (
-            <div className="flex items-center gap-1">
-              <Input
-                type="number"
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                className="h-7 text-xs"
-                disabled={loading}
-              />
-              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleSave} disabled={loading}>
+      <Card className="p-3">
+        <div className="flex items-center gap-2 mb-1">
+          <Target className="h-3 w-3 text-primary" />
+          <span className="text-xs text-muted-foreground">Meta do Mês</span>
+        </div>
+        {isEditing ? (
+          <div className="space-y-1">
+            <Input
+              type="number"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              className="h-8 text-sm"
+              disabled={loading}
+            />
+            <div className="flex gap-1">
+              <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={handleSave} disabled={loading}>
                 <Check className="h-3 w-3" />
               </Button>
-              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleCancel} disabled={loading}>
+              <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={handleCancel} disabled={loading}>
                 <X className="h-3 w-3" />
               </Button>
             </div>
-          ) : (
+          </div>
+        ) : (
+          <>
             <div className="flex items-center gap-1">
-              <span className="text-sm font-medium">R$ {formatCurrency(goalValue)}</span>
-              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={handleEdit}>
+              <span className="text-xl font-bold">R$ {formatCurrency(goalValue)}</span>
+              <Button size="icon" variant="ghost" className="h-5 w-5 p-0" onClick={handleEdit}>
                 <Pencil className="h-3 w-3" />
               </Button>
             </div>
-          )}
-          {goalValue > 0 && (
-            <div className="text-xs">
-              <span className={remaining > 0 ? 'text-muted-foreground' : 'text-success'}>
-                {progressPercent.toFixed(1)}% • {remaining > 0 ? `Falta R$ ${formatCurrency(remaining)}` : 'Meta atingida!'}
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
+            {goalValue > 0 && (
+              <p className="text-[10px] text-muted-foreground">
+                {progressPercent.toFixed(1)}% • {remaining > 0 ? `Falta R$ ${formatCurrency(remaining)}` : 'Atingida!'}
+              </p>
+            )}
+          </>
+        )}
+      </Card>
     );
   }
 

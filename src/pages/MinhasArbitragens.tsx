@@ -1305,32 +1305,28 @@ export default function MinhasArbitragens() {
 
         {/* Card de Totais */}
         {filteredArbitragens.length > 0 && (
-          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
-            <div className="rounded-lg border bg-card p-6">
-              <div className="text-sm font-medium text-muted-foreground">Total de Arbitragens</div>
-              <div className="text-2xl font-bold mt-2">{filteredArbitragens.length}</div>
+          <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+            <div className="rounded-lg border bg-card p-3">
+              <div className="text-xs text-muted-foreground mb-1">Total de Arbitragens</div>
+              <div className="text-xl font-bold">{filteredArbitragens.length}</div>
             </div>
-            <div className="rounded-lg border bg-card p-6">
-              <div className="text-sm font-medium text-muted-foreground">Total Investido</div>
-              <div className="text-2xl font-bold mt-2">R$ {formatCurrency(totais.totalInvestido)}</div>
+            <div className="rounded-lg border bg-card p-3">
+              <div className="text-xs text-muted-foreground mb-1">Total Investido</div>
+              <div className="text-xl font-bold">R$ {formatCurrency(totais.totalInvestido)}</div>
             </div>
-            <div className="rounded-lg border bg-card p-6">
-              <div className="text-sm font-medium text-muted-foreground">Lucro Total</div>
-              <div className={`text-2xl font-bold mt-2 ${totais.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
+            <div className="rounded-lg border bg-card p-3">
+              <div className="text-xs text-muted-foreground mb-1">Lucro Total</div>
+              <div className={`text-xl font-bold ${totais.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
                 R$ {formatCurrency(totais.totalLucro)}
               </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                (Inclui lucro projetado dos aguardando)
-              </div>
+              <p className="text-[10px] text-muted-foreground">Inclui projetado</p>
             </div>
-            <div className="rounded-lg border bg-card p-6">
-              <div className="text-sm font-medium text-muted-foreground">ROI</div>
-              <div className={`text-2xl font-bold mt-2 ${totais.totalInvestido > 0 && (totais.totalLucro / totais.totalInvestido) >= 0 ? 'text-success' : 'text-destructive'}`}>
+            <div className="rounded-lg border bg-card p-3">
+              <div className="text-xs text-muted-foreground mb-1">ROI</div>
+              <div className={`text-xl font-bold ${totais.totalInvestido > 0 && (totais.totalLucro / totais.totalInvestido) >= 0 ? 'text-success' : 'text-destructive'}`}>
                 {totais.totalInvestido > 0 ? formatCurrency((totais.totalLucro / totais.totalInvestido) * 100) : '0'}%
               </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                Retorno sobre investimento
-              </div>
+              <p className="text-[10px] text-muted-foreground">Sobre investimento</p>
             </div>
             {user?.id && (
               <MonthlyGoalCard
