@@ -11,6 +11,7 @@ import MinhasArbitragens from "./pages/MinhasArbitragens";
 import CustosOperacionais from "./pages/CustosOperacionais";
 import Graficos from "./pages/Graficos";
 import Parcerias from "./pages/Parcerias";
+import Bancos from "./pages/Bancos";
 import Usuarios from "./pages/Usuarios";
 import DeleteAllUsers from "./pages/DeleteAllUsers";
 import NotFound from "./pages/NotFound";
@@ -56,6 +57,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Parcerias />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/bancos"
+              element={
+                <ProtectedRoute>
+                  <Bancos />
                 </ProtectedRoute>
               }
             />

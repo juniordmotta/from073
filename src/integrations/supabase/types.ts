@@ -223,6 +223,68 @@ export type Database = {
           },
         ]
       }
+      banks: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_goals: {
+        Row: {
+          created_at: string
+          goal_value: number
+          id: string
+          month: string
+          partnership_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          goal_value?: number
+          id?: string
+          month: string
+          partnership_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          goal_value?: number
+          id?: string
+          month?: string
+          partnership_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_goals_partnership_id_fkey"
+            columns: ["partnership_id"]
+            isOneToOne: false
+            referencedRelation: "partnerships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       operational_costs: {
         Row: {
           created_at: string
@@ -252,6 +314,42 @@ export type Database = {
           valor?: number
         }
         Relationships: []
+      }
+      partnership_banks: {
+        Row: {
+          bank_id: string
+          created_at: string
+          id: string
+          partnership_id: string
+        }
+        Insert: {
+          bank_id: string
+          created_at?: string
+          id?: string
+          partnership_id: string
+        }
+        Update: {
+          bank_id?: string
+          created_at?: string
+          id?: string
+          partnership_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partnership_banks_bank_id_fkey"
+            columns: ["bank_id"]
+            isOneToOne: false
+            referencedRelation: "banks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partnership_banks_partnership_id_fkey"
+            columns: ["partnership_id"]
+            isOneToOne: false
+            referencedRelation: "partnerships"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       partnerships: {
         Row: {

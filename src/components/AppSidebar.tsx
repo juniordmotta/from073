@@ -1,4 +1,4 @@
-import { LayoutDashboard, DollarSign, List, Users, TrendingUp, Handshake } from 'lucide-react';
+import { LayoutDashboard, DollarSign, List, Users, TrendingUp, Handshake, Building2 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -25,6 +25,7 @@ export function AppSidebar() {
     { title: 'Minhas Arbitragens', url: '/minhas-arbitragens', icon: List, show: true },
     { title: 'Custos Operacionais', url: '/custos-operacionais', icon: DollarSign, show: true },
     { title: 'Parcerias', url: '/parcerias', icon: Handshake, show: true },
+    { title: 'Bancos', url: '/bancos', icon: Building2, show: true },
     { title: 'Gerenciar Usuários', url: '/usuarios', icon: Users, show: isAdmin },
   ];
 
@@ -35,9 +36,9 @@ export function AppSidebar() {
       className={isCollapsed ? 'w-14' : 'w-60'}
       collapsible="icon"
     >
-      <SidebarContent>
+      <SidebarContent className="bg-primary/0">
         <SidebarGroup>
-          <SidebarGroupLabel>Navegação</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-foreground">Navegação</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {visibleItems.map((item) => (
@@ -46,7 +47,7 @@ export function AppSidebar() {
                     <NavLink 
                       to={item.url} 
                       end 
-                      className="hover:bg-accent/50" 
+                      className="hover:bg-accent/50 text-foreground" 
                       activeClassName="bg-accent text-accent-foreground font-medium"
                     >
                       <item.icon className="h-4 w-4" />
