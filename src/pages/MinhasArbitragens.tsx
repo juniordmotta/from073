@@ -1031,6 +1031,46 @@ export default function MinhasArbitragens() {
                 </Button>
               )}
             </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setViewMode(viewMode === 'table' ? 'cards' : 'table')}
+              className="gap-2 h-8"
+            >
+              {viewMode === 'table' ? (
+                <>
+                  <LayoutGrid className="h-4 w-4" />
+                  Cards
+                </>
+              ) : (
+                <>
+                  <TableIcon className="h-4 w-4" />
+                  Tabela
+                </>
+              )}
+            </Button>
+
+            {viewMode === 'table' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsExpandedView(!isExpandedView)}
+                className="gap-2 h-8"
+              >
+                {isExpandedView ? (
+                  <>
+                    <Minimize2 className="h-4 w-4" />
+                    Compacto
+                  </>
+                ) : (
+                  <>
+                    <Maximize2 className="h-4 w-4" />
+                    Expandido
+                  </>
+                )}
+              </Button>
+            )}
           </div>
           
           <div className="flex items-end gap-2 flex-wrap">
@@ -1257,46 +1297,6 @@ export default function MinhasArbitragens() {
                 </Button>
               </DialogTrigger>
             </Dialog>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setViewMode(viewMode === 'table' ? 'cards' : 'table')}
-              className="gap-2 h-10"
-            >
-              {viewMode === 'table' ? (
-                <>
-                  <LayoutGrid className="h-4 w-4" />
-                  Cards
-                </>
-              ) : (
-                <>
-                  <TableIcon className="h-4 w-4" />
-                  Tabela
-                </>
-              )}
-            </Button>
-
-            {viewMode === 'table' && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsExpandedView(!isExpandedView)}
-                className="gap-2 h-10"
-              >
-                {isExpandedView ? (
-                  <>
-                    <Minimize2 className="h-4 w-4" />
-                    Compacto
-                  </>
-                ) : (
-                  <>
-                    <Maximize2 className="h-4 w-4" />
-                    Expandido
-                  </>
-                )}
-              </Button>
-            )}
           </div>
         </div>
 
