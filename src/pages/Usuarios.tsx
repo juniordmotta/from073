@@ -145,12 +145,18 @@ export default function Usuarios() {
       return;
     }
 
-    // Salvar meta mensal se fornecida
-    if (formData.monthlyGoal && data?.userId) {
-      const goalValue = parseFloat(formData.monthlyGoal.replace(/\D/g, '')) / 100;
+    console.log('Usuário criado:', data);
+
+    // Salvar meta mensal (sempre salva, mesmo se for zero)
+    if (data?.userId) {
+      const goalValue = formData.monthlyGoal 
+        ? parseFloat(formData.monthlyGoal.replace(/\D/g, '')) / 100 
+        : 0;
       const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
       
-      await supabase.from('monthly_goals').upsert({
+      console.log('Salvando meta:', { userId: data.userId, goalValue, currentMonth });
+      
+      const { error: goalError } = await supabase.from('monthly_goals').upsert({
         user_id: data.userId,
         partnership_id: null,
         month: currentMonth,
@@ -158,6 +164,17 @@ export default function Usuarios() {
       }, {
         onConflict: 'user_id,partnership_id,month',
       });
+
+      if (goalError) {
+        console.error('Erro ao salvar meta:', goalError);
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao salvar meta',
+          description: goalError.message,
+        });
+      } else {
+        console.log('Meta salva com sucesso!');
+      }
     }
 
     toast({
@@ -215,6 +232,8 @@ export default function Usuarios() {
       : 0;
     const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
     
+    console.log('Atualizando meta:', { userId: editingUser.id, goalValue, currentMonth });
+    
     const { error: goalError } = await supabase.from('monthly_goals').upsert({
       user_id: editingUser.id,
       partnership_id: null,
@@ -226,6 +245,13 @@ export default function Usuarios() {
 
     if (goalError) {
       console.error('Erro ao atualizar meta:', goalError);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao atualizar meta',
+        description: goalError.message,
+      });
+    } else {
+      console.log('Meta atualizada com sucesso!');
     }
 
     toast({
