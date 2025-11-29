@@ -814,7 +814,7 @@ const Parcerias = () => {
                 onClick={() => setIsBanksDialogOpen(true)}
               >
                 <Building2 className="h-4 w-4 mr-2" />
-                Gerenciar Bancos
+                Bancos
               </Button>
               <Button variant="outline" onClick={handleViewDashboard}>
                 <LayoutDashboard className="h-4 w-4 mr-2" />
