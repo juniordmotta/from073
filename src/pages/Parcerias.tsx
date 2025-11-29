@@ -749,7 +749,7 @@ const Parcerias = () => {
           <div className="flex items-center gap-4">
             <h1 className="text-3xl font-bold">Parcerias</h1>
             {activeFiltersCount > 0 && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge className="text-xs bg-yellow-400 text-black hover:bg-yellow-500">
                 {activeFiltersCount} filtro{activeFiltersCount > 1 ? 's' : ''} ativo{activeFiltersCount > 1 ? 's' : ''}
               </Badge>
             )}
