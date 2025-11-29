@@ -368,7 +368,7 @@ export default function Dashboard() {
             </div>
 
             {isAdmin && (
-              <div className="space-y-1">
+              <div className="flex flex-col space-y-1">
                 <Label className="text-xs">Operador</Label>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -435,7 +435,7 @@ export default function Dashboard() {
               </div>
             )}
 
-            <div className="space-y-1">
+            <div className="flex flex-col space-y-1">
               <Label className="text-xs">Status</Label>
               <Popover>
                 <PopoverTrigger asChild>
