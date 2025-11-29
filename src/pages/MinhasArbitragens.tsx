@@ -456,20 +456,13 @@ export default function MinhasArbitragens() {
   const loadPartnerships = useCallback(async (userIds?: string[]) => {
     if (!user?.id) return;
     
-    // Se for admin, buscar parcerias de todos os usuários ou dos usuários filtrados
-    let query = supabase
+    // TODOS os usuários (incluindo admins) só podem ver suas próprias parcerias ao adicionar apostas
+    const query = supabase
       .from('partnerships')
       .select('id, nome_completo, status, user_id')
       .eq('status', 'ativo')
+      .eq('user_id', user.id)
       .order('nome_completo');
-    
-    // Se não for admin, filtrar apenas as do usuário
-    if (!isAdmin) {
-      query = query.eq('user_id', user.id);
-    } else if (userIds && userIds.length > 0) {
-      // Se for admin e tiver filtro de usuários, filtrar por esses usuários
-      query = query.in('user_id', userIds);
-    }
     
     const { data, error } = await query;
     
@@ -484,7 +477,7 @@ export default function MinhasArbitragens() {
         setSelectedPartnership03(data[0].id);
       }
     }
-  }, [user?.id, isAdmin]);
+  }, [user?.id]);
 
   // Carregar dados inicialmente
   useEffect(() => {
@@ -497,19 +490,6 @@ export default function MinhasArbitragens() {
     }
     // Apenas uma vez quando user.id ou isAdmin mudar
   }, [user?.id, isAdmin]);
-
-  // Recarregar parcerias quando o filtro de usuário mudar (para admins)
-  useEffect(() => {
-    if (!isAdmin || !user?.id) return;
-    
-    // Se nenhum usuário estiver selecionado ou todos estiverem selecionados, carregar todas
-    if (filterUser.length === 0 || filterUser.length === users.length) {
-      loadPartnerships();
-    } else {
-      // Carregar apenas parcerias dos usuários filtrados
-      loadPartnerships(filterUser);
-    }
-  }, [filterUser, users.length, isAdmin, user?.id, loadPartnerships]);
 
   // Aplicar filtros quando arbitragens ou filtros mudarem
   useEffect(() => {
