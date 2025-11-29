@@ -8,7 +8,6 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import MinhasArbitragens from "./pages/MinhasArbitragens";
-import RelatorioCasas from "./pages/RelatorioCasas";
 import CustosOperacionais from "./pages/CustosOperacionais";
 import Graficos from "./pages/Graficos";
 import Parcerias from "./pages/Parcerias";
@@ -45,14 +44,6 @@ const App = () => (
               }
             />
             <Route
-              path="/relatorio-casas"
-              element={
-                <ProtectedRoute>
-                  <RelatorioCasas />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/custos-operacionais"
               element={
                 <ProtectedRoute>
@@ -61,18 +52,18 @@ const App = () => (
               }
             />
             <Route
-              path="/graficos"
-              element={
-                <ProtectedRoute>
-                  <Graficos />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/parcerias"
               element={
                 <ProtectedRoute>
                   <Parcerias />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/graficos"
+              element={
+                <ProtectedRoute>
+                  <Graficos />
                 </ProtectedRoute>
               }
             />
