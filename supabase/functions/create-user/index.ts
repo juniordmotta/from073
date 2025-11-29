@@ -118,7 +118,10 @@ serve(async (req) => {
     if (updateRoleError) throw updateRoleError;
 
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ 
+        success: true,
+        userId: authData.user.id,
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {

@@ -52,10 +52,12 @@ export default function Usuarios() {
     email: '',
     password: '',
     role: 'operador',
+    monthlyGoal: '',
   });
   const [editFormData, setEditFormData] = useState({
     name: '',
     role: 'operador',
+    monthlyGoal: '',
   });
 
   const totalPages = Math.ceil(users.length / itemsPerPage);
@@ -123,15 +125,32 @@ export default function Usuarios() {
         title: 'Erro ao criar usuário',
         description: error.message,
       });
-    } else {
-      toast({
-        title: 'Usuário criado!',
-        description: 'O novo usuário foi cadastrado com sucesso.',
-      });
-      setOpen(false);
-      setFormData({ name: '', email: '', password: '', role: 'operador' });
-      loadUsers();
+      setIsLoading(false);
+      return;
     }
+
+    // Salvar meta mensal se fornecida
+    if (formData.monthlyGoal && data?.userId) {
+      const goalValue = parseFloat(formData.monthlyGoal.replace(/\D/g, '')) / 100;
+      const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
+      
+      await supabase.from('monthly_goals').upsert({
+        user_id: data.userId,
+        partnership_id: null,
+        month: currentMonth,
+        goal_value: goalValue,
+      }, {
+        onConflict: 'user_id,partnership_id,month',
+      });
+    }
+
+    toast({
+      title: 'Usuário criado!',
+      description: 'O novo usuário foi cadastrado com sucesso.',
+    });
+    setOpen(false);
+    setFormData({ name: '', email: '', password: '', role: 'operador', monthlyGoal: '' });
+    loadUsers();
 
     setIsLoading(false);
   };
@@ -172,6 +191,21 @@ export default function Usuarios() {
       });
       setIsLoading(false);
       return;
+    }
+
+    // Atualizar meta mensal se fornecida
+    if (editFormData.monthlyGoal) {
+      const goalValue = parseFloat(editFormData.monthlyGoal.replace(/\D/g, '')) / 100;
+      const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
+      
+      await supabase.from('monthly_goals').upsert({
+        user_id: editingUser.id,
+        partnership_id: null,
+        month: currentMonth,
+        goal_value: goalValue,
+      }, {
+        onConflict: 'user_id,partnership_id,month',
+      });
     }
 
     toast({
@@ -232,11 +266,26 @@ export default function Usuarios() {
     setIsLoading(false);
   };
 
-  const openEditDialog = (user: User) => {
+  const openEditDialog = async (user: User) => {
     setEditingUser(user);
+    
+    // Buscar meta atual do usuário
+    const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
+    const { data: goalData } = await supabase
+      .from('monthly_goals')
+      .select('goal_value')
+      .eq('user_id', user.id)
+      .eq('partnership_id', null)
+      .eq('month', currentMonth)
+      .maybeSingle();
+    
+    const goalValue = goalData?.goal_value || 0;
+    const formattedGoal = goalValue > 0 ? (goalValue * 100).toFixed(0) : '';
+    
     setEditFormData({
       name: user.name,
       role: user.role || 'operador',
+      monthlyGoal: formattedGoal,
     });
     setEditOpen(true);
   };
@@ -320,6 +369,25 @@ export default function Usuarios() {
                       <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="monthlyGoal">Meta Mensal (opcional)</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
+                    <Input
+                      id="monthlyGoal"
+                      type="text"
+                      placeholder="0,00"
+                      className="pl-10"
+                      value={formData.monthlyGoal}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '');
+                        const formatted = (parseInt(value || '0') / 100).toFixed(2).replace('.', ',');
+                        setFormData({ ...formData, monthlyGoal: formatted });
+                      }}
+                    />
+                  </div>
                 </div>
 
                 <Button type="submit" className="w-full" disabled={isLoading}>
@@ -449,6 +517,25 @@ export default function Usuarios() {
                     <SelectItem value="admin">Admin</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-monthlyGoal">Meta Mensal (opcional)</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
+                  <Input
+                    id="edit-monthlyGoal"
+                    type="text"
+                    placeholder="0,00"
+                    className="pl-10"
+                    value={editFormData.monthlyGoal}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      const formatted = (parseInt(value || '0') / 100).toFixed(2).replace('.', ',');
+                      setEditFormData({ ...editFormData, monthlyGoal: formatted });
+                    }}
+                  />
+                </div>
               </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
