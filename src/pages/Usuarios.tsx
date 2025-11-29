@@ -317,16 +317,26 @@ export default function Usuarios() {
     
     // Buscar meta atual do usuário
     const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
-    const { data: goalData } = await supabase
+    console.log('Buscando meta para usuário:', user.id, 'mês:', currentMonth);
+    
+    const { data: goalData, error: goalError } = await supabase
       .from('monthly_goals')
       .select('goal_value')
       .eq('user_id', user.id)
-      .eq('partnership_id', null)
+      .is('partnership_id', null)
       .eq('month', currentMonth)
       .maybeSingle();
     
+    if (goalError) {
+      console.error('Erro ao buscar meta:', goalError);
+    }
+    
+    console.log('Meta encontrada:', goalData);
+    
     const goalValue = goalData?.goal_value || 0;
-    const formattedGoal = goalValue > 0 ? (goalValue * 100).toFixed(0) : '';
+    const formattedGoal = goalValue > 0 ? (goalValue).toFixed(2).replace('.', ',') : '';
+    
+    console.log('Meta formatada para exibição:', formattedGoal);
     
     setEditFormData({
       name: user.name,
@@ -340,11 +350,7 @@ export default function Usuarios() {
     setIsLoadingHistory(true);
     let query = supabase
       .from('partnerships_history')
-      .select(`
-        *,
-        changed_by_profile:changed_by(name),
-        partnership:partnership_id(nome_completo)
-      `)
+      .select('*')
       .order('changed_at', { ascending: false })
       .limit(100);
 
@@ -352,7 +358,7 @@ export default function Usuarios() {
       query = query.eq('changed_by', historyFilter);
     }
 
-    const { data, error } = await query;
+    const { data: historyData, error } = await query;
 
     if (error) {
       toast({
@@ -360,9 +366,37 @@ export default function Usuarios() {
         title: 'Erro ao carregar histórico',
         description: error.message,
       });
-    } else {
-      setHistoryData(data || []);
+      setIsLoadingHistory(false);
+      return;
     }
+
+    // Buscar informações dos usuários e parcerias separadamente
+    if (historyData && historyData.length > 0) {
+      const userIds = [...new Set(historyData.map(h => h.changed_by))];
+      const partnershipIds = [...new Set(historyData.map(h => h.partnership_id))];
+
+      const { data: usersData } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .in('id', userIds);
+
+      const { data: partnershipsData } = await supabase
+        .from('partnerships')
+        .select('id, nome_completo')
+        .in('id', partnershipIds);
+
+      // Combinar os dados
+      const enrichedHistory = historyData.map(item => ({
+        ...item,
+        changed_by_profile: usersData?.find(u => u.id === item.changed_by),
+        partnership: partnershipsData?.find(p => p.id === item.partnership_id),
+      }));
+
+      setHistoryData(enrichedHistory);
+    } else {
+      setHistoryData([]);
+    }
+
     setIsLoadingHistory(false);
   };
 
