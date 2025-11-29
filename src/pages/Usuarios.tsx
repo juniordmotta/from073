@@ -359,13 +359,13 @@ export default function Usuarios() {
   const loadHistory = async () => {
     setIsLoadingHistory(true);
     let query = supabase
-      .from('partnerships_history')
+      .from('users_history')
       .select('*')
       .order('changed_at', { ascending: false })
       .limit(100);
 
     if (historyFilter !== 'all') {
-      query = query.eq('changed_by', historyFilter);
+      query = query.eq('user_id', historyFilter);
     }
 
     const { data: historyData, error } = await query;
@@ -380,26 +380,22 @@ export default function Usuarios() {
       return;
     }
 
-    // Buscar informações dos usuários e parcerias separadamente
+    // Buscar informações dos usuários
     if (historyData && historyData.length > 0) {
-      const userIds = [...new Set(historyData.map(h => h.changed_by))];
-      const partnershipIds = [...new Set(historyData.map(h => h.partnership_id))];
+      const changedByIds = [...new Set(historyData.map(h => h.changed_by))];
+      const affectedUserIds = [...new Set(historyData.map(h => h.user_id))];
+      const allUserIds = [...new Set([...changedByIds, ...affectedUserIds])];
 
       const { data: usersData } = await supabase
         .from('profiles')
         .select('id, name')
-        .in('id', userIds);
-
-      const { data: partnershipsData } = await supabase
-        .from('partnerships')
-        .select('id, nome_completo')
-        .in('id', partnershipIds);
+        .in('id', allUserIds);
 
       // Combinar os dados
       const enrichedHistory = historyData.map(item => ({
         ...item,
         changed_by_profile: usersData?.find(u => u.id === item.changed_by),
-        partnership: partnershipsData?.find(p => p.id === item.partnership_id),
+        affected_user_profile: usersData?.find(u => u.id === item.user_id),
       }));
 
       setHistoryData(enrichedHistory);
@@ -718,21 +714,21 @@ export default function Usuarios() {
         <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
           <DialogContent className="max-w-4xl max-h-[80vh]">
             <DialogHeader>
-              <DialogTitle>Histórico de Alterações</DialogTitle>
+              <DialogTitle>Histórico de Alterações de Usuários</DialogTitle>
               <DialogDescription>
-                Visualize todas as alterações realizadas em parcerias pelos operadores
+                Visualize todas as alterações realizadas nos perfis dos usuários
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <Label htmlFor="history-filter">Filtrar por Operador:</Label>
+                <Label htmlFor="history-filter">Filtrar por Usuário:</Label>
                 <Select value={historyFilter} onValueChange={setHistoryFilter}>
                   <SelectTrigger className="w-64">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todos os Operadores</SelectItem>
+                    <SelectItem value="all">Todos os Usuários</SelectItem>
                     {users.map((user) => (
                       <SelectItem key={user.id} value={user.id}>
                         {formatUserName(user.name)}
@@ -753,45 +749,65 @@ export default function Usuarios() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {historyData.map((item) => (
-                      <div
-                        key={item.id}
-                        className="rounded-lg border p-4 space-y-2"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="font-semibold text-sm">
-                              {item.partnership?.nome_completo || 'Parceria não encontrada'}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              Campo alterado: <span className="font-medium">{item.field_changed}</span>
-                            </div>
-                          </div>
-                          <div className="text-right text-xs text-muted-foreground">
-                            {format(new Date(item.changed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-3 text-xs">
-                          <div className="rounded bg-muted/50 p-2">
-                            <div className="text-muted-foreground mb-1">Valor Anterior:</div>
-                            <div className="font-medium break-words">
-                              {item.old_value || '-'}
-                            </div>
-                          </div>
-                          <div className="rounded bg-muted/50 p-2">
-                            <div className="text-muted-foreground mb-1">Valor Novo:</div>
-                            <div className="font-medium break-words">
-                              {item.new_value || '-'}
-                            </div>
-                          </div>
-                        </div>
+                    {historyData.map((item) => {
+                      const fieldLabels = {
+                        name: 'Nome',
+                        email: 'E-mail',
+                        role: 'Função',
+                        monthly_goal: 'Meta Mensal',
+                      };
+                      
+                      const formatValue = (value: string | null, field: string) => {
+                        if (!value) return '-';
+                        if (field === 'role') {
+                          return roleLabels[value as keyof typeof roleLabels] || value;
+                        }
+                        if (field === 'monthly_goal') {
+                          return `R$ ${parseFloat(value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                        }
+                        return value;
+                      };
 
-                        <div className="text-xs text-muted-foreground">
-                          Alterado por: <span className="font-medium">{formatUserName(item.changed_by_profile?.name) || 'Usuário desconhecido'}</span>
+                      return (
+                        <div
+                          key={item.id}
+                          className="rounded-lg border p-4 space-y-2"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="font-semibold text-sm">
+                                {item.affected_user_profile?.name || 'Usuário não encontrado'}
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                Campo alterado: <span className="font-medium">{fieldLabels[item.field_changed as keyof typeof fieldLabels] || item.field_changed}</span>
+                              </div>
+                            </div>
+                            <div className="text-right text-xs text-muted-foreground">
+                              {format(new Date(item.changed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-3 text-xs">
+                            <div className="rounded bg-muted/50 p-2">
+                              <div className="text-muted-foreground mb-1">Valor Anterior:</div>
+                              <div className="font-medium break-words">
+                                {formatValue(item.old_value, item.field_changed)}
+                              </div>
+                            </div>
+                            <div className="rounded bg-muted/50 p-2">
+                              <div className="text-muted-foreground mb-1">Valor Novo:</div>
+                              <div className="font-medium break-words">
+                                {formatValue(item.new_value, item.field_changed)}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="text-xs text-muted-foreground">
+                            Alterado por: <span className="font-medium">{formatUserName(item.changed_by_profile?.name) || 'Usuário desconhecido'}</span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </ScrollArea>
