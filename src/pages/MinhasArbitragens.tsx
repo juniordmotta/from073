@@ -54,6 +54,7 @@ import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency, formatUserName } from '@/lib/utils';
 import { parseArbitrageText } from '@/utils/arbitrageParser';
+import { MonthlyGoalCard } from '@/components/MonthlyGoalCard';
 
 interface Arbitrage {
   id: string;
@@ -1304,7 +1305,7 @@ export default function MinhasArbitragens() {
 
         {/* Card de Totais */}
         {filteredArbitragens.length > 0 && (
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
             <div className="rounded-lg border bg-card p-6">
               <div className="text-sm font-medium text-muted-foreground">Total de Arbitragens</div>
               <div className="text-2xl font-bold mt-2">{filteredArbitragens.length}</div>
@@ -1331,6 +1332,13 @@ export default function MinhasArbitragens() {
                 Retorno sobre investimento
               </div>
             </div>
+            {user?.id && (
+              <MonthlyGoalCard
+                userId={user.id}
+                currentProfit={totais.totalLucro}
+                compact
+              />
+            )}
           </div>
         )}
 
