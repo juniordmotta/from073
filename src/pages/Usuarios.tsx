@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Layout } from '@/components/Layout';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,7 +21,7 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Pencil, Trash2, History } from 'lucide-react';
+import { UserPlus, Pencil, Trash2, History, Search, Filter, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatUserName } from '@/lib/utils';
@@ -68,11 +69,47 @@ export default function Usuarios() {
   const [historyData, setHistoryData] = useState<any[]>([]);
   const [historyFilter, setHistoryFilter] = useState<string>('all');
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const debouncedSearch = useDebounce(searchTerm, 300);
 
-  const totalPages = Math.ceil(users.length / itemsPerPage);
+  // Filtrar usuários com base na busca e filtro de role
+  const filteredUsers = useMemo(() => {
+    let filtered = users;
+    
+    // Filtro de busca
+    if (debouncedSearch) {
+      const search = debouncedSearch.toLowerCase();
+      filtered = filtered.filter(u => 
+        u.name.toLowerCase().includes(search) ||
+        u.email.toLowerCase().includes(search)
+      );
+    }
+    
+    // Filtro de role
+    if (roleFilter !== 'all') {
+      filtered = filtered.filter(u => u.role === roleFilter);
+    }
+    
+    return filtered;
+  }, [users, debouncedSearch, roleFilter]);
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedUsers = users.slice(startIndex, endIndex);
+  const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setRoleFilter('all');
+  };
+
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (debouncedSearch) count++;
+    if (roleFilter !== 'all') count++;
+    return count;
+  }, [debouncedSearch, roleFilter]);
 
   useEffect(() => {
     loadUsers();
@@ -433,25 +470,25 @@ export default function Usuarios() {
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <h1 className="text-3xl font-bold">Gerenciar Usuários</h1>
 
           <div className="flex gap-2">
             <Button 
-              size="lg" 
+              size={isMobile ? "sm" : "lg"} 
               variant="outline" 
               className="gap-2"
               onClick={openHistoryDialog}
             >
               <History className="h-5 w-5" />
-              Histórico de Alterações
+              {!isMobile && "Histórico"}
             </Button>
 
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
-                <Button size="lg" className="gap-2">
+                <Button size={isMobile ? "sm" : "lg"} className="gap-2">
                   <UserPlus className="h-5 w-5" />
-                  Criar Novo Usuário
+                  {isMobile ? "Novo" : "Criar Usuário"}
                 </Button>
               </DialogTrigger>
               <DialogContent>
@@ -539,6 +576,52 @@ export default function Usuarios() {
           </Dialog>
           </div>
         </div>
+
+        {/* Seção de Filtros e Busca */}
+        <Card className="p-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Campo de Busca */}
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome ou email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Filtro de Role */}
+            <div className="w-full md:w-48">
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os tipos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os tipos</SelectItem>
+                  <SelectItem value="admin_master">Admin Master</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="operador">Operador</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Botão de Limpar Filtros */}
+            {activeFiltersCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="gap-2"
+              >
+                <X className="h-4 w-4" />
+                Limpar ({activeFiltersCount})
+              </Button>
+            )}
+          </div>
+        </Card>
 
         {/* Visualização Desktop */}
         <div className="hidden md:block rounded-lg border">

@@ -3,6 +3,7 @@ import { Layout } from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Pencil, Trash2, History, TrendingUp, ArrowLeft, LayoutDashboard, Download, AlertTriangle, TrendingDown, DollarSign, Target, X, Building2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, History, TrendingUp, ArrowLeft, LayoutDashboard, Download, AlertTriangle, TrendingDown, DollarSign, Target, X, Building2, Search, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrency, formatUserName } from '@/lib/utils';
@@ -100,6 +101,8 @@ const Parcerias = () => {
   const [selectedBanks, setSelectedBanks] = useState<string[]>([]);
   const [isBanksDialogOpen, setIsBanksDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'all' | 'ativo' | 'inativo'>('ativo');
+  const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 300);
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
@@ -232,6 +235,7 @@ const Parcerias = () => {
   const clearFilters = () => {
     setSelectedUserId('all');
     setStatusFilter('ativo');
+    setSearchTerm('');
   };
 
   // Contar filtros ativos
@@ -239,8 +243,21 @@ const Parcerias = () => {
     let count = 0;
     if (isAdmin && selectedUserId !== 'all') count++;
     if (statusFilter !== 'ativo') count++;
+    if (debouncedSearch) count++;
     return count;
-  }, [selectedUserId, statusFilter, isAdmin]);
+  }, [selectedUserId, statusFilter, isAdmin, debouncedSearch]);
+
+  // Filtrar parcerias com base na busca
+  const filteredPartnerships = useMemo(() => {
+    if (!debouncedSearch) return partnerships;
+    
+    const search = debouncedSearch.toLowerCase();
+    return partnerships.filter(p => 
+      p.nome_completo.toLowerCase().includes(search) ||
+      p.cpf.includes(search) ||
+      p.endereco.toLowerCase().includes(search)
+    );
+  }, [partnerships, debouncedSearch]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -791,56 +808,9 @@ const Parcerias = () => {
   return (
     <Layout>
       <div className="p-6 space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center flex-wrap gap-4">
           <div className="flex items-center gap-4">
             <h1 className="text-3xl font-bold">Parcerias</h1>
-            {activeFiltersCount > 0 && (
-              <>
-                <Badge className="text-xs bg-yellow-400 text-black hover:bg-yellow-500">
-                  {activeFiltersCount} filtro{activeFiltersCount > 1 ? 's' : ''} ativo{activeFiltersCount > 1 ? 's' : ''}
-                </Badge>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={clearFilters}
-                  className="h-8"
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  Limpar Filtros
-                </Button>
-              </>
-            )}
-            {viewMode === 'list' && (
-              <div className="flex items-center gap-2 ml-2">
-                <Label className="text-sm font-medium">Status:</Label>
-                <div className="flex gap-1">
-                  <Button
-                    variant={statusFilter === 'all' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setStatusFilter('all')}
-                    className="h-8"
-                  >
-                    Todas
-                  </Button>
-                  <Button
-                    variant={statusFilter === 'ativo' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setStatusFilter('ativo')}
-                    className="h-8"
-                  >
-                    Ativa
-                  </Button>
-                  <Button
-                    variant={statusFilter === 'inativo' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setStatusFilter('inativo')}
-                    className="h-8"
-                  >
-                    Inativa
-                  </Button>
-                </div>
-              </div>
-            )}
             {viewMode !== 'list' && (
               <Button variant="outline" onClick={handleBackToList}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -849,64 +819,72 @@ const Parcerias = () => {
             )}
           </div>
           {viewMode === 'list' && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Button 
                 variant="outline" 
+                size={isMobile ? "sm" : "default"}
                 onClick={() => setIsBanksDialogOpen(true)}
               >
                 <Building2 className="h-4 w-4 mr-2" />
-                Bancos
+                {!isMobile && "Bancos"}
               </Button>
-              <Button variant="outline" onClick={handleViewDashboard}>
+              <Button 
+                variant="outline" 
+                size={isMobile ? "sm" : "default"}
+                onClick={handleViewDashboard}
+              >
                 <LayoutDashboard className="h-4 w-4 mr-2" />
-                Dashboard
+                {!isMobile && "Dashboard"}
               </Button>
-              <Button variant="outline" onClick={handleViewHistory}>
+              <Button 
+                variant="outline" 
+                size={isMobile ? "sm" : "default"}
+                onClick={handleViewHistory}
+              >
                 <History className="h-4 w-4 mr-2" />
-                Histórico de Alterações
+                {!isMobile && "Histórico"}
               </Button>
-              <Button variant="outline" onClick={handleViewReport}>
+              <Button 
+                variant="outline" 
+                size={isMobile ? "sm" : "default"}
+                onClick={handleViewReport}
+              >
                 <TrendingUp className="h-4 w-4 mr-2" />
-                Relatório de Lucro
+                {!isMobile && "Relatório"}
               </Button>
               <Dialog open={isDialogOpen} onOpenChange={(open) => {
                 setIsDialogOpen(open);
                 if (!open) resetForm();
               }}>
                 <DialogTrigger asChild>
-                  <Button>
+                  <Button size={isMobile ? "sm" : "default"}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Nova Parceria
+                    {isMobile ? "Nova" : "Nova Parceria"}
                   </Button>
                 </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>
-                  {editingPartnership ? 'Editar Parceria' : 'Nova Parceria'}
-                </DialogTitle>
+                <DialogTitle>{editingPartnership ? 'Editar' : 'Nova'} Parceria</DialogTitle>
               </DialogHeader>
+
               <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nome_completo">Nome Completo</Label>
+                  <Input
+                    id="nome_completo"
+                    value={formData.nome_completo}
+                    onChange={(e) => setFormData({ ...formData, nome_completo: e.target.value })}
+                    required
+                  />
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="nome_completo">Nome Completo</Label>
-                    <Input
-                      id="nome_completo"
-                      value={formData.nome_completo}
-                      onChange={(e) => setFormData({ ...formData, nome_completo: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cpf">CPF *</Label>
+                    <Label htmlFor="cpf">CPF</Label>
                     <Input
                       id="cpf"
                       value={formData.cpf}
-                      onChange={(e) => {
-                        const formatted = formatCpf(e.target.value);
-                        setFormData({ ...formData, cpf: formatted });
-                      }}
-                      placeholder="000.000.000-00"
-                      maxLength={14}
+                      onChange={(e) => setFormData({ ...formData, cpf: formatCpf(e.target.value) })}
                       required
                     />
                   </div>
@@ -1053,34 +1031,84 @@ const Parcerias = () => {
           )}
         </div>
 
-        {viewMode === 'list' && isAdmin && (
-          <div className="space-y-2">
-            <div className="flex gap-4 items-end">
-              <div className="space-y-2 flex-1">
-                <Label htmlFor="user-filter">
-                  Filtrar por Usuário
-                </Label>
-                <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todos os usuários" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os usuários</SelectItem>
-                    {users.map((user) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {formatUserName(user.name)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+        {/* Seção de Filtros e Busca */}
+        {viewMode === 'list' && (
+          <Card className="p-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              {/* Campo de Busca */}
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nome, CPF ou endereço..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
               </div>
+
+              {/* Filtro de Status */}
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground hidden md:block" />
+                <div className="flex gap-1">
+                  <Button
+                    variant={statusFilter === 'all' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setStatusFilter('all')}
+                  >
+                    Todas
+                  </Button>
+                  <Button
+                    variant={statusFilter === 'ativo' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setStatusFilter('ativo')}
+                  >
+                    Ativas
+                  </Button>
+                  <Button
+                    variant={statusFilter === 'inativo' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setStatusFilter('inativo')}
+                  >
+                    Inativas
+                  </Button>
+                </div>
+              </div>
+
+              {/* Filtro de Usuário (somente admin) */}
+              {isAdmin && (
+                <div className="w-full md:w-48">
+                  <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos os usuários" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      {users.map((user) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {formatUserName(user.name)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Botão de Limpar Filtros */}
+              {activeFiltersCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="gap-2"
+                >
+                  <X className="h-4 w-4" />
+                  Limpar ({activeFiltersCount})
+                </Button>
+              )}
             </div>
-            {users.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                Carregando usuários...
-              </p>
-            )}
-          </div>
+          </Card>
         )}
 
         {viewMode === 'list' && (
@@ -1108,14 +1136,14 @@ const Parcerias = () => {
                         Carregando...
                       </TableCell>
                     </TableRow>
-                  ) : partnerships.length === 0 ? (
+                  ) : filteredPartnerships.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={isAdmin ? 9 : 8} className="text-center py-8">
                         Nenhuma parceria encontrada
                       </TableCell>
                     </TableRow>
                   ) : (
-                    partnerships.map((partnership) => (
+                    filteredPartnerships.map((partnership) => (
                       <TableRow key={partnership.id}>
                         {isAdmin && (
                           <TableCell>
