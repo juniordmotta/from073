@@ -199,6 +199,13 @@ const Parcerias = () => {
     setSelectedUserId('all');
   };
 
+  // Contar filtros ativos
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (isAdmin && selectedUserId !== 'all') count++;
+    return count;
+  }, [selectedUserId, isAdmin]);
+
   const hasActiveFilters = selectedUserId !== 'all';
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -741,6 +748,11 @@ const Parcerias = () => {
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
             <h1 className="text-3xl font-bold">Parcerias</h1>
+            {activeFiltersCount > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {activeFiltersCount} filtro{activeFiltersCount > 1 ? 's' : ''} ativo{activeFiltersCount > 1 ? 's' : ''}
+              </Badge>
+            )}
             {viewMode !== 'list' && (
               <Button variant="outline" onClick={handleBackToList}>
                 <ArrowLeft className="h-4 w-4 mr-2" />

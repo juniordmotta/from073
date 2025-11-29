@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TrendingUp, TrendingDown, DollarSign, Target, Filter, X, Download } from 'lucide-react';
 import { format } from 'date-fns';
@@ -306,11 +307,28 @@ export default function Dashboard() {
     }
   }, [isAdmin, user?.id, debouncedSelectedUser, debouncedStartDate, debouncedEndDate]);
 
+  // Contar filtros ativos
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (startDate) count++;
+    if (endDate) count++;
+    if (isAdmin && selectedUser.length > 0 && selectedUser.length < users.length) count++;
+    if (!selectedStatus.includes('all')) count++;
+    return count;
+  }, [startDate, endDate, selectedUser, users.length, selectedStatus, isAdmin]);
+
   return (
     <Layout>
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
-          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold">Dashboard</h1>
+            {activeFiltersCount > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {activeFiltersCount} filtro{activeFiltersCount > 1 ? 's' : ''} ativo{activeFiltersCount > 1 ? 's' : ''}
+              </Badge>
+            )}
+          </div>
           
           <div className="flex items-center gap-2 flex-wrap">
             <div className="space-y-1">

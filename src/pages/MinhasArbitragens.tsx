@@ -179,6 +179,19 @@ export default function MinhasArbitragens() {
   const [selectedPartnership02, setSelectedPartnership02] = useState('');
   const [selectedPartnership03, setSelectedPartnership03] = useState('');
   
+  // Filtro de parcerias
+  const [filterPartnership, setFilterPartnership] = useState<string[]>(() => {
+    const saved = sessionStorage.getItem('arbitragens_filterPartnership');
+    if (!saved) return [];
+    try {
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  });
+  const debouncedFilterPartnership = useDebounce(filterPartnership, 300);
+  
   // Estados para adicionar arbitragem
   const [openAdd, setOpenAdd] = useState(false);
   const [isLoadingAdd, setIsLoadingAdd] = useState(false);
@@ -289,6 +302,18 @@ export default function MinhasArbitragens() {
       filtered = filtered.filter((arb) => debouncedFilterUser.includes(arb.user_id));
     }
 
+    // Filtrar por parceria (casa de aposta)
+    if (debouncedFilterPartnership.length > 0) {
+      filtered = filtered.filter((arb) => {
+        const partnershipIds = [
+          arb.casa_01_parceria_id,
+          arb.casa_02_parceria_id,
+          arb.casa_03_parceria_id
+        ].filter(Boolean);
+        return partnershipIds.some(id => debouncedFilterPartnership.includes(id as string));
+      });
+    }
+
     // Ordenação especial quando status = "all"
     if (debouncedFilterStatus.includes('all')) {
       // Separar aguardando e fechadas
@@ -307,7 +332,7 @@ export default function MinhasArbitragens() {
 
     setFilteredArbitragens(filtered);
     setCurrentPage(1);
-  }, [arbitragens, debouncedFilterStartDate, debouncedFilterEndDate, debouncedFilterStatus, debouncedFilterUser]);
+  }, [arbitragens, debouncedFilterStartDate, debouncedFilterEndDate, debouncedFilterStatus, debouncedFilterUser, debouncedFilterPartnership]);
 
   const loadArbitragens = useCallback(async () => {
     if (!user?.id) return;
@@ -390,12 +415,19 @@ export default function MinhasArbitragens() {
   const loadPartnerships = async () => {
     if (!user?.id) return;
     
-    const { data, error } = await supabase
+    // Se for admin, buscar parcerias de todos os usuários
+    let query = supabase
       .from('partnerships')
-      .select('id, nome_completo, status')
-      .eq('user_id', user.id)
+      .select('id, nome_completo, status, user_id')
       .eq('status', 'ativo')
       .order('nome_completo');
+    
+    // Se não for admin, filtrar apenas as do usuário
+    if (!isAdmin) {
+      query = query.eq('user_id', user.id);
+    }
+    
+    const { data, error } = await query;
     
     if (error) {
       console.error('Erro ao carregar parcerias:', error);
@@ -425,7 +457,7 @@ export default function MinhasArbitragens() {
   // Aplicar filtros quando arbitragens ou filtros mudarem
   useEffect(() => {
     applyFilters();
-  }, [arbitragens, debouncedFilterStartDate, debouncedFilterEndDate, debouncedFilterStatus, debouncedFilterUser]);
+  }, [arbitragens, debouncedFilterStartDate, debouncedFilterEndDate, debouncedFilterStatus, debouncedFilterUser, debouncedFilterPartnership]);
 
   // Salvar filtros no sessionStorage sempre que mudarem
   useEffect(() => {
@@ -435,6 +467,10 @@ export default function MinhasArbitragens() {
   useEffect(() => {
     sessionStorage.setItem('arbitragens_filterEndDate', filterEndDate);
   }, [filterEndDate]);
+
+  useEffect(() => {
+    sessionStorage.setItem('arbitragens_filterPartnership', JSON.stringify(filterPartnership));
+  }, [filterPartnership]);
 
   useEffect(() => {
     sessionStorage.setItem('arbitragens_filterStatus', JSON.stringify(filterStatus));
@@ -898,6 +934,17 @@ export default function MinhasArbitragens() {
     }
   };
 
+  // Contar filtros ativos
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filterStartDate) count++;
+    if (filterEndDate) count++;
+    if (isAdmin && filterUser.length > 0 && filterUser.length < users.length) count++;
+    if (!filterStatus.includes('all')) count++;
+    if (filterPartnership.length > 0) count++;
+    return count;
+  }, [filterStartDate, filterEndDate, filterUser, users.length, filterStatus, isAdmin, filterPartnership]);
+
   if (isLoading) {
     return (
       <Layout>
@@ -912,7 +959,14 @@ export default function MinhasArbitragens() {
     <Layout>
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
-          <h1 className="text-3xl font-bold">Minhas Arbitragens</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold">Minhas Arbitragens</h1>
+            {activeFiltersCount > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {activeFiltersCount} filtro{activeFiltersCount > 1 ? 's' : ''} ativo{activeFiltersCount > 1 ? 's' : ''}
+              </Badge>
+            )}
+          </div>
           
           <div className="flex items-center gap-2 flex-wrap">
             <div className="space-y-1">
@@ -1065,6 +1119,72 @@ export default function MinhasArbitragens() {
             )}
 
             <div className="space-y-1">
+              <Label className="text-xs">Parceria</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-52 justify-between">
+                    <span className="truncate">
+                      {filterPartnership.length === 0 
+                        ? 'Todas as parcerias' 
+                        : filterPartnership.length === partnerships.length
+                        ? 'Todas as parcerias'
+                        : `${filterPartnership.length} parceria${filterPartnership.length > 1 ? 's' : ''}`
+                      }
+                    </span>
+                    <Filter className="h-4 w-4 ml-2 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-3 bg-background z-50" align="start">
+                  <div className="space-y-3">
+                    <div className="font-semibold text-sm">Filtrar por Parceria</div>
+                    <div className="flex items-center space-x-2 pb-2 border-b">
+                      <Checkbox
+                        id="select-all-partnerships"
+                        checked={filterPartnership.length === partnerships.length}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFilterPartnership(partnerships.map(p => p.id));
+                          } else {
+                            setFilterPartnership([]);
+                          }
+                        }}
+                      />
+                      <label
+                        htmlFor="select-all-partnerships"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        Selecionar Todas
+                      </label>
+                    </div>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {partnerships.map((p) => (
+                        <div key={p.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`partnership-${p.id}`}
+                            checked={filterPartnership.includes(p.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setFilterPartnership([...filterPartnership, p.id]);
+                              } else {
+                                setFilterPartnership(filterPartnership.filter(id => id !== p.id));
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor={`partnership-${p.id}`}
+                            className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                          >
+                            {formatUserName(p.nome_completo)}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-1">
               <Label className="text-xs opacity-0">Ações</Label>
               <Button
                 variant="outline"
@@ -1074,6 +1194,7 @@ export default function MinhasArbitragens() {
                   setFilterEndDate('');
                   setFilterStatus(['all']);
                   setFilterUser(users.map(u => u.id));
+                  setFilterPartnership([]);
                 }}
                 className="h-10"
               >
