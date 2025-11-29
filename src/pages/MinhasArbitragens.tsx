@@ -51,7 +51,7 @@ import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter, X } f
 import { format, differenceInMilliseconds } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatUserName } from '@/lib/utils';
 import { parseArbitrageText } from '@/utils/arbitrageParser';
 
 interface Arbitrage {
@@ -1153,7 +1153,7 @@ export default function MinhasArbitragens() {
                     </TableCell>
                     {isAdmin && (
                       <TableCell className="text-xs">
-                        {(arb as any).profiles?.name || 'Desconhecido'}
+                        {formatUserName((arb as any).profiles?.name) || 'Desconhecido'}
                       </TableCell>
                     )}
                     <TableCell className="text-xs">
@@ -1161,7 +1161,7 @@ export default function MinhasArbitragens() {
                         <div>
                           {arb.partnerships_casa_01 && (
                             <div className="text-[10px] text-primary font-medium mb-1">
-                              {arb.partnerships_casa_01.nome_completo}
+                              {formatUserName(arb.partnerships_casa_01.nome_completo)}
                             </div>
                           )}
                           <div className="font-medium break-words whitespace-normal">{arb.casa_01_nome}</div>
@@ -1203,7 +1203,7 @@ export default function MinhasArbitragens() {
                         <div>
                           {arb.partnerships_casa_02 && (
                             <div className="text-[10px] text-primary font-medium mb-1">
-                              {arb.partnerships_casa_02.nome_completo}
+                              {formatUserName(arb.partnerships_casa_02.nome_completo)}
                             </div>
                           )}
                           <div className="font-medium break-words whitespace-normal">{arb.casa_02_nome}</div>
@@ -1246,7 +1246,7 @@ export default function MinhasArbitragens() {
                           <div>
                             {arb.partnerships_casa_03 && (
                               <div className="text-[10px] text-primary font-medium mb-1">
-                                {arb.partnerships_casa_03.nome_completo}
+                                {formatUserName(arb.partnerships_casa_03.nome_completo)}
                               </div>
                             )}
                             <div className="font-medium break-words whitespace-normal">{arb.casa_03_nome}</div>
