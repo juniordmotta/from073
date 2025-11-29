@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Pencil, Trash2, History, TrendingUp, ArrowLeft, LayoutDashboard, Download, AlertTriangle, TrendingDown, DollarSign, Target, FilterX } from 'lucide-react';
+import { Plus, Pencil, Trash2, History, TrendingUp, ArrowLeft, LayoutDashboard, Download, AlertTriangle, TrendingDown, DollarSign, Target, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrency, formatUserName } from '@/lib/utils';
@@ -205,8 +205,6 @@ const Parcerias = () => {
     if (isAdmin && selectedUserId !== 'all') count++;
     return count;
   }, [selectedUserId, isAdmin]);
-
-  const hasActiveFilters = selectedUserId !== 'all';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -749,9 +747,20 @@ const Parcerias = () => {
           <div className="flex items-center gap-4">
             <h1 className="text-3xl font-bold">Parcerias</h1>
             {activeFiltersCount > 0 && (
-              <Badge className="text-xs bg-yellow-400 text-black hover:bg-yellow-500">
-                {activeFiltersCount} filtro{activeFiltersCount > 1 ? 's' : ''} ativo{activeFiltersCount > 1 ? 's' : ''}
-              </Badge>
+              <>
+                <Badge className="text-xs bg-yellow-400 text-black hover:bg-yellow-500">
+                  {activeFiltersCount} filtro{activeFiltersCount > 1 ? 's' : ''} ativo{activeFiltersCount > 1 ? 's' : ''}
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="h-8"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Limpar Filtros
+                </Button>
+              </>
             )}
             {viewMode !== 'list' && (
               <Button variant="outline" onClick={handleBackToList}>
@@ -894,11 +903,6 @@ const Parcerias = () => {
               <div className="space-y-2 flex-1">
                 <Label htmlFor="user-filter">
                   Filtrar por Usuário
-                  {hasActiveFilters && (
-                    <Badge variant="secondary" className="ml-2 text-xs">
-                      Filtro ativo
-                    </Badge>
-                  )}
                 </Label>
                 <Select value={selectedUserId} onValueChange={setSelectedUserId}>
                   <SelectTrigger>
@@ -914,12 +918,6 @@ const Parcerias = () => {
                   </SelectContent>
                 </Select>
               </div>
-              {hasActiveFilters && (
-                <Button variant="outline" onClick={clearFilters}>
-                  <FilterX className="h-4 w-4 mr-2" />
-                  Limpar Filtros
-                </Button>
-              )}
             </div>
             {users.length === 0 && (
               <p className="text-sm text-muted-foreground">

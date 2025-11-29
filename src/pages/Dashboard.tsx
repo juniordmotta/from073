@@ -324,9 +324,25 @@ export default function Dashboard() {
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold">Dashboard</h1>
             {activeFiltersCount > 0 && (
-              <Badge className="text-xs bg-yellow-400 text-black hover:bg-yellow-500">
-                {activeFiltersCount} filtro{activeFiltersCount > 1 ? 's' : ''} ativo{activeFiltersCount > 1 ? 's' : ''}
-              </Badge>
+              <>
+                <Badge className="text-xs bg-yellow-400 text-black hover:bg-yellow-500">
+                  {activeFiltersCount} filtro{activeFiltersCount > 1 ? 's' : ''} ativo{activeFiltersCount > 1 ? 's' : ''}
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setStartDate('');
+                    setEndDate('');
+                    setSelectedUser(users.map(u => u.id));
+                    setSelectedStatus(['all']);
+                  }}
+                  className="h-8"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Limpar Filtros
+                </Button>
+              </>
             )}
           </div>
           
@@ -491,24 +507,6 @@ export default function Dashboard() {
               >
                 <Download className="h-4 w-4 mr-2" />
                 Exportar Excel
-              </Button>
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-xs opacity-0">Ações</Label>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setStartDate('');
-                  setEndDate('');
-                  setSelectedUser(users.map(u => u.id));
-                  setSelectedStatus(['all']);
-                }}
-                className="h-10"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Limpar Filtros
               </Button>
             </div>
           </div>
