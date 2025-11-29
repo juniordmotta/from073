@@ -29,7 +29,7 @@ export function MonthlyGoalCard({ userId, partnershipId, currentProfit, compact 
         .select('goal_value')
         .eq('user_id', userId)
         .eq('month', currentMonth)
-        .eq('partnership_id', partnershipId || null)
+        .is('partnership_id', null)
         .maybeSingle();
 
       if (error) throw error;
