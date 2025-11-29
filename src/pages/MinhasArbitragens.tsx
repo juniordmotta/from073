@@ -66,24 +66,36 @@ interface Arbitrage {
   casa_01_resultado: string;
   casa_01_mercado?: string;
   casa_01_valor_resultado?: number;
+  casa_01_parceria_id?: string;
   casa_02_nome: string;
   casa_02_odd: number;
   casa_02_valor: number;
   casa_02_resultado: string;
   casa_02_mercado?: string;
   casa_02_valor_resultado?: number;
+  casa_02_parceria_id?: string;
   casa_03_nome?: string;
   casa_03_odd?: number;
   casa_03_valor?: number;
   casa_03_resultado?: string;
   casa_03_mercado?: string;
   casa_03_valor_resultado?: number;
+  casa_03_parceria_id?: string;
   porcentagem: number;
   retorno_previsto: number;
   lucro_projetado: number;
   lucro_real: number;
   status: string;
   user_id: string;
+  partnerships_casa_01?: { nome_completo: string };
+  partnerships_casa_02?: { nome_completo: string };
+  partnerships_casa_03?: { nome_completo: string };
+}
+
+interface Partnership {
+  id: string;
+  nome_completo: string;
+  status: string;
 }
 
 const statusMap = {
@@ -156,6 +168,12 @@ export default function MinhasArbitragens() {
   const debouncedFilterDate = useDebounce(filterDate, 300);
   const debouncedFilterStatus = useDebounce(filterStatus, 300);
   const debouncedFilterUser = useDebounce(filterUser, 300);
+  
+  // Estados para parcerias
+  const [partnerships, setPartnerships] = useState<Partnership[]>([]);
+  const [selectedPartnership01, setSelectedPartnership01] = useState('');
+  const [selectedPartnership02, setSelectedPartnership02] = useState('');
+  const [selectedPartnership03, setSelectedPartnership03] = useState('');
   
   // Estados para adicionar arbitragem
   const [openAdd, setOpenAdd] = useState(false);
@@ -291,25 +309,31 @@ export default function MinhasArbitragens() {
       casa_01_resultado,
       casa_01_mercado,
       casa_01_valor_resultado,
+      casa_01_parceria_id,
       casa_02_nome,
       casa_02_odd,
       casa_02_valor,
       casa_02_resultado,
       casa_02_mercado,
       casa_02_valor_resultado,
+      casa_02_parceria_id,
       casa_03_nome,
       casa_03_odd,
       casa_03_valor,
       casa_03_resultado,
       casa_03_mercado,
       casa_03_valor_resultado,
+      casa_03_parceria_id,
       porcentagem,
       retorno_previsto,
       lucro_projetado,
       lucro_real,
       status,
       user_id,
-      profiles!arbitrages_user_id_fkey (name)
+      profiles!arbitrages_user_id_fkey (name),
+      partnerships_casa_01:partnerships!arbitrages_casa_01_parceria_id_fkey (nome_completo),
+      partnerships_casa_02:partnerships!arbitrages_casa_02_parceria_id_fkey (nome_completo),
+      partnerships_casa_03:partnerships!arbitrages_casa_03_parceria_id_fkey (nome_completo)
     `).order('data_evento', { ascending: true });
 
     if (!isAdmin) {
@@ -348,11 +372,35 @@ export default function MinhasArbitragens() {
     }
   };
 
+  const loadPartnerships = async () => {
+    if (!user?.id) return;
+    
+    const { data, error } = await supabase
+      .from('partnerships')
+      .select('id, nome_completo, status')
+      .eq('user_id', user.id)
+      .eq('status', 'ativo')
+      .order('nome_completo');
+    
+    if (error) {
+      console.error('Erro ao carregar parcerias:', error);
+    } else {
+      setPartnerships(data || []);
+      // Se houver parcerias ativas, selecionar a primeira por padrão
+      if (data && data.length > 0) {
+        setSelectedPartnership01(data[0].id);
+        setSelectedPartnership02(data[0].id);
+        setSelectedPartnership03(data[0].id);
+      }
+    }
+  };
+
   // Carregar dados inicialmente
   useEffect(() => {
     if (!user?.id) return;
     
     loadArbitragens();
+    loadPartnerships();
     if (isAdmin) {
       loadUsers();
     }
@@ -491,6 +539,16 @@ export default function MinhasArbitragens() {
       });
       return;
     }
+
+    // Validar se tem pelo menos 1 parceria ativa
+    if (partnerships.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Parceria obrigatória',
+        description: 'Você precisa ter pelo menos uma parceria ativa para inserir apostas.',
+      });
+      return;
+    }
     
     setIsLoadingAdd(true);
 
@@ -517,10 +575,12 @@ export default function MinhasArbitragens() {
         casa_01_odd: parseFloat(formData.casa_01_odd),
         casa_01_valor: parseFloat(formData.casa_01_valor),
         casa_01_mercado: formData.casa_01_mercado || 'Mercado não especificado',
+        casa_01_parceria_id: selectedPartnership01,
         casa_02_nome: formData.casa_02_nome,
         casa_02_odd: parseFloat(formData.casa_02_odd),
         casa_02_valor: parseFloat(formData.casa_02_valor),
         casa_02_mercado: formData.casa_02_mercado || 'Mercado não especificado',
+        casa_02_parceria_id: selectedPartnership02,
         porcentagem: parseFloat(formData.porcentagem),
         retorno_previsto: parseFloat(formData.retorno_previsto),
         lucro_projetado: parseFloat(formData.lucro_projetado),
@@ -531,6 +591,7 @@ export default function MinhasArbitragens() {
         arbitrageData.casa_03_odd = parseFloat(formData.casa_03_odd);
         arbitrageData.casa_03_valor = parseFloat(formData.casa_03_valor);
         arbitrageData.casa_03_mercado = formData.casa_03_mercado || 'Mercado não especificado';
+        arbitrageData.casa_03_parceria_id = selectedPartnership03;
       }
 
       const { error: insertError } = await supabase.from('arbitrages').insert(arbitrageData);
@@ -1098,6 +1159,11 @@ export default function MinhasArbitragens() {
                     <TableCell className="text-xs">
                       <div className="space-y-1.5">
                         <div>
+                          {arb.partnerships_casa_01 && (
+                            <div className="text-[10px] text-primary font-medium mb-1">
+                              {arb.partnerships_casa_01.nome_completo}
+                            </div>
+                          )}
                           <div className="font-medium break-words whitespace-normal">{arb.casa_01_nome}</div>
                           {arb.casa_01_mercado && (
                             <div className="text-muted-foreground text-[10px]">{arb.casa_01_mercado}</div>
@@ -1135,6 +1201,11 @@ export default function MinhasArbitragens() {
                     <TableCell className="text-xs">
                       <div className="space-y-1.5">
                         <div>
+                          {arb.partnerships_casa_02 && (
+                            <div className="text-[10px] text-primary font-medium mb-1">
+                              {arb.partnerships_casa_02.nome_completo}
+                            </div>
+                          )}
                           <div className="font-medium break-words whitespace-normal">{arb.casa_02_nome}</div>
                           {arb.casa_02_mercado && (
                             <div className="text-muted-foreground text-[10px]">{arb.casa_02_mercado}</div>
@@ -1173,6 +1244,11 @@ export default function MinhasArbitragens() {
                       {arb.casa_03_nome ? (
                         <div className="space-y-1.5">
                           <div>
+                            {arb.partnerships_casa_03 && (
+                              <div className="text-[10px] text-primary font-medium mb-1">
+                                {arb.partnerships_casa_03.nome_completo}
+                              </div>
+                            )}
                             <div className="font-medium break-words whitespace-normal">{arb.casa_03_nome}</div>
                             {arb.casa_03_mercado && (
                               <div className="text-muted-foreground text-[10px]">{arb.casa_03_mercado}</div>
@@ -1738,6 +1814,36 @@ export default function MinhasArbitragens() {
                 <div className={`grid gap-4 ${useTresCasas ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
                   <div className="space-y-4 p-4 border rounded-lg">
                     <h3 className="font-semibold text-lg">Casa 01</h3>
+                    {partnerships.length > 1 && (
+                      <div className="space-y-2">
+                        <Label htmlFor="parceria_01">Parceria</Label>
+                        <Select
+                          value={selectedPartnership01}
+                          onValueChange={setSelectedPartnership01}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {partnerships.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.nome_completo}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    {partnerships.length === 1 && (
+                      <div className="space-y-2">
+                        <Label>Parceria</Label>
+                        <Input
+                          value={partnerships[0].nome_completo}
+                          disabled
+                          className="bg-muted"
+                        />
+                      </div>
+                    )}
                     <div className="space-y-2">
                       <Label htmlFor="casa_01_nome_add">Nome da Casa</Label>
                       <Input
@@ -1786,6 +1892,36 @@ export default function MinhasArbitragens() {
 
                   <div className="space-y-4 p-4 border rounded-lg">
                     <h3 className="font-semibold text-lg">Casa 02</h3>
+                    {partnerships.length > 1 && (
+                      <div className="space-y-2">
+                        <Label htmlFor="parceria_02">Parceria</Label>
+                        <Select
+                          value={selectedPartnership02}
+                          onValueChange={setSelectedPartnership02}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {partnerships.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.nome_completo}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    {partnerships.length === 1 && (
+                      <div className="space-y-2">
+                        <Label>Parceria</Label>
+                        <Input
+                          value={partnerships[0].nome_completo}
+                          disabled
+                          className="bg-muted"
+                        />
+                      </div>
+                    )}
                     <div className="space-y-2">
                       <Label htmlFor="casa_02_nome_add">Nome da Casa</Label>
                       <Input
@@ -1835,6 +1971,36 @@ export default function MinhasArbitragens() {
                   {useTresCasas && (
                     <div className="space-y-4 p-4 border rounded-lg">
                       <h3 className="font-semibold text-lg">Casa 03</h3>
+                      {partnerships.length > 1 && (
+                        <div className="space-y-2">
+                          <Label htmlFor="parceria_03">Parceria</Label>
+                          <Select
+                            value={selectedPartnership03}
+                            onValueChange={setSelectedPartnership03}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {partnerships.map((p) => (
+                                <SelectItem key={p.id} value={p.id}>
+                                  {p.nome_completo}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                      {partnerships.length === 1 && (
+                        <div className="space-y-2">
+                          <Label>Parceria</Label>
+                          <Input
+                            value={partnerships[0].nome_completo}
+                            disabled
+                            className="bg-muted"
+                          />
+                        </div>
+                      )}
                       <div className="space-y-2">
                         <Label htmlFor="casa_03_nome_add">Nome da Casa</Label>
                         <Input

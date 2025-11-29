@@ -73,6 +73,7 @@ export type Database = {
           casa_01_mercado: string
           casa_01_nome: string
           casa_01_odd: number
+          casa_01_parceria_id: string | null
           casa_01_resultado:
             | Database["public"]["Enums"]["arbitrage_status"]
             | null
@@ -81,6 +82,7 @@ export type Database = {
           casa_02_mercado: string
           casa_02_nome: string
           casa_02_odd: number
+          casa_02_parceria_id: string | null
           casa_02_resultado:
             | Database["public"]["Enums"]["arbitrage_status"]
             | null
@@ -89,6 +91,7 @@ export type Database = {
           casa_03_mercado: string | null
           casa_03_nome: string | null
           casa_03_odd: number | null
+          casa_03_parceria_id: string | null
           casa_03_resultado:
             | Database["public"]["Enums"]["arbitrage_status"]
             | null
@@ -111,6 +114,7 @@ export type Database = {
           casa_01_mercado?: string
           casa_01_nome: string
           casa_01_odd: number
+          casa_01_parceria_id?: string | null
           casa_01_resultado?:
             | Database["public"]["Enums"]["arbitrage_status"]
             | null
@@ -119,6 +123,7 @@ export type Database = {
           casa_02_mercado?: string
           casa_02_nome: string
           casa_02_odd: number
+          casa_02_parceria_id?: string | null
           casa_02_resultado?:
             | Database["public"]["Enums"]["arbitrage_status"]
             | null
@@ -127,6 +132,7 @@ export type Database = {
           casa_03_mercado?: string | null
           casa_03_nome?: string | null
           casa_03_odd?: number | null
+          casa_03_parceria_id?: string | null
           casa_03_resultado?:
             | Database["public"]["Enums"]["arbitrage_status"]
             | null
@@ -149,6 +155,7 @@ export type Database = {
           casa_01_mercado?: string
           casa_01_nome?: string
           casa_01_odd?: number
+          casa_01_parceria_id?: string | null
           casa_01_resultado?:
             | Database["public"]["Enums"]["arbitrage_status"]
             | null
@@ -157,6 +164,7 @@ export type Database = {
           casa_02_mercado?: string
           casa_02_nome?: string
           casa_02_odd?: number
+          casa_02_parceria_id?: string | null
           casa_02_resultado?:
             | Database["public"]["Enums"]["arbitrage_status"]
             | null
@@ -165,6 +173,7 @@ export type Database = {
           casa_03_mercado?: string | null
           casa_03_nome?: string | null
           casa_03_odd?: number | null
+          casa_03_parceria_id?: string | null
           casa_03_resultado?:
             | Database["public"]["Enums"]["arbitrage_status"]
             | null
@@ -184,6 +193,27 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "arbitrages_casa_01_parceria_id_fkey"
+            columns: ["casa_01_parceria_id"]
+            isOneToOne: false
+            referencedRelation: "partnerships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arbitrages_casa_02_parceria_id_fkey"
+            columns: ["casa_02_parceria_id"]
+            isOneToOne: false
+            referencedRelation: "partnerships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arbitrages_casa_03_parceria_id_fkey"
+            columns: ["casa_03_parceria_id"]
+            isOneToOne: false
+            referencedRelation: "partnerships"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "arbitrages_user_id_fkey"
             columns: ["user_id"]
@@ -220,6 +250,48 @@ export type Database = {
           updated_at?: string
           user_id?: string
           valor?: number
+        }
+        Relationships: []
+      }
+      partnerships: {
+        Row: {
+          bancos_cadastrados: string
+          cpf: string
+          created_at: string
+          data_inicio: string
+          endereco: string
+          id: string
+          nome_completo: string
+          status: string
+          updated_at: string
+          user_id: string
+          valor_banca: number
+        }
+        Insert: {
+          bancos_cadastrados: string
+          cpf: string
+          created_at?: string
+          data_inicio: string
+          endereco: string
+          id?: string
+          nome_completo: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          valor_banca: number
+        }
+        Update: {
+          bancos_cadastrados?: string
+          cpf?: string
+          created_at?: string
+          data_inicio?: string
+          endereco?: string
+          id?: string
+          nome_completo?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          valor_banca?: number
         }
         Relationships: []
       }
