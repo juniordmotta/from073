@@ -1273,18 +1273,26 @@ export default function MinhasArbitragens() {
                   const hours = Math.floor((timeToEvent % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                   const minutes = Math.floor((timeToEvent % (1000 * 60 * 60)) / (1000 * 60));
                   
+                  // Comparar apenas as datas (sem hora)
+                  const eventDate = new Date(arb.data_evento);
+                  eventDate.setHours(0, 0, 0, 0);
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const isEventPast = eventDate < today;
+                  const isEventToday = eventDate.getTime() === today.getTime();
+                  
                   return (
                   <TableRow key={arb.id}>
                     <TableCell className={`text-xs relative ${
-                      new Date(arb.data_evento) < new Date() && arb.status === 'aguardando'
+                      isEventPast && arb.status === 'aguardando'
                         ? 'border-l-4 border-red-500'
-                        : format(new Date(arb.data_evento), 'dd/MM/yy') === format(new Date(), 'dd/MM/yy')
+                        : isEventToday
                         ? 'border-l-4 border-sky-300'
                         : ''
                     }`}>
-                      {new Date(arb.data_evento) < new Date() && arb.status === 'aguardando' ? (
+                      {isEventPast && arb.status === 'aguardando' ? (
                         <div className="absolute left-0 top-1 bottom-1 w-1 bg-red-500 animate-pulse" />
-                      ) : format(new Date(arb.data_evento), 'dd/MM/yy') === format(new Date(), 'dd/MM/yy') ? (
+                      ) : isEventToday ? (
                         <div className="absolute left-0 top-1 bottom-1 w-1 bg-sky-300 animate-pulse" />
                       ) : null}
                       <div className="flex flex-col pl-2">
@@ -1296,7 +1304,7 @@ export default function MinhasArbitragens() {
                     </TableCell>
                     <TableCell className="max-w-[200px] text-xs">
                       <div className="flex flex-col gap-0.5">
-                        <span className={`${arb.status === 'aguardando' && new Date(arb.data_evento) < new Date() ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
+                        <span className={`${isEventPast && arb.status === 'aguardando' ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
                           {format(new Date(arb.data_evento), 'dd/MM/yy HH:mm')}
                         </span>
                         <span className="font-medium truncate">{arb.descricao}</span>
