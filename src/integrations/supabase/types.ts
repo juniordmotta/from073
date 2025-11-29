@@ -437,6 +437,7 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          default_partnership_id: string | null
           email: string
           id: string
           name: string
@@ -444,6 +445,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          default_partnership_id?: string | null
           email: string
           id: string
           name: string
@@ -451,12 +453,21 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          default_partnership_id?: string | null
           email?: string
           id?: string
           name?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_default_partnership_id_fkey"
+            columns: ["default_partnership_id"]
+            isOneToOne: false
+            referencedRelation: "partnerships"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
