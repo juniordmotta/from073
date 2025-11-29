@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Pencil, Trash2, History, TrendingUp, ArrowLeft, LayoutDashboard, Download, AlertTriangle, TrendingDown, DollarSign, Target, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, History, TrendingUp, ArrowLeft, LayoutDashboard, Download, AlertTriangle, TrendingDown, DollarSign, Target, X, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrency, formatUserName } from '@/lib/utils';
@@ -23,6 +23,7 @@ import { formatCpf, unformatCpf } from '@/hooks/useCpfFormat';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { MonthlyGoalCard } from '@/components/MonthlyGoalCard';
+import { BanksDialog } from '@/components/BanksDialog';
 
 interface Partnership {
   id: string;
@@ -95,6 +96,7 @@ const Parcerias = () => {
   const [partnershipDetails, setPartnershipDetails] = useState<any>(null);
   const [banks, setBanks] = useState<Array<{ id: string; nome: string }>>([]);
   const [selectedBanks, setSelectedBanks] = useState<string[]>([]);
+  const [isBanksDialogOpen, setIsBanksDialogOpen] = useState(false);
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
@@ -843,11 +845,16 @@ const Parcerias = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="cpf">CPF</Label>
+                    <Label htmlFor="cpf">CPF *</Label>
                     <Input
                       id="cpf"
                       value={formData.cpf}
-                      onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
+                      onChange={(e) => {
+                        const formatted = formatCpf(e.target.value);
+                        setFormData({ ...formData, cpf: formatted });
+                      }}
+                      placeholder="000.000.000-00"
+                      maxLength={14}
                       required
                     />
                   </div>
@@ -876,13 +883,71 @@ const Parcerias = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="bancos_cadastrados">Bancos Cadastrados</Label>
-                    <Input
-                      id="bancos_cadastrados"
-                      value={formData.bancos_cadastrados}
-                      onChange={(e) => setFormData({ ...formData, bancos_cadastrados: e.target.value })}
-                      required
-                    />
+                    <Label htmlFor="bancos_cadastrados">Bancos Cadastrados *</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-between"
+                          type="button"
+                        >
+                          {selectedBanks.length === 0
+                            ? 'Selecionar bancos'
+                            : `${selectedBanks.length} banco(s) selecionado(s)`}
+                          <X
+                            className="ml-2 h-4 w-4 opacity-50"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedBanks([]);
+                            }}
+                          />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-4" align="start">
+                        <div className="space-y-2">
+                          {banks.length === 0 ? (
+                            <div className="space-y-2">
+                              <p className="text-sm text-muted-foreground">
+                                Nenhum banco cadastrado.
+                              </p>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setIsBanksDialogOpen(true);
+                                }}
+                                type="button"
+                              >
+                                <Plus className="mr-2 h-4 w-4" />
+                                Adicionar Banco
+                              </Button>
+                            </div>
+                          ) : (
+                            banks.map((bank) => (
+                              <div key={bank.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={bank.id}
+                                  checked={selectedBanks.includes(bank.nome)}
+                                  onCheckedChange={() => {
+                                    setSelectedBanks(
+                                      selectedBanks.includes(bank.nome)
+                                        ? selectedBanks.filter((b) => b !== bank.nome)
+                                        : [...selectedBanks, bank.nome]
+                                    );
+                                  }}
+                                />
+                                <label
+                                  htmlFor={bank.id}
+                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                >
+                                  {bank.nome}
+                                </label>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
 
@@ -1452,6 +1517,13 @@ const Parcerias = () => {
           </div>
         )}
       </div>
+
+      <BanksDialog
+        isOpen={isBanksDialogOpen}
+        onOpenChange={setIsBanksDialogOpen}
+        userId={user?.id || ''}
+        onBanksUpdate={fetchBanks}
+      />
     </Layout>
   );
 };
