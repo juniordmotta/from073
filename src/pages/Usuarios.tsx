@@ -18,10 +18,11 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Pencil, Trash2 } from 'lucide-react';
+import { UserPlus, Pencil, Trash2, History } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatUserName } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface User {
   id: string;
@@ -60,6 +61,10 @@ export default function Usuarios() {
     role: 'operador',
     monthlyGoal: '',
   });
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyData, setHistoryData] = useState<any[]>([]);
+  const [historyFilter, setHistoryFilter] = useState<string>('all');
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
   const totalPages = Math.ceil(users.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -301,6 +306,47 @@ export default function Usuarios() {
     setEditOpen(true);
   };
 
+  const loadHistory = async () => {
+    setIsLoadingHistory(true);
+    let query = supabase
+      .from('partnerships_history')
+      .select(`
+        *,
+        changed_by_profile:changed_by(name),
+        partnership:partnership_id(nome_completo)
+      `)
+      .order('changed_at', { ascending: false })
+      .limit(100);
+
+    if (historyFilter !== 'all') {
+      query = query.eq('changed_by', historyFilter);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao carregar histórico',
+        description: error.message,
+      });
+    } else {
+      setHistoryData(data || []);
+    }
+    setIsLoadingHistory(false);
+  };
+
+  const openHistoryDialog = () => {
+    setHistoryOpen(true);
+    loadHistory();
+  };
+
+  useEffect(() => {
+    if (historyOpen) {
+      loadHistory();
+    }
+  }, [historyFilter]);
+
   if (isLoading) {
     return (
       <Layout>
@@ -317,14 +363,25 @@ export default function Usuarios() {
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Gerenciar Usuários</h1>
 
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button size="lg" className="gap-2">
-                <UserPlus className="h-5 w-5" />
-                Criar Novo Usuário
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
+          <div className="flex gap-2">
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="gap-2"
+              onClick={openHistoryDialog}
+            >
+              <History className="h-5 w-5" />
+              Histórico de Alterações
+            </Button>
+
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button size="lg" className="gap-2">
+                  <UserPlus className="h-5 w-5" />
+                  Criar Novo Usuário
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
               <DialogHeader>
                 <DialogTitle>Criar Novo Usuário</DialogTitle>
                 <DialogDescription>
@@ -407,6 +464,7 @@ export default function Usuarios() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         <div className="rounded-lg border">
@@ -581,6 +639,91 @@ export default function Usuarios() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Dialog de Histórico de Alterações */}
+        <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle>Histórico de Alterações</DialogTitle>
+              <DialogDescription>
+                Visualize todas as alterações realizadas em parcerias pelos operadores
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="history-filter">Filtrar por Operador:</Label>
+                <Select value={historyFilter} onValueChange={setHistoryFilter}>
+                  <SelectTrigger className="w-64">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os Operadores</SelectItem>
+                    {users.map((user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {formatUserName(user.name)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <ScrollArea className="h-[500px] pr-4">
+                {isLoadingHistory ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                  </div>
+                ) : historyData.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Nenhum histórico encontrado
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {historyData.map((item) => (
+                      <div
+                        key={item.id}
+                        className="rounded-lg border p-4 space-y-2"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="font-semibold text-sm">
+                              {item.partnership?.nome_completo || 'Parceria não encontrada'}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Campo alterado: <span className="font-medium">{item.field_changed}</span>
+                            </div>
+                          </div>
+                          <div className="text-right text-xs text-muted-foreground">
+                            {format(new Date(item.changed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div className="rounded bg-muted/50 p-2">
+                            <div className="text-muted-foreground mb-1">Valor Anterior:</div>
+                            <div className="font-medium break-words">
+                              {item.old_value || '-'}
+                            </div>
+                          </div>
+                          <div className="rounded bg-muted/50 p-2">
+                            <div className="text-muted-foreground mb-1">Valor Novo:</div>
+                            <div className="font-medium break-words">
+                              {item.new_value || '-'}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-xs text-muted-foreground">
+                          Alterado por: <span className="font-medium">{formatUserName(item.changed_by_profile?.name) || 'Usuário desconhecido'}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
