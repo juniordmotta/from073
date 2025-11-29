@@ -1033,32 +1033,32 @@ export default function MinhasArbitragens() {
             </div>
           </div>
           
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="space-y-1">
-              <Label className="text-xs">Data Início</Label>
+          <div className="flex items-end gap-2 flex-wrap">
+            <div>
+              <Label className="text-xs mb-1 block">Data Início</Label>
               <Input
                 type="date"
                 value={filterStartDate}
                 onChange={(e) => setFilterStartDate(e.target.value)}
-                className="w-40"
+                className="w-40 h-10"
               />
             </div>
 
-            <div className="space-y-1">
-              <Label className="text-xs">Data Fim</Label>
+            <div>
+              <Label className="text-xs mb-1 block">Data Fim</Label>
               <Input
                 type="date"
                 value={filterEndDate}
                 onChange={(e) => setFilterEndDate(e.target.value)}
-                className="w-40"
+                className="w-40 h-10"
               />
             </div>
 
-            <div className="flex flex-col space-y-1">
-              <Label className="text-xs">Status</Label>
+            <div>
+              <Label className="text-xs mb-1 block">Status</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-40 justify-between">
+                  <Button variant="outline" className="w-40 h-10 justify-between">
                     <span className="truncate">
                       {filterStatus.includes('all') ? 'Todos' : `${filterStatus.length} selecionado(s)`}
                     </span>
@@ -1116,11 +1116,11 @@ export default function MinhasArbitragens() {
             </div>
 
             {isAdmin && (
-              <div className="flex flex-col space-y-1">
-                <Label className="text-xs">Operador</Label>
+              <div>
+                <Label className="text-xs mb-1 block">Operador</Label>
                 <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-52 justify-between">
+                  <Button variant="outline" className="w-52 h-10 justify-between">
                     <span className="truncate">
                       {filterUser.length === 0 
                         ? 'Todos os operadores' 
@@ -1183,11 +1183,11 @@ export default function MinhasArbitragens() {
               </div>
             )}
 
-            <div className="flex flex-col space-y-1">
-              <Label className="text-xs">Parceria</Label>
+            <div>
+              <Label className="text-xs mb-1 block">Parceria</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-52 justify-between">
+                  <Button variant="outline" className="w-52 h-10 justify-between">
                     <span className="truncate">
                       {filterPartnership.length === 0 
                         ? 'Todas as parcerias' 
@@ -1251,54 +1251,52 @@ export default function MinhasArbitragens() {
 
             <Dialog open={openAdd} onOpenChange={setOpenAdd}>
               <DialogTrigger asChild>
-                <Button className="gap-2">
+                <Button className="gap-2 h-10">
                   <Plus className="h-4 w-4" />
                   Adicionar Arbitragem
                 </Button>
               </DialogTrigger>
             </Dialog>
             
-            <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setViewMode(viewMode === 'table' ? 'cards' : 'table')}
+              className="gap-2 h-10"
+            >
+              {viewMode === 'table' ? (
+                <>
+                  <LayoutGrid className="h-4 w-4" />
+                  Cards
+                </>
+              ) : (
+                <>
+                  <TableIcon className="h-4 w-4" />
+                  Tabela
+                </>
+              )}
+            </Button>
+
+            {viewMode === 'table' && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setViewMode(viewMode === 'table' ? 'cards' : 'table')}
-                className="gap-2"
+                onClick={() => setIsExpandedView(!isExpandedView)}
+                className="gap-2 h-10"
               >
-                {viewMode === 'table' ? (
+                {isExpandedView ? (
                   <>
-                    <LayoutGrid className="h-4 w-4" />
-                    Cards
+                    <Minimize2 className="h-4 w-4" />
+                    Compacto
                   </>
                 ) : (
                   <>
-                    <TableIcon className="h-4 w-4" />
-                    Tabela
+                    <Maximize2 className="h-4 w-4" />
+                    Expandido
                   </>
                 )}
               </Button>
-
-              {viewMode === 'table' && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsExpandedView(!isExpandedView)}
-                  className="gap-2"
-                >
-                  {isExpandedView ? (
-                    <>
-                      <Minimize2 className="h-4 w-4" />
-                      Compacto
-                    </>
-                  ) : (
-                    <>
-                      <Maximize2 className="h-4 w-4" />
-                      Expandido
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
+            )}
           </div>
         </div>
 

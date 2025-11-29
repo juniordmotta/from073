@@ -347,33 +347,33 @@ export default function Dashboard() {
             )}
           </div>
           
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="space-y-1">
-              <Label className="text-xs">Data Início</Label>
+          <div className="flex items-end gap-2 flex-wrap">
+            <div>
+              <Label className="text-xs mb-1 block">Data Início</Label>
               <Input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-40"
+                className="w-40 h-10"
               />
             </div>
 
-            <div className="space-y-1">
-              <Label className="text-xs">Data Fim</Label>
+            <div>
+              <Label className="text-xs mb-1 block">Data Fim</Label>
               <Input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-40"
+                className="w-40 h-10"
               />
             </div>
 
             {isAdmin && (
-              <div className="flex flex-col space-y-1">
-                <Label className="text-xs">Operador</Label>
+              <div>
+                <Label className="text-xs mb-1 block">Operador</Label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-52 justify-between">
+                    <Button variant="outline" className="w-52 h-10 justify-between">
                       <span className="truncate">
                         {selectedUser.length === 0 
                           ? 'Todos os operadores' 
@@ -436,11 +436,11 @@ export default function Dashboard() {
               </div>
             )}
 
-            <div className="flex flex-col space-y-1">
-              <Label className="text-xs">Status</Label>
+            <div>
+              <Label className="text-xs mb-1 block">Status</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-40 justify-between">
+                  <Button variant="outline" className="w-40 h-10 justify-between">
                     <span className="truncate">
                       {selectedStatus.includes('all') ? 'Todos' : `${selectedStatus.length} selecionado(s)`}
                     </span>
@@ -501,7 +501,7 @@ export default function Dashboard() {
               variant="outline"
               size="sm"
               onClick={handleExportExcel}
-              className="gap-2 mt-auto"
+              className="gap-2 h-10"
               disabled={allArbitrages.length === 0}
             >
               <Download className="h-4 w-4" />
@@ -512,7 +512,7 @@ export default function Dashboard() {
               variant="outline"
               size="sm"
               onClick={() => setIsExpandedView(!isExpandedView)}
-              className="gap-2 mt-auto"
+              className="gap-2 h-10"
             >
               {isExpandedView ? (
                 <>
