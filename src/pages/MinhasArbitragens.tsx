@@ -47,7 +47,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter, X, Maximize2, Minimize2, Search } from 'lucide-react';
+import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter, X, Maximize2, Minimize2, Search, LayoutGrid, Table as TableIcon } from 'lucide-react';
 import { format, differenceInMilliseconds } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -198,6 +198,7 @@ export default function MinhasArbitragens() {
   
   // Estado para modo de visualização
   const [isExpandedView, setIsExpandedView] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   
   // Estados para adicionar arbitragem
   const [openAdd, setOpenAdd] = useState(false);
@@ -984,7 +985,7 @@ export default function MinhasArbitragens() {
     <Layout>
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-3xl font-bold">Minhas Arbitragens</h1>
             {activeFiltersCount > 0 && (
               <>
@@ -1009,33 +1010,30 @@ export default function MinhasArbitragens() {
                 </Button>
               </>
             )}
+            
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Buscar..."
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                className="pl-9 h-8 w-64"
+              />
+              {searchText && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                  onClick={() => setSearchText('')}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
           </div>
           
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="space-y-1 w-64">
-              <Label className="text-xs">Buscar</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Descrição, times ou casas..."
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  className="pl-9"
-                />
-                {searchText && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
-                    onClick={() => setSearchText('')}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                )}
-              </div>
-            </div>
-
             <div className="space-y-1">
               <Label className="text-xs">Data Início</Label>
               <Input
@@ -1251,24 +1249,47 @@ export default function MinhasArbitragens() {
             </Popover>
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsExpandedView(!isExpandedView)}
-              className="gap-2"
-            >
-              {isExpandedView ? (
-                <>
-                  <Minimize2 className="h-4 w-4" />
-                  Compacto
-                </>
-              ) : (
-                <>
-                  <Maximize2 className="h-4 w-4" />
-                  Expandido
-                </>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setViewMode(viewMode === 'table' ? 'cards' : 'table')}
+                className="gap-2"
+              >
+                {viewMode === 'table' ? (
+                  <>
+                    <LayoutGrid className="h-4 w-4" />
+                    Cards
+                  </>
+                ) : (
+                  <>
+                    <TableIcon className="h-4 w-4" />
+                    Tabela
+                  </>
+                )}
+              </Button>
+
+              {viewMode === 'table' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsExpandedView(!isExpandedView)}
+                  className="gap-2"
+                >
+                  {isExpandedView ? (
+                    <>
+                      <Minimize2 className="h-4 w-4" />
+                      Compacto
+                    </>
+                  ) : (
+                    <>
+                      <Maximize2 className="h-4 w-4" />
+                      Expandido
+                    </>
+                  )}
+                </Button>
               )}
-            </Button>
+            </div>
 
             <Dialog open={openAdd} onOpenChange={setOpenAdd}>
               <DialogTrigger asChild>
@@ -1317,7 +1338,247 @@ export default function MinhasArbitragens() {
           <div className="rounded-lg border p-8 text-center text-muted-foreground">
             <p>Nenhuma arbitragem cadastrada ainda.</p>
           </div>
+        ) : viewMode === 'cards' ? (
+          // Visualização em Cards
+          <div className="space-y-4">
+            {paginatedArbitragens.map((arb) => {
+              const timeToEvent = differenceInMilliseconds(new Date(arb.data_evento), new Date());
+              const days = Math.floor(timeToEvent / (1000 * 60 * 60 * 24));
+              const hours = Math.floor((timeToEvent % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+              const minutes = Math.floor((timeToEvent % (1000 * 60 * 60)) / (1000 * 60));
+              
+              const eventDate = new Date(arb.data_evento);
+              eventDate.setHours(0, 0, 0, 0);
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const isEventPast = eventDate < today;
+              const isEventToday = eventDate.getTime() === today.getTime();
+              
+              return (
+                <div
+                  key={arb.id}
+                  className={`rounded-lg border bg-card p-4 ${
+                    isEventPast && arb.status === 'aguardando'
+                      ? 'border-l-4 border-red-500'
+                      : isEventToday
+                      ? 'border-l-4 border-sky-300'
+                      : ''
+                  }`}
+                >
+                  {/* Header do Card */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Badge variant={statusMap[arb.status as keyof typeof statusMap]?.variant}>
+                          {statusMap[arb.status as keyof typeof statusMap]?.label}
+                        </Badge>
+                        {isAdmin && (
+                          <span className="text-xs text-muted-foreground">
+                            {formatUserName((arb as any).profiles?.name) || 'Desconhecido'}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Adicionado: </span>
+                        <span>{format(new Date(arb.created_at), 'dd/MM/yy HH:mm')}</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditArbitrage(arb)}
+                        title="Editar arbitragem"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDuplicate(arb)}
+                        title="Duplicar arbitragem"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      {isAdmin && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeleteId(arb.id)}
+                          title="Excluir arbitragem"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Informações do Evento */}
+                  <div className="mb-4 pb-4 border-b">
+                    <div className={`text-sm mb-1 ${isEventPast && arb.status === 'aguardando' ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
+                      <Clock className="inline h-3 w-3 mr-1" />
+                      {format(new Date(arb.data_evento), 'dd/MM/yy HH:mm')}
+                      {timeToEvent > 0 && (
+                        <span className="ml-2">
+                          ({days > 0 && `${days}d `}{hours}h {minutes}m)
+                        </span>
+                      )}
+                    </div>
+                    <div className="font-medium text-lg">{arb.descricao}</div>
+                    {arb.esporte_liga && (
+                      <div className="text-sm text-muted-foreground">{arb.esporte_liga}</div>
+                    )}
+                  </div>
+
+                  {/* Casas de Apostas */}
+                  <div className="grid gap-3 mb-4">
+                    {/* Casa 01 */}
+                    <div className="rounded-lg bg-muted/50 p-3">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="space-y-1 flex-1">
+                          {arb.partnerships_casa_01 && (
+                            <div className="text-[10px] text-primary font-medium">
+                              {formatUserName(arb.partnerships_casa_01.nome_completo)}
+                            </div>
+                          )}
+                          <div className="font-medium">{arb.casa_01_nome}</div>
+                          {arb.casa_01_mercado && (
+                            <div className="text-xs text-muted-foreground">{arb.casa_01_mercado}</div>
+                          )}
+                          <div className="text-sm text-muted-foreground">
+                            {Number(arb.casa_01_odd).toFixed(3)}x • R$ {formatCurrency(arb.casa_01_valor)}
+                          </div>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+                              {statusMap[arb.casa_01_resultado as keyof typeof statusMap]?.label || 'Definir'}
+                              <ChevronDown className="h-3 w-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            {resultOptions.map((option) => (
+                              <DropdownMenuItem
+                                key={option.value}
+                                onClick={() => handleUpdateResult(arb.id, 'casa_01', option.value)}
+                              >
+                                {option.label}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+
+                    {/* Casa 02 */}
+                    <div className="rounded-lg bg-muted/50 p-3">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="space-y-1 flex-1">
+                          {arb.partnerships_casa_02 && (
+                            <div className="text-[10px] text-primary font-medium">
+                              {formatUserName(arb.partnerships_casa_02.nome_completo)}
+                            </div>
+                          )}
+                          <div className="font-medium">{arb.casa_02_nome}</div>
+                          {arb.casa_02_mercado && (
+                            <div className="text-xs text-muted-foreground">{arb.casa_02_mercado}</div>
+                          )}
+                          <div className="text-sm text-muted-foreground">
+                            {Number(arb.casa_02_odd).toFixed(3)}x • R$ {formatCurrency(arb.casa_02_valor)}
+                          </div>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+                              {statusMap[arb.casa_02_resultado as keyof typeof statusMap]?.label || 'Definir'}
+                              <ChevronDown className="h-3 w-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            {resultOptions.map((option) => (
+                              <DropdownMenuItem
+                                key={option.value}
+                                onClick={() => handleUpdateResult(arb.id, 'casa_02', option.value)}
+                              >
+                                {option.label}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+
+                    {/* Casa 03 */}
+                    {arb.casa_03_nome && (
+                      <div className="rounded-lg bg-muted/50 p-3">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="space-y-1 flex-1">
+                            {arb.partnerships_casa_03 && (
+                              <div className="text-[10px] text-primary font-medium">
+                                {formatUserName(arb.partnerships_casa_03.nome_completo)}
+                              </div>
+                            )}
+                            <div className="font-medium">{arb.casa_03_nome}</div>
+                            {arb.casa_03_mercado && (
+                              <div className="text-xs text-muted-foreground">{arb.casa_03_mercado}</div>
+                            )}
+                            <div className="text-sm text-muted-foreground">
+                              {Number(arb.casa_03_odd).toFixed(3)}x • R$ {formatCurrency(arb.casa_03_valor)}
+                            </div>
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+                                {statusMap[arb.casa_03_resultado as keyof typeof statusMap]?.label || 'Definir'}
+                                <ChevronDown className="h-3 w-3" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              {resultOptions.map((option) => (
+                                <DropdownMenuItem
+                                  key={option.value}
+                                  onClick={() => handleUpdateResult(arb.id, 'casa_03', option.value)}
+                                >
+                                  {option.label}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Informações de Lucro */}
+                  <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">Lucro Real</div>
+                      <div className={`text-lg font-semibold ${arb.lucro_real >= 0 ? 'text-success' : 'text-destructive'}`}>
+                        R$ {formatCurrency(arb.lucro_real)}
+                      </div>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0 text-xs"
+                        onClick={() => setViewGanhosArbitrage(arb)}
+                      >
+                        Ver ganhos
+                      </Button>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">Lucro Projetado</div>
+                      <div className="text-lg font-medium">R$ {formatCurrency(arb.lucro_projetado)}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {arb.porcentagem.toFixed(2)}% • R$ {formatCurrency(arb.retorno_previsto)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         ) : (
+          // Visualização em Tabela
           <div className="rounded-lg border">
             <Table>
               <TableHeader>
