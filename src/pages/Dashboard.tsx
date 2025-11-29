@@ -348,24 +348,6 @@ export default function Dashboard() {
           </div>
           
           <div className="flex items-center gap-2 flex-wrap">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsExpandedView(!isExpandedView)}
-              className="gap-2"
-            >
-              {isExpandedView ? (
-                <>
-                  <Minimize2 className="h-4 w-4" />
-                  Compacto
-                </>
-              ) : (
-                <>
-                  <Maximize2 className="h-4 w-4" />
-                  Expandido
-                </>
-              )}
-            </Button>
             <div className="space-y-1">
               <Label className="text-xs">Data Início</Label>
               <Input
@@ -515,19 +497,35 @@ export default function Dashboard() {
               </Popover>
             </div>
 
-            <div className="space-y-1">
-              <Label className="text-xs opacity-0">Ações</Label>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportExcel}
-                disabled={allArbitrages.length === 0}
-                className="h-10"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Exportar Excel
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportExcel}
+              className="gap-2 mt-auto"
+              disabled={allArbitrages.length === 0}
+            >
+              <Download className="h-4 w-4" />
+              Exportar Excel
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsExpandedView(!isExpandedView)}
+              className="gap-2 mt-auto"
+            >
+              {isExpandedView ? (
+                <>
+                  <Minimize2 className="h-4 w-4" />
+                  Compacto
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="h-4 w-4" />
+                  Expandido
+                </>
+              )}
+            </Button>
           </div>
         </div>
 

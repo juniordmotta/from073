@@ -1249,6 +1249,15 @@ export default function MinhasArbitragens() {
             </Popover>
             </div>
 
+            <Dialog open={openAdd} onOpenChange={setOpenAdd}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Adicionar Arbitragem
+                </Button>
+              </DialogTrigger>
+            </Dialog>
+            
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -1290,15 +1299,6 @@ export default function MinhasArbitragens() {
                 </Button>
               )}
             </div>
-
-            <Dialog open={openAdd} onOpenChange={setOpenAdd}>
-              <DialogTrigger asChild>
-                <Button className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Adicionar Arbitragem
-                </Button>
-              </DialogTrigger>
-            </Dialog>
           </div>
         </div>
 
