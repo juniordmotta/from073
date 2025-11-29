@@ -109,15 +109,25 @@ export default function Dashboard() {
       }
     }
 
-    if (debouncedStartDate) {
-      query = query.gte('created_at', new Date(debouncedStartDate).toISOString());
-    }
-
-    if (debouncedEndDate) {
+    // Filtrar por data de criação (created_at)
+    // Regra: Se ambas as datas estiverem preenchidas, filtrar período
+    // Se apenas data fim preenchida, filtrar apenas aquele dia único
+    if (debouncedStartDate && debouncedEndDate) {
+      // Ambas preenchidas: filtrar período
+      const startOfDay = new Date(debouncedStartDate);
+      startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(debouncedEndDate);
       endOfDay.setHours(23, 59, 59, 999);
-      query = query.lte('created_at', endOfDay.toISOString());
+      query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
+    } else if (!debouncedStartDate && debouncedEndDate) {
+      // Apenas data fim: filtrar apenas aquele dia
+      const startOfDay = new Date(debouncedEndDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(debouncedEndDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
     }
+    // Se apenas data início preenchida, não filtrar
 
     const { data } = await query;
 
@@ -181,15 +191,25 @@ export default function Dashboard() {
       }
     }
 
-    if (debouncedStartDate) {
-      query = query.gte('created_at', new Date(debouncedStartDate).toISOString());
-    }
-
-    if (debouncedEndDate) {
+    // Filtrar por data de criação (created_at)
+    // Regra: Se ambas as datas estiverem preenchidas, filtrar período
+    // Se apenas data fim preenchida, filtrar apenas aquele dia único
+    if (debouncedStartDate && debouncedEndDate) {
+      // Ambas preenchidas: filtrar período
+      const startOfDay = new Date(debouncedStartDate);
+      startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(debouncedEndDate);
       endOfDay.setHours(23, 59, 59, 999);
-      query = query.lte('created_at', endOfDay.toISOString());
+      query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
+    } else if (!debouncedStartDate && debouncedEndDate) {
+      // Apenas data fim: filtrar apenas aquele dia
+      const startOfDay = new Date(debouncedEndDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(debouncedEndDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
     }
+    // Se apenas data início preenchida, não filtrar
 
     const { data } = await query;
 
@@ -271,15 +291,25 @@ export default function Dashboard() {
       query = query.in('user_id', debouncedSelectedUser);
     }
 
-    if (debouncedStartDate) {
-      query = query.gte('created_at', new Date(debouncedStartDate).toISOString());
-    }
-
-    if (debouncedEndDate) {
+    // Filtrar por data de criação (created_at)
+    // Regra: Se ambas as datas estiverem preenchidas, filtrar período
+    // Se apenas data fim preenchida, filtrar apenas aquele dia único
+    if (debouncedStartDate && debouncedEndDate) {
+      // Ambas preenchidas: filtrar período
+      const startOfDay = new Date(debouncedStartDate);
+      startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(debouncedEndDate);
       endOfDay.setHours(23, 59, 59, 999);
-      query = query.lte('created_at', endOfDay.toISOString());
+      query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
+    } else if (!debouncedStartDate && debouncedEndDate) {
+      // Apenas data fim: filtrar apenas aquele dia
+      const startOfDay = new Date(debouncedEndDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(debouncedEndDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
     }
+    // Se apenas data início preenchida, não filtrar
 
     const { data } = await query;
 
@@ -325,15 +355,25 @@ export default function Dashboard() {
       query = query.in('user_id', debouncedSelectedUser);
     }
 
-    if (debouncedStartDate) {
-      query = query.gte('created_at', new Date(debouncedStartDate).toISOString());
-    }
-
-    if (debouncedEndDate) {
+    // Filtrar por data de criação (created_at)
+    // Regra: Se ambas as datas estiverem preenchidas, filtrar período
+    // Se apenas data fim preenchida, filtrar apenas aquele dia único
+    if (debouncedStartDate && debouncedEndDate) {
+      // Ambas preenchidas: filtrar período
+      const startOfDay = new Date(debouncedStartDate);
+      startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(debouncedEndDate);
       endOfDay.setHours(23, 59, 59, 999);
-      query = query.lte('created_at', endOfDay.toISOString());
+      query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
+    } else if (!debouncedStartDate && debouncedEndDate) {
+      // Apenas data fim: filtrar apenas aquele dia
+      const startOfDay = new Date(debouncedEndDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(debouncedEndDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
     }
+    // Se apenas data início preenchida, não filtrar
 
     const { data } = await query;
 
@@ -350,8 +390,8 @@ export default function Dashboard() {
   // Contar filtros ativos
   const activeFiltersCount = useMemo(() => {
     let count = 0;
-    if (startDate) count++;
-    if (endDate) count++;
+    // Contar filtro de data apenas se ambas preenchidas OU apenas data fim
+    if ((startDate && endDate) || (!startDate && endDate)) count++;
     if (isAdmin && selectedUser.length > 0 && selectedUser.length < users.length) count++;
     if (!selectedStatus.includes('all')) count++;
     return count;
@@ -388,22 +428,30 @@ export default function Dashboard() {
           
           <div className="flex items-end gap-2 flex-wrap">
             <div>
-              <Label className="text-xs mb-1 block">Data Início</Label>
+              <Label className="text-xs mb-1 block">
+                Data Início
+                <span className="text-muted-foreground ml-1">(Adicionado em)</span>
+              </Label>
               <Input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 className="w-40 h-10"
+                placeholder="Data inicial"
               />
             </div>
 
             <div>
-              <Label className="text-xs mb-1 block">Data Fim</Label>
+              <Label className="text-xs mb-1 block">
+                Data Fim
+                <span className="text-muted-foreground ml-1">(Adicionado em)</span>
+              </Label>
               <Input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 className="w-40 h-10"
+                placeholder="Data final"
               />
             </div>
 
