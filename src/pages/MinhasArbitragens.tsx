@@ -307,22 +307,31 @@ export default function MinhasArbitragens() {
       });
     }
 
-    // Filtrar por data de criação (created_at)
-    if (debouncedFilterStartDate) {
+    // Filtrar por data de criação (created_at) - coluna "ADICIONADO EM"
+    // Regra: Se ambas as datas estiverem preenchidas, filtrar período
+    // Se apenas data fim preenchida, filtrar apenas aquele dia único
+    if (debouncedFilterStartDate && debouncedFilterEndDate) {
+      // Ambas preenchidas: filtrar período
       const startDate = new Date(debouncedFilterStartDate);
       startDate.setHours(0, 0, 0, 0);
-      filtered = filtered.filter((arb) => 
-        new Date(arb.created_at) >= startDate
-      );
-    }
-
-    if (debouncedFilterEndDate) {
       const endDate = new Date(debouncedFilterEndDate);
       endDate.setHours(23, 59, 59, 999);
-      filtered = filtered.filter((arb) => 
-        new Date(arb.created_at) <= endDate
-      );
+      filtered = filtered.filter((arb) => {
+        const arbDate = new Date(arb.created_at);
+        return arbDate >= startDate && arbDate <= endDate;
+      });
+    } else if (!debouncedFilterStartDate && debouncedFilterEndDate) {
+      // Apenas data fim: filtrar apenas aquele dia
+      const startOfDay = new Date(debouncedFilterEndDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(debouncedFilterEndDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      filtered = filtered.filter((arb) => {
+        const arbDate = new Date(arb.created_at);
+        return arbDate >= startOfDay && arbDate <= endOfDay;
+      });
     }
+    // Se apenas data início preenchida, não filtrar
 
     if (!debouncedFilterStatus.includes('all')) {
       filtered = filtered.filter((arb) => {
@@ -1076,8 +1085,8 @@ export default function MinhasArbitragens() {
   // Contar filtros ativos
   const activeFiltersCount = useMemo(() => {
     let count = 0;
-    if (filterStartDate) count++;
-    if (filterEndDate) count++;
+    // Contar filtro de data apenas se ambas preenchidas OU apenas data fim
+    if ((filterStartDate && filterEndDate) || (!filterStartDate && filterEndDate)) count++;
     if (isAdmin && filterUser.length > 0 && filterUser.length < users.length) count++;
     if (!filterStatus.includes('all')) count++;
     if (filterPartnership.length > 0) count++;
@@ -1188,22 +1197,30 @@ export default function MinhasArbitragens() {
           
           <div className="flex items-end gap-2 flex-wrap">
             <div>
-              <Label className="text-xs mb-1 block">Data Início</Label>
+              <Label className="text-xs mb-1 block">
+                Data Início
+                <span className="text-muted-foreground ml-1">(Adicionado em)</span>
+              </Label>
               <Input
                 type="date"
                 value={filterStartDate}
                 onChange={(e) => setFilterStartDate(e.target.value)}
                 className="w-40 h-10"
+                placeholder="Data inicial"
               />
             </div>
 
             <div>
-              <Label className="text-xs mb-1 block">Data Fim</Label>
+              <Label className="text-xs mb-1 block">
+                Data Fim
+                <span className="text-muted-foreground ml-1">(Adicionado em)</span>
+              </Label>
               <Input
                 type="date"
                 value={filterEndDate}
                 onChange={(e) => setFilterEndDate(e.target.value)}
                 className="w-40 h-10"
+                placeholder="Data final"
               />
             </div>
 
