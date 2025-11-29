@@ -1006,7 +1006,7 @@ export default function MinhasArbitragens() {
               />
             </div>
 
-            <div className="space-y-1">
+            <div className="flex flex-col space-y-1">
               <Label className="text-xs">Status</Label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -1068,7 +1068,7 @@ export default function MinhasArbitragens() {
             </div>
 
             {isAdmin && (
-              <div className="space-y-1">
+              <div className="flex flex-col space-y-1">
                 <Label className="text-xs">Operador</Label>
                 <Popover>
                 <PopoverTrigger asChild>
@@ -1135,7 +1135,7 @@ export default function MinhasArbitragens() {
               </div>
             )}
 
-            <div className="space-y-1">
+            <div className="flex flex-col space-y-1">
               <Label className="text-xs">Parceria</Label>
               <Popover>
                 <PopoverTrigger asChild>
