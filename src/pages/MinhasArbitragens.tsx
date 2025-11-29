@@ -459,10 +459,10 @@ export default function MinhasArbitragens() {
     // TODOS os usuários (incluindo admins) só podem ver suas próprias parcerias ao adicionar apostas
     const query = supabase
       .from('partnerships')
-      .select('id, nome_completo, status, user_id')
+      .select('id, nome_completo, status, user_id, created_at, data_inicio')
       .eq('status', 'ativo')
       .eq('user_id', user.id)
-      .order('nome_completo');
+      .order('created_at');
     
     const { data, error } = await query;
     
@@ -470,11 +470,28 @@ export default function MinhasArbitragens() {
       console.error('Erro ao carregar parcerias:', error);
     } else {
       setPartnerships(data || []);
-      // Se houver parcerias ativas, selecionar a primeira por padrão
+      
+      // Pré-selecionar a primeira parceria criada no mês vigente
       if (data && data.length > 0) {
-        setSelectedPartnership01(data[0].id);
-        setSelectedPartnership02(data[0].id);
-        setSelectedPartnership03(data[0].id);
+        const hoje = new Date();
+        const mesVigente = hoje.getMonth();
+        const anoVigente = hoje.getFullYear();
+        
+        // Filtrar parcerias criadas no mês vigente
+        const parceriasMesVigente = data.filter(p => {
+          const dataInicio = new Date(p.data_inicio);
+          return dataInicio.getMonth() === mesVigente && dataInicio.getFullYear() === anoVigente;
+        });
+        
+        // Se houver parcerias do mês vigente, selecionar a primeira (mais antiga)
+        // Senão, selecionar a primeira da lista geral
+        const parceiraDefault = parceriasMesVigente.length > 0 
+          ? parceriasMesVigente[0].id 
+          : data[0].id;
+          
+        setSelectedPartnership01(parceiraDefault);
+        setSelectedPartnership02(parceiraDefault);
+        setSelectedPartnership03(parceiraDefault);
       }
     }
   }, [user?.id]);
