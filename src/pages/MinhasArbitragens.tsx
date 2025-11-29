@@ -47,7 +47,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter, X, Maximize2, Minimize2 } from 'lucide-react';
+import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter, X, Maximize2, Minimize2, Search } from 'lucide-react';
 import { format, differenceInMilliseconds } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -130,6 +130,9 @@ export default function MinhasArbitragens() {
   const itemsPerPage = 30;
   
   // Restaurar filtros do sessionStorage ou usar valores padrão
+  const [searchText, setSearchText] = useState(() =>
+    sessionStorage.getItem('arbitragens_searchText') || ''
+  );
   const [filterStartDate, setFilterStartDate] = useState(() => 
     sessionStorage.getItem('arbitragens_filterStartDate') || ''
   );
@@ -168,6 +171,7 @@ export default function MinhasArbitragens() {
   });
   
   // Debounce dos filtros para evitar queries excessivas
+  const debouncedSearchText = useDebounce(searchText, 300);
   const debouncedFilterStartDate = useDebounce(filterStartDate, 300);
   const debouncedFilterEndDate = useDebounce(filterEndDate, 300);
   const debouncedFilterStatus = useDebounce(filterStatus, 300);
@@ -248,6 +252,20 @@ export default function MinhasArbitragens() {
 
   const applyFilters = useCallback(() => {
     let filtered = [...arbitragens];
+
+    // Filtrar por texto de busca
+    if (debouncedSearchText.trim()) {
+      const searchLower = debouncedSearchText.toLowerCase().trim();
+      filtered = filtered.filter((arb) => {
+        return (
+          arb.descricao.toLowerCase().includes(searchLower) ||
+          (arb.esporte_liga && arb.esporte_liga.toLowerCase().includes(searchLower)) ||
+          arb.casa_01_nome.toLowerCase().includes(searchLower) ||
+          arb.casa_02_nome.toLowerCase().includes(searchLower) ||
+          (arb.casa_03_nome && arb.casa_03_nome.toLowerCase().includes(searchLower))
+        );
+      });
+    }
 
     // Filtrar por data de criação (created_at)
     if (debouncedFilterStartDate) {
@@ -335,7 +353,7 @@ export default function MinhasArbitragens() {
 
     setFilteredArbitragens(filtered);
     setCurrentPage(1);
-  }, [arbitragens, debouncedFilterStartDate, debouncedFilterEndDate, debouncedFilterStatus, debouncedFilterUser, debouncedFilterPartnership]);
+  }, [arbitragens, debouncedSearchText, debouncedFilterStartDate, debouncedFilterEndDate, debouncedFilterStatus, debouncedFilterUser, debouncedFilterPartnership]);
 
   const loadArbitragens = useCallback(async () => {
     if (!user?.id) return;
@@ -460,9 +478,13 @@ export default function MinhasArbitragens() {
   // Aplicar filtros quando arbitragens ou filtros mudarem
   useEffect(() => {
     applyFilters();
-  }, [arbitragens, debouncedFilterStartDate, debouncedFilterEndDate, debouncedFilterStatus, debouncedFilterUser, debouncedFilterPartnership]);
+  }, [arbitragens, debouncedSearchText, debouncedFilterStartDate, debouncedFilterEndDate, debouncedFilterStatus, debouncedFilterUser, debouncedFilterPartnership]);
 
   // Salvar filtros no sessionStorage sempre que mudarem
+  useEffect(() => {
+    sessionStorage.setItem('arbitragens_searchText', searchText);
+  }, [searchText]);
+
   useEffect(() => {
     sessionStorage.setItem('arbitragens_filterStartDate', filterStartDate);
   }, [filterStartDate]);
@@ -973,6 +995,7 @@ export default function MinhasArbitragens() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
+                    setSearchText('');
                     setFilterStartDate('');
                     setFilterEndDate('');
                     setFilterStatus(['all']);
@@ -989,6 +1012,30 @@ export default function MinhasArbitragens() {
           </div>
           
           <div className="flex items-center gap-2 flex-wrap">
+            <div className="space-y-1 w-64">
+              <Label className="text-xs">Buscar</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Descrição, times ou casas..."
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  className="pl-9"
+                />
+                {searchText && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
+                    onClick={() => setSearchText('')}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+            </div>
+
             <div className="space-y-1">
               <Label className="text-xs">Data Início</Label>
               <Input
