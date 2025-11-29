@@ -962,9 +962,26 @@ export default function MinhasArbitragens() {
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold">Minhas Arbitragens</h1>
             {activeFiltersCount > 0 && (
-              <Badge className="text-xs bg-yellow-400 text-black hover:bg-yellow-500">
-                {activeFiltersCount} filtro{activeFiltersCount > 1 ? 's' : ''} ativo{activeFiltersCount > 1 ? 's' : ''}
-              </Badge>
+              <>
+                <Badge className="text-xs bg-yellow-400 text-black hover:bg-yellow-500">
+                  {activeFiltersCount} filtro{activeFiltersCount > 1 ? 's' : ''} ativo{activeFiltersCount > 1 ? 's' : ''}
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setFilterStartDate('');
+                    setFilterEndDate('');
+                    setFilterStatus(['all']);
+                    setFilterUser(users.map(u => u.id));
+                    setFilterPartnership([]);
+                  }}
+                  className="h-8"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Limpar Filtros
+                </Button>
+              </>
             )}
           </div>
           
@@ -1181,26 +1198,7 @@ export default function MinhasArbitragens() {
                     </div>
                   </div>
                 </PopoverContent>
-              </Popover>
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-xs opacity-0">Ações</Label>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setFilterStartDate('');
-                  setFilterEndDate('');
-                  setFilterStatus(['all']);
-                  setFilterUser(users.map(u => u.id));
-                  setFilterPartnership([]);
-                }}
-                className="h-10"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Limpar
-              </Button>
+            </Popover>
             </div>
 
             <Dialog open={openAdd} onOpenChange={setOpenAdd}>
@@ -1256,7 +1254,21 @@ export default function MinhasArbitragens() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Adicionado em</TableHead>
-                  <TableHead>Descrição</TableHead>
+                  <TableHead>
+                    <div className="flex flex-col gap-1">
+                      <span>Descrição</span>
+                      <div className="flex gap-3 text-[10px] font-normal">
+                        <span className="flex items-center gap-1">
+                          <span className="w-2 h-2 bg-sky-300 rounded-full"></span>
+                          Hoje
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                          Atrasado
+                        </span>
+                      </div>
+                    </div>
+                  </TableHead>
                   {isAdmin && <TableHead>Operador</TableHead>}
                   <TableHead>Casa 01</TableHead>
                   <TableHead>Casa 02</TableHead>
