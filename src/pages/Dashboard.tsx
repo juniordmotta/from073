@@ -616,7 +616,7 @@ export default function Dashboard() {
                   <TableBody>
                     {openBets.map((bet) => (
                       <TableRow key={bet.id}>
-                        <TableCell className="font-medium text-xs max-w-[150px] truncate">{bet.descricao}</TableCell>
+                        <TableCell className="font-medium text-xs max-w-[200px] break-words whitespace-normal">{bet.descricao}</TableCell>
                         <TableCell className={`text-xs ${
                           format(new Date(bet.data_evento), 'dd/MM/yy') === format(new Date(), 'dd/MM/yy')
                             ? 'border-l-4 border-sky-300 pl-2'
@@ -627,7 +627,7 @@ export default function Dashboard() {
                         {isAdmin && <TableCell className="text-xs">{formatUserName(bet.profiles?.name) || '-'}</TableCell>}
                         <TableCell className="text-xs">
                           <div>
-                            <div className="font-medium">{bet.casa_01_nome}</div>
+                            <div className="font-medium break-words whitespace-normal">{bet.casa_01_nome}</div>
                             <div className="text-muted-foreground">
                               @{Number(bet.casa_01_odd).toFixed(3)} • R$ {formatCurrency(bet.casa_01_valor)}
                             </div>
@@ -635,7 +635,7 @@ export default function Dashboard() {
                         </TableCell>
                         <TableCell className="text-xs">
                           <div>
-                            <div className="font-medium">{bet.casa_02_nome}</div>
+                            <div className="font-medium break-words whitespace-normal">{bet.casa_02_nome}</div>
                             <div className="text-muted-foreground">
                               @{Number(bet.casa_02_odd).toFixed(3)} • R$ {formatCurrency(bet.casa_02_valor)}
                             </div>
@@ -644,7 +644,7 @@ export default function Dashboard() {
                         <TableCell className="text-xs">
                           {bet.casa_03_nome ? (
                             <div>
-                              <div className="font-medium">{bet.casa_03_nome}</div>
+                              <div className="font-medium break-words whitespace-normal">{bet.casa_03_nome}</div>
                               <div className="text-muted-foreground">
                                 @{Number(bet.casa_03_odd).toFixed(3)} • R$ {formatCurrency(bet.casa_03_valor)}
                               </div>
