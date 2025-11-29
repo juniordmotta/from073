@@ -101,13 +101,21 @@ export default function Usuarios() {
           .eq('user_id', profile.id)
           .single();
 
-        const { data: goalData } = await supabase
+        const { data: goalData, error: goalError } = await supabase
           .from('monthly_goals')
           .select('goal_value')
           .eq('user_id', profile.id)
-          .eq('partnership_id', null)
+          .is('partnership_id', null)
           .eq('month', currentMonth)
+          .order('created_at', { ascending: false })
+          .limit(1)
           .maybeSingle();
+
+        if (goalError) {
+          console.error('Erro ao buscar meta para usuário', profile.id, ':', goalError);
+        }
+
+        console.log('Meta carregada para', profile.name, ':', goalData?.goal_value);
 
         return {
           ...profile,
