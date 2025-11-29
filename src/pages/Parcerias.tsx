@@ -1291,7 +1291,7 @@ const Parcerias = () => {
                 ) : partnershipDetails ? (
                   <>
                     {/* Métricas principais */}
-                    <div className="grid gap-4 md:grid-cols-4">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                       <Card className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                           <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -1331,6 +1331,35 @@ const Parcerias = () => {
                           {partnershipDetails.totalArbitragens}
                         </p>
                       </Card>
+
+                      <Card className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">% Lucro/Banca</span>
+                        </div>
+                        <p className={`text-2xl font-bold ${
+                          partnershipDetails.partnership.valor_banca > 0 && 
+                          (partnershipDetails.lucroLiquido / partnershipDetails.partnership.valor_banca) * 100 >= 0 
+                            ? 'text-success' 
+                            : 'text-destructive'
+                        }`}>
+                          {partnershipDetails.partnership.valor_banca > 0 
+                            ? formatCurrency((partnershipDetails.lucroLiquido / partnershipDetails.partnership.valor_banca) * 100)
+                            : '0'}%
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Banca: R$ {formatCurrency(partnershipDetails.partnership.valor_banca)}
+                        </p>
+                      </Card>
+
+                      {user?.id && selectedPartnershipId && (
+                        <MonthlyGoalCard
+                          userId={user.id}
+                          partnershipId={selectedPartnershipId}
+                          currentProfit={partnershipDetails.lucroLiquido}
+                          compact
+                        />
+                      )}
                     </div>
 
                     {/* Tabela de casas */}

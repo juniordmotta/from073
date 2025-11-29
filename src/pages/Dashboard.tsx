@@ -16,6 +16,7 @@ import { TrendingUp, TrendingDown, DollarSign, Target, Filter, X, Download, Maxi
 import { format } from 'date-fns';
 import { formatCurrency, formatUserName } from '@/lib/utils';
 import * as XLSX from 'xlsx';
+import { MonthlyGoalCard } from '@/components/MonthlyGoalCard';
 
 interface Stats {
   totalArbitragens: number;
@@ -529,7 +530,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total de Arbitragens</CardTitle>
@@ -608,6 +609,13 @@ export default function Dashboard() {
               <p className="text-xs text-muted-foreground">período selecionado</p>
             </CardContent>
           </Card>
+
+          {user?.id && (
+            <MonthlyGoalCard
+              userId={user.id}
+              currentProfit={stats.totalLucro}
+            />
+          )}
         </div>
 
         {openBets.length > 0 && (
