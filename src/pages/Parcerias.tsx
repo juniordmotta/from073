@@ -87,6 +87,8 @@ const Parcerias = () => {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [arbitrages, setArbitrages] = useState<ArbitrageResult[]>([]);
   const [loadingData, setLoadingData] = useState(false);
+  const [selectedPartnershipId, setSelectedPartnershipId] = useState<string | null>(null);
+  const [partnershipDetails, setPartnershipDetails] = useState<any>(null);
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
@@ -414,6 +416,167 @@ const Parcerias = () => {
   const handleViewDashboard = () => {
     setViewMode('dashboard');
     loadArbitragesData();
+  };
+
+  const loadPartnershipDetails = async (partnershipId: string) => {
+    setLoadingData(true);
+    try {
+      // Buscar dados da parceria
+      const { data: partnership, error: partnershipError } = await supabase
+        .from('partnerships')
+        .select('*')
+        .eq('id', partnershipId)
+        .single();
+
+      if (partnershipError) throw partnershipError;
+
+      // Buscar arbitragens relacionadas
+      const { data: arbs, error: arbsError } = await supabase
+        .from('arbitrages')
+        .select('*')
+        .or(`casa_01_parceria_id.eq.${partnershipId},casa_02_parceria_id.eq.${partnershipId},casa_03_parceria_id.eq.${partnershipId}`);
+
+      if (arbsError) throw arbsError;
+
+      // Buscar custos operacionais do mês atual
+      const firstDayOfMonth = new Date();
+      firstDayOfMonth.setDate(1);
+      const lastDayOfMonth = new Date(firstDayOfMonth.getFullYear(), firstDayOfMonth.getMonth() + 1, 0);
+
+      const { data: costs, error: costsError } = await supabase
+        .from('operational_costs')
+        .select('*')
+        .eq('user_id', partnership.user_id)
+        .gte('data', format(firstDayOfMonth, 'yyyy-MM-dd'))
+        .lte('data', format(lastDayOfMonth, 'yyyy-MM-dd'));
+
+      if (costsError) throw costsError;
+
+      // Calcular estatísticas por casa
+      const casasStats = new Map();
+
+      arbs?.forEach((arb: any) => {
+        // Casa 01
+        if (arb.casa_01_parceria_id === partnershipId) {
+          if (!casasStats.has(arb.casa_01_nome)) {
+            casasStats.set(arb.casa_01_nome, {
+              nome: arb.casa_01_nome,
+              ganhos: 0,
+              perdas: 0,
+              devolvidos: 0,
+              aguardando: 0,
+              totalApostas: 0,
+            });
+          }
+          const stats = casasStats.get(arb.casa_01_nome);
+          stats.totalApostas++;
+          
+          if (arb.casa_01_resultado === 'green' || arb.casa_01_resultado === 'parcial_green') {
+            stats.ganhos += arb.casa_01_valor_resultado || 0;
+          } else if (arb.casa_01_resultado === 'red' || arb.casa_01_resultado === 'parcial_red' || arb.casa_01_resultado === 'perda_total') {
+            stats.perdas += arb.casa_01_valor || 0;
+          } else if (arb.casa_01_resultado === 'devolvido') {
+            stats.devolvidos++;
+          } else if (arb.casa_01_resultado === 'aguardando') {
+            stats.aguardando++;
+          }
+        }
+
+        // Casa 02
+        if (arb.casa_02_parceria_id === partnershipId) {
+          if (!casasStats.has(arb.casa_02_nome)) {
+            casasStats.set(arb.casa_02_nome, {
+              nome: arb.casa_02_nome,
+              ganhos: 0,
+              perdas: 0,
+              devolvidos: 0,
+              aguardando: 0,
+              totalApostas: 0,
+            });
+          }
+          const stats = casasStats.get(arb.casa_02_nome);
+          stats.totalApostas++;
+          
+          if (arb.casa_02_resultado === 'green' || arb.casa_02_resultado === 'parcial_green') {
+            stats.ganhos += arb.casa_02_valor_resultado || 0;
+          } else if (arb.casa_02_resultado === 'red' || arb.casa_02_resultado === 'parcial_red' || arb.casa_02_resultado === 'perda_total') {
+            stats.perdas += arb.casa_02_valor || 0;
+          } else if (arb.casa_02_resultado === 'devolvido') {
+            stats.devolvidos++;
+          } else if (arb.casa_02_resultado === 'aguardando') {
+            stats.aguardando++;
+          }
+        }
+
+        // Casa 03
+        if (arb.casa_03_parceria_id === partnershipId && arb.casa_03_nome) {
+          if (!casasStats.has(arb.casa_03_nome)) {
+            casasStats.set(arb.casa_03_nome, {
+              nome: arb.casa_03_nome,
+              ganhos: 0,
+              perdas: 0,
+              devolvidos: 0,
+              aguardando: 0,
+              totalApostas: 0,
+            });
+          }
+          const stats = casasStats.get(arb.casa_03_nome);
+          stats.totalApostas++;
+          
+          if (arb.casa_03_resultado === 'green' || arb.casa_03_resultado === 'parcial_green') {
+            stats.ganhos += arb.casa_03_valor_resultado || 0;
+          } else if (arb.casa_03_resultado === 'red' || arb.casa_03_resultado === 'parcial_red' || arb.casa_03_resultado === 'perda_total') {
+            stats.perdas += arb.casa_03_valor || 0;
+          } else if (arb.casa_03_resultado === 'devolvido') {
+            stats.devolvidos++;
+          } else if (arb.casa_03_resultado === 'aguardando') {
+            stats.aguardando++;
+          }
+        }
+      });
+
+      // Calcular lucro líquido por casa
+      const casasArray = Array.from(casasStats.values()).map(casa => ({
+        ...casa,
+        lucroLiquido: casa.ganhos - casa.perdas,
+      }));
+
+      // Calcular totais
+      const totalCustos = costs?.reduce((sum, cost) => sum + Number(cost.valor), 0) || 0;
+      const lucroBruto = arbs?.reduce((sum, arb) => {
+        if (arb.status === 'aguardando') return sum;
+        return sum + (arb.lucro_real || 0);
+      }, 0) || 0;
+      const lucroLiquido = lucroBruto - totalCustos;
+
+      setPartnershipDetails({
+        partnership,
+        custosMes: totalCustos,
+        lucroBruto,
+        lucroLiquido,
+        casas: casasArray,
+        totalArbitragens: arbs?.length || 0,
+      });
+    } catch (error) {
+      console.error('Erro ao carregar detalhes da parceria:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível carregar os detalhes da parceria',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  const handlePartnershipClick = (partnershipId: string) => {
+    setSelectedPartnershipId(partnershipId);
+    loadPartnershipDetails(partnershipId);
+  };
+
+  const handleBackToReport = () => {
+    setSelectedPartnershipId(null);
+    setPartnershipDetails(null);
   };
 
   const handleExportReport = () => {
@@ -837,91 +1000,206 @@ const Parcerias = () => {
 
         {viewMode === 'report' && (
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold">Relatório de Lucro por Parceria</h2>
-              {reportData.length > 0 && (
-                <Button onClick={handleExportReport} variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  Exportar Excel
-                </Button>
-              )}
-            </div>
-            
-            {loadingData ? (
-              <div className="text-center py-8">Carregando relatório...</div>
-            ) : reportData.length === 0 ? (
-              <div className="text-center py-8">Nenhum dado disponível para gerar relatório</div>
-            ) : (
+            {!selectedPartnershipId ? (
               <>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                  {reportData.map((data) => (
-                    <Card key={data.id} className="p-4">
-                      <h3 className="font-semibold text-sm mb-2 truncate">{formatUserName(data.nome)}</h3>
-                      <div className="space-y-1 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Total Apostas:</span>
-                          <span className="font-medium">{data.totalArbitrages}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Lucro Total:</span>
-                          <span className={`font-medium ${data.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
-                            R$ {formatCurrency(data.totalLucro)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">ROI:</span>
-                          <span className={`font-medium ${data.roi >= 0 ? 'text-success' : 'text-destructive'}`}>
-                            {data.roi.toFixed(2)}%
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-xs pt-1 border-t">
-                          <span className="text-success">Green: {data.greenCount}</span>
-                          <span className="text-destructive">Red: {data.redCount}</span>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold">Relatório de Lucro por Parceria</h2>
+                  {reportData.length > 0 && (
+                    <Button onClick={handleExportReport} variant="outline">
+                      <Download className="h-4 w-4 mr-2" />
+                      Exportar Excel
+                    </Button>
+                  )}
                 </div>
-
-                <div className="grid gap-6 md:grid-cols-2">
-                  <Card className="p-6">
-                    <h3 className="text-lg font-semibold mb-4">Lucro por Parceria</h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={reportData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="nome" angle={-45} textAnchor="end" height={100} tickFormatter={formatUserName} />
-                        <YAxis />
-                        <Tooltip formatter={(value: number) => `R$ ${formatCurrency(value)}`} />
-                        <Legend />
-                        <Bar dataKey="totalLucro" fill="#8884d8" name="Lucro Total (R$)" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </Card>
-
-                  <Card className="p-6">
-                    <h3 className="text-lg font-semibold mb-4">Distribuição de Apostas</h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie
-                          data={reportData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ nome, totalArbitrages }) => `${formatUserName(nome)}: ${totalArbitrages}`}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="totalArbitrages"
+                
+                {loadingData ? (
+                  <div className="text-center py-8">Carregando relatório...</div>
+                ) : reportData.length === 0 ? (
+                  <div className="text-center py-8">Nenhum dado disponível para gerar relatório</div>
+                ) : (
+                  <>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                      {reportData.map((data) => (
+                        <Card 
+                          key={data.id} 
+                          className="p-4 cursor-pointer hover:shadow-lg transition-shadow"
+                          onClick={() => handlePartnershipClick(data.id)}
                         >
-                          {reportData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </Card>
-                </div>
+                          <h3 className="font-semibold text-sm mb-2 truncate">{formatUserName(data.nome)}</h3>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Total Apostas:</span>
+                              <span className="font-medium">{data.totalArbitrages}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Lucro Total:</span>
+                              <span className={`font-medium ${data.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
+                                R$ {formatCurrency(data.totalLucro)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">ROI:</span>
+                              <span className={`font-medium ${data.roi >= 0 ? 'text-success' : 'text-destructive'}`}>
+                                {data.roi.toFixed(2)}%
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-xs pt-1 border-t">
+                              <span className="text-success">Green: {data.greenCount}</span>
+                              <span className="text-destructive">Red: {data.redCount}</span>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+
+                    <div className="grid gap-6 md:grid-cols-2">
+                      <Card className="p-6">
+                        <h3 className="text-lg font-semibold mb-4">Lucro por Parceria</h3>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <BarChart data={reportData}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="nome" angle={-45} textAnchor="end" height={100} tickFormatter={formatUserName} />
+                            <YAxis />
+                            <Tooltip formatter={(value: number) => `R$ ${formatCurrency(value)}`} />
+                            <Legend />
+                            <Bar dataKey="totalLucro" fill="#8884d8" name="Lucro Total (R$)" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </Card>
+                      
+                      <Card className="p-6">
+                        <h3 className="text-lg font-semibold mb-4">Distribuição de Resultados</h3>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <PieChart>
+                            <Pie
+                              data={reportData}
+                              dataKey="totalArbitrages"
+                              nameKey="nome"
+                              cx="50%"
+                              cy="50%"
+                              outerRadius={100}
+                              label={(entry) => formatUserName(entry.nome)}
+                            >
+                              {reportData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip />
+                            <Legend />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </Card>
+                    </div>
+                  </>
+                )}
               </>
+            ) : (
+              // Visualização detalhada da parceria
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <Button variant="outline" onClick={handleBackToReport}>
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Voltar
+                  </Button>
+                  <h2 className="text-2xl font-bold">
+                    {partnershipDetails ? formatUserName(partnershipDetails.partnership.nome_completo) : 'Carregando...'}
+                  </h2>
+                </div>
+
+                {loadingData ? (
+                  <div className="text-center py-8">Carregando detalhes...</div>
+                ) : partnershipDetails ? (
+                  <>
+                    {/* Métricas principais */}
+                    <div className="grid gap-4 md:grid-cols-4">
+                      <Card className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <DollarSign className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">Custos do Mês</span>
+                        </div>
+                        <p className="text-2xl font-bold text-destructive">
+                          R$ {formatCurrency(partnershipDetails.custosMes)}
+                        </p>
+                      </Card>
+
+                      <Card className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">Lucro Bruto</span>
+                        </div>
+                        <p className={`text-2xl font-bold ${partnershipDetails.lucroBruto >= 0 ? 'text-success' : 'text-destructive'}`}>
+                          R$ {formatCurrency(partnershipDetails.lucroBruto)}
+                        </p>
+                      </Card>
+
+                      <Card className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Target className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">Lucro Líquido</span>
+                        </div>
+                        <p className={`text-2xl font-bold ${partnershipDetails.lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
+                          R$ {formatCurrency(partnershipDetails.lucroLiquido)}
+                        </p>
+                      </Card>
+
+                      <Card className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">Total Apostas</span>
+                        </div>
+                        <p className="text-2xl font-bold">
+                          {partnershipDetails.totalArbitragens}
+                        </p>
+                      </Card>
+                    </div>
+
+                    {/* Tabela de casas */}
+                    <Card className="p-6">
+                      <h3 className="text-lg font-semibold mb-4">Desempenho por Casa de Apostas</h3>
+                      {partnershipDetails.casas.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-4">
+                          Nenhuma aposta registrada para esta parceria
+                        </p>
+                      ) : (
+                        <div className="rounded-md border">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Casa</TableHead>
+                                <TableHead className="text-right">Total Apostas</TableHead>
+                                <TableHead className="text-right">Ganhos</TableHead>
+                                <TableHead className="text-right">Perdas</TableHead>
+                                <TableHead className="text-right">Devolvidos</TableHead>
+                                <TableHead className="text-right">Aguardando</TableHead>
+                                <TableHead className="text-right">Lucro Líquido</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {partnershipDetails.casas.map((casa: any, index: number) => (
+                                <TableRow key={index}>
+                                  <TableCell className="font-medium">{casa.nome}</TableCell>
+                                  <TableCell className="text-right">{casa.totalApostas}</TableCell>
+                                  <TableCell className="text-right text-success">
+                                    R$ {formatCurrency(casa.ganhos)}
+                                  </TableCell>
+                                  <TableCell className="text-right text-destructive">
+                                    R$ {formatCurrency(casa.perdas)}
+                                  </TableCell>
+                                  <TableCell className="text-right">{casa.devolvidos}</TableCell>
+                                  <TableCell className="text-right text-muted-foreground">{casa.aguardando}</TableCell>
+                                  <TableCell className={`text-right font-semibold ${casa.lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
+                                    R$ {formatCurrency(casa.lucroLiquido)}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      )}
+                    </Card>
+                  </>
+                ) : null}
+              </div>
             )}
           </div>
         )}
