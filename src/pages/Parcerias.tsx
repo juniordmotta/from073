@@ -11,11 +11,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Pencil, Trash2, History, TrendingUp, ArrowLeft } from 'lucide-react';
+import { Plus, Pencil, Trash2, History, TrendingUp, ArrowLeft, LayoutDashboard, Download, AlertTriangle, TrendingDown, DollarSign, Target } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrency, formatUserName } from '@/lib/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import * as XLSX from 'xlsx';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface Partnership {
   id: string;
@@ -80,7 +83,7 @@ const Parcerias = () => {
   const [editingPartnership, setEditingPartnership] = useState<Partnership | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [users, setUsers] = useState<{ id: string; name: string; email: string }[]>([]);
-  const [viewMode, setViewMode] = useState<'list' | 'history' | 'report'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'history' | 'report' | 'dashboard'>('list');
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [arbitrages, setArbitrages] = useState<ArbitrageResult[]>([]);
   const [loadingData, setLoadingData] = useState(false);
@@ -408,6 +411,140 @@ const Parcerias = () => {
     setArbitrages([]);
   };
 
+  const handleViewDashboard = () => {
+    setViewMode('dashboard');
+    loadArbitragesData();
+  };
+
+  const handleExportReport = () => {
+    if (reportData.length === 0) {
+      toast({
+        title: 'Aviso',
+        description: 'Nenhum dado disponível para exportar',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const exportData = reportData.map((data) => ({
+      'Parceria': data.nome,
+      'Total de Apostas': data.totalArbitrages,
+      'Apostas Green': data.greenCount,
+      'Apostas Red': data.redCount,
+      'Lucro Total (R$)': data.totalLucro,
+      'ROI (%)': data.roi.toFixed(2),
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Relatório de Lucro');
+    
+    const fileName = `relatorio_parcerias_${format(new Date(), 'dd-MM-yyyy_HH-mm')}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+
+    toast({
+      title: 'Sucesso',
+      description: 'Relatório exportado com sucesso',
+    });
+  };
+
+  // Métricas consolidadas para o dashboard
+  const dashboardMetrics = useMemo(() => {
+    if (partnerships.length === 0 || arbitrages.length === 0) {
+      return null;
+    }
+
+    const activePartnerships = partnerships.filter(p => p.status === 'ativo');
+    const inactivePartnerships = partnerships.filter(p => p.status === 'inativo');
+    const totalBanca = partnerships.reduce((sum, p) => sum + Number(p.valor_banca), 0);
+
+    // Calcular métricas de apostas
+    const partnershipStats = new Map();
+    
+    partnerships.forEach(partnership => {
+      const partnershipArbitrages = arbitrages.filter(
+        arb => arb.casa_01_parceria_id === partnership.id || 
+               arb.casa_02_parceria_id === partnership.id || 
+               arb.casa_03_parceria_id === partnership.id
+      );
+
+      const totalLucro = partnershipArbitrages.reduce((sum, arb) => {
+        const lucro = arb.status === 'aguardando' ? 0 : (arb.lucro_real || 0);
+        return sum + Number(lucro);
+      }, 0);
+
+      const greenCount = partnershipArbitrages.filter(
+        arb => arb.status === 'green' || arb.status === 'parcial_green'
+      ).length;
+
+      partnershipStats.set(partnership.id, {
+        nome: partnership.nome_completo,
+        totalArbitrages: partnershipArbitrages.length,
+        totalLucro,
+        greenCount,
+      });
+    });
+
+    // Identificar alertas
+    const alerts = [];
+    
+    // Alerta: Parcerias com performance negativa
+    Array.from(partnershipStats.entries()).forEach(([id, stats]) => {
+      if (stats.totalLucro < -100 && stats.totalArbitrages > 5) {
+        alerts.push({
+          type: 'negative_performance',
+          severity: 'high',
+          message: `${formatUserName(stats.nome)} está com lucro negativo de R$ ${formatCurrency(Math.abs(stats.totalLucro))}`,
+        });
+      }
+    });
+
+    // Alerta: Parcerias sem apostas recentes (últimos 30 dias)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    activePartnerships.forEach(partnership => {
+      const recentArbitrages = arbitrages.filter(
+        arb => (arb.casa_01_parceria_id === partnership.id || 
+                arb.casa_02_parceria_id === partnership.id || 
+                arb.casa_03_parceria_id === partnership.id) &&
+               new Date(arb.created_at) >= thirtyDaysAgo
+      );
+
+      if (recentArbitrages.length === 0) {
+        alerts.push({
+          type: 'no_recent_activity',
+          severity: 'medium',
+          message: `${formatUserName(partnership.nome_completo)} não possui apostas nos últimos 30 dias`,
+        });
+      }
+    });
+
+    // Alerta: Parcerias com baixa taxa de sucesso
+    Array.from(partnershipStats.entries()).forEach(([id, stats]) => {
+      if (stats.totalArbitrages >= 10) {
+        const successRate = (stats.greenCount / stats.totalArbitrages) * 100;
+        if (successRate < 50) {
+          alerts.push({
+            type: 'low_success_rate',
+            severity: 'medium',
+            message: `${formatUserName(stats.nome)} tem taxa de sucesso baixa (${successRate.toFixed(1)}%)`,
+          });
+        }
+      }
+    });
+
+    return {
+      totalPartnerships: partnerships.length,
+      activePartnerships: activePartnerships.length,
+      inactivePartnerships: inactivePartnerships.length,
+      totalBanca,
+      totalArbitrages: arbitrages.length,
+      alerts,
+      partnershipStats: Array.from(partnershipStats.values()),
+    };
+  }, [partnerships, arbitrages]);
+
   return (
     <Layout>
       <div className="p-6 space-y-6">
@@ -423,6 +560,10 @@ const Parcerias = () => {
           </div>
           {viewMode === 'list' && (
             <div className="flex gap-2">
+              <Button variant="outline" onClick={handleViewDashboard}>
+                <LayoutDashboard className="h-4 w-4 mr-2" />
+                Dashboard
+              </Button>
               <Button variant="outline" onClick={handleViewHistory}>
                 <History className="h-4 w-4 mr-2" />
                 Histórico de Alterações
@@ -696,7 +837,15 @@ const Parcerias = () => {
 
         {viewMode === 'report' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold">Relatório de Lucro por Parceria</h2>
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Relatório de Lucro por Parceria</h2>
+              {reportData.length > 0 && (
+                <Button onClick={handleExportReport} variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar Excel
+                </Button>
+              )}
+            </div>
             
             {loadingData ? (
               <div className="text-center py-8">Carregando relatório...</div>
@@ -772,6 +921,165 @@ const Parcerias = () => {
                     </ResponsiveContainer>
                   </Card>
                 </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {viewMode === 'dashboard' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold">Dashboard - Visão Geral das Parcerias</h2>
+            
+            {loadingData ? (
+              <div className="text-center py-8">Carregando dashboard...</div>
+            ) : !dashboardMetrics ? (
+              <div className="text-center py-8">Nenhum dado disponível para gerar dashboard</div>
+            ) : (
+              <>
+                {/* Métricas Principais */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Parcerias</CardTitle>
+                      <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{dashboardMetrics.totalPartnerships}</div>
+                      <p className="text-xs text-muted-foreground">
+                        {dashboardMetrics.activePartnerships} ativas
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Parcerias Ativas</CardTitle>
+                      <TrendingUp className="h-4 w-4 text-success" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-success">{dashboardMetrics.activePartnerships}</div>
+                      <p className="text-xs text-muted-foreground">
+                        {((dashboardMetrics.activePartnerships / dashboardMetrics.totalPartnerships) * 100).toFixed(1)}% do total
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Parcerias Inativas</CardTitle>
+                      <TrendingDown className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-muted-foreground">{dashboardMetrics.inactivePartnerships}</div>
+                      <p className="text-xs text-muted-foreground">
+                        {((dashboardMetrics.inactivePartnerships / dashboardMetrics.totalPartnerships) * 100).toFixed(1)}% do total
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Valor Total Banca</CardTitle>
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">R$ {formatCurrency(dashboardMetrics.totalBanca)}</div>
+                      <p className="text-xs text-muted-foreground">
+                        Média: R$ {formatCurrency(dashboardMetrics.totalBanca / dashboardMetrics.totalPartnerships)}
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Apostas</CardTitle>
+                      <Target className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{dashboardMetrics.totalArbitrages}</div>
+                      <p className="text-xs text-muted-foreground">
+                        em todas as parcerias
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Alertas */}
+                {dashboardMetrics.alerts.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-semibold">Alertas e Notificações</h3>
+                    {dashboardMetrics.alerts.map((alert, index) => (
+                      <Alert
+                        key={index}
+                        variant={alert.severity === 'high' ? 'destructive' : 'default'}
+                      >
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle>
+                          {alert.severity === 'high' ? 'Atenção Urgente' : 'Aviso'}
+                        </AlertTitle>
+                        <AlertDescription>{alert.message}</AlertDescription>
+                      </Alert>
+                    ))}
+                  </div>
+                )}
+
+                {/* Performance por Parceria */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold">Performance por Parceria</h3>
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {dashboardMetrics.partnershipStats
+                      .sort((a, b) => b.totalLucro - a.totalLucro)
+                      .map((stat, index) => (
+                        <Card key={index} className="p-4">
+                          <h4 className="font-semibold text-sm mb-2 truncate">{formatUserName(stat.nome)}</h4>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Apostas:</span>
+                              <span className="font-medium">{stat.totalArbitrages}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Green:</span>
+                              <span className="font-medium text-success">{stat.greenCount}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Lucro:</span>
+                              <span className={`font-medium ${stat.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
+                                R$ {formatCurrency(stat.totalLucro)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Taxa Sucesso:</span>
+                              <span className="font-medium">
+                                {stat.totalArbitrages > 0 ? ((stat.greenCount / stat.totalArbitrages) * 100).toFixed(1) : 0}%
+                              </span>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                  </div>
+                </div>
+
+                {/* Gráfico de Comparação */}
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold mb-4">Comparação de Performance</h3>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <BarChart data={dashboardMetrics.partnershipStats.sort((a, b) => b.totalLucro - a.totalLucro)}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="nome" angle={-45} textAnchor="end" height={100} tickFormatter={formatUserName} />
+                      <YAxis />
+                      <Tooltip 
+                        formatter={(value: number, name: string) => {
+                          if (name === 'Lucro (R$)') return `R$ ${formatCurrency(value)}`;
+                          return value;
+                        }}
+                      />
+                      <Legend />
+                      <Bar dataKey="totalLucro" fill="#8884d8" name="Lucro (R$)" />
+                      <Bar dataKey="totalArbitrages" fill="#82ca9d" name="Total Apostas" />
+                      <Bar dataKey="greenCount" fill="#00C49F" name="Green" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Card>
               </>
             )}
           </div>
