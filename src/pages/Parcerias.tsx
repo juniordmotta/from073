@@ -97,6 +97,7 @@ const Parcerias = () => {
   const [banks, setBanks] = useState<Array<{ id: string; nome: string }>>([]);
   const [selectedBanks, setSelectedBanks] = useState<string[]>([]);
   const [isBanksDialogOpen, setIsBanksDialogOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'ativo' | 'inativo'>('ativo');
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
@@ -172,6 +173,11 @@ const Parcerias = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
+      // Filtrar por status
+      if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
+      }
+
       // Se for admin e tiver filtro específico, filtrar por usuário
       if (isAdmin && selectedUserId && selectedUserId !== 'all') {
         console.log('Filtrando por usuário:', selectedUserId);
@@ -223,14 +229,16 @@ const Parcerias = () => {
 
   const clearFilters = () => {
     setSelectedUserId('all');
+    setStatusFilter('ativo');
   };
 
   // Contar filtros ativos
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (isAdmin && selectedUserId !== 'all') count++;
+    if (statusFilter !== 'ativo') count++;
     return count;
-  }, [selectedUserId, isAdmin]);
+  }, [selectedUserId, statusFilter, isAdmin]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -799,6 +807,37 @@ const Parcerias = () => {
                   Limpar Filtros
                 </Button>
               </>
+            )}
+            {viewMode === 'list' && (
+              <div className="flex items-center gap-2 ml-2">
+                <Label className="text-sm font-medium">Status:</Label>
+                <div className="flex gap-1">
+                  <Button
+                    variant={statusFilter === 'all' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setStatusFilter('all')}
+                    className="h-8"
+                  >
+                    Todas
+                  </Button>
+                  <Button
+                    variant={statusFilter === 'ativo' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setStatusFilter('ativo')}
+                    className="h-8"
+                  >
+                    Ativa
+                  </Button>
+                  <Button
+                    variant={statusFilter === 'inativo' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setStatusFilter('inativo')}
+                    className="h-8"
+                  >
+                    Inativa
+                  </Button>
+                </div>
+              </div>
             )}
             {viewMode !== 'list' && (
               <Button variant="outline" onClick={handleBackToList}>
