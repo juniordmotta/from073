@@ -325,6 +325,8 @@ export default function Usuarios() {
       .eq('user_id', user.id)
       .is('partnership_id', null)
       .eq('month', currentMonth)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
     
     if (goalError) {
