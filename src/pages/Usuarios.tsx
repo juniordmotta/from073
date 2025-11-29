@@ -209,19 +209,23 @@ export default function Usuarios() {
       return;
     }
 
-    // Atualizar meta mensal se fornecida
-    if (editFormData.monthlyGoal) {
-      const goalValue = parseFloat(editFormData.monthlyGoal.replace(/\D/g, '')) / 100;
-      const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
-      
-      await supabase.from('monthly_goals').upsert({
-        user_id: editingUser.id,
-        partnership_id: null,
-        month: currentMonth,
-        goal_value: goalValue,
-      }, {
-        onConflict: 'user_id,partnership_id,month',
-      });
+    // Atualizar meta mensal (sempre atualiza, mesmo se for zero)
+    const goalValue = editFormData.monthlyGoal 
+      ? parseFloat(editFormData.monthlyGoal.replace(/\D/g, '')) / 100 
+      : 0;
+    const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
+    
+    const { error: goalError } = await supabase.from('monthly_goals').upsert({
+      user_id: editingUser.id,
+      partnership_id: null,
+      month: currentMonth,
+      goal_value: goalValue,
+    }, {
+      onConflict: 'user_id,partnership_id,month',
+    });
+
+    if (goalError) {
+      console.error('Erro ao atualizar meta:', goalError);
     }
 
     toast({
