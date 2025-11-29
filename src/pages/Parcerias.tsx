@@ -81,7 +81,7 @@ const Parcerias = () => {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPartnership, setEditingPartnership] = useState<Partnership | null>(null);
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [selectedUserId, setSelectedUserId] = useState<string>('all');
   const [users, setUsers] = useState<{ id: string; name: string; email: string }[]>([]);
   const [viewMode, setViewMode] = useState<'list' | 'history' | 'report' | 'dashboard'>('list');
   const [history, setHistory] = useState<HistoryEntry[]>([]);
@@ -130,7 +130,7 @@ const Parcerias = () => {
         .order('created_at', { ascending: false });
 
       // Se for admin e tiver filtro, filtrar por usuário
-      if (isAdmin && selectedUserId) {
+      if (isAdmin && selectedUserId && selectedUserId !== 'all') {
         query = query.eq('user_id', selectedUserId);
       } else if (!isAdmin) {
         // Se não for admin, só mostrar suas próprias parcerias
@@ -284,7 +284,7 @@ const Parcerias = () => {
 
       if (!isAdmin) {
         query = query.eq('user_id', user?.id);
-      } else if (selectedUserId) {
+      } else if (selectedUserId && selectedUserId !== 'all') {
         query = query.eq('user_id', selectedUserId);
       }
 
@@ -341,7 +341,7 @@ const Parcerias = () => {
 
       if (!isAdmin) {
         query = query.eq('user_id', user?.id);
-      } else if (selectedUserId) {
+      } else if (selectedUserId && selectedUserId !== 'all') {
         query = query.eq('user_id', selectedUserId);
       }
 
@@ -695,7 +695,7 @@ const Parcerias = () => {
                   <SelectValue placeholder="Todos os usuários" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os usuários</SelectItem>
+                  <SelectItem value="all">Todos os usuários</SelectItem>
                   {users.map((user) => (
                     <SelectItem key={user.id} value={user.id}>
                       {user.name} ({user.email})
