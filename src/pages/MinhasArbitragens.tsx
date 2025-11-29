@@ -145,6 +145,7 @@ export default function MinhasArbitragens() {
   const [filterEndDate, setFilterEndDate] = useState(() => 
     sessionStorage.getItem('arbitragens_filterEndDate') || ''
   );
+  const [selectedPeriod, setSelectedPeriod] = useState<'hoje' | 'semana' | 'mes' | 'mes_atual' | 'custom'>('custom');
   const [filterStatus, setFilterStatus] = useState<string[]>(() => {
     const saved = sessionStorage.getItem('arbitragens_filterStatus');
     if (!saved) return ['aguardando'];
@@ -251,6 +252,43 @@ export default function MinhasArbitragens() {
   });
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
+
+  // Função para aplicar filtros rápidos de período
+  const applyPeriodFilter = useCallback((period: 'hoje' | 'semana' | 'mes' | 'mes_atual' | 'custom') => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    switch (period) {
+      case 'hoje':
+        setFilterStartDate(format(today, 'yyyy-MM-dd'));
+        setFilterEndDate(format(today, 'yyyy-MM-dd'));
+        setSelectedPeriod('hoje');
+        break;
+      case 'semana':
+        const weekAgo = new Date(today);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        setFilterStartDate(format(weekAgo, 'yyyy-MM-dd'));
+        setFilterEndDate(format(today, 'yyyy-MM-dd'));
+        setSelectedPeriod('semana');
+        break;
+      case 'mes':
+        const monthAgo = new Date(today);
+        monthAgo.setDate(monthAgo.getDate() - 30);
+        setFilterStartDate(format(monthAgo, 'yyyy-MM-dd'));
+        setFilterEndDate(format(today, 'yyyy-MM-dd'));
+        setSelectedPeriod('mes');
+        break;
+      case 'mes_atual':
+        const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        setFilterStartDate(format(firstDayOfMonth, 'yyyy-MM-dd'));
+        setFilterEndDate(format(today, 'yyyy-MM-dd'));
+        setSelectedPeriod('mes_atual');
+        break;
+      case 'custom':
+        setSelectedPeriod('custom');
+        break;
+    }
+  }, []);
 
   // Ativar notificações de jogos
   useGameNotifications({ userId: user?.id, enabled: true });
@@ -1124,6 +1162,7 @@ export default function MinhasArbitragens() {
                     setFilterStatus(['all']);
                     setFilterUser(users.map(u => u.id));
                     setFilterPartnership([]);
+                    setSelectedPeriod('custom');
                   }}
                   className="h-8"
                 >
@@ -1196,6 +1235,45 @@ export default function MinhasArbitragens() {
           </div>
           
           <div className="flex items-end gap-2 flex-wrap">
+            {/* Filtros Rápidos de Período */}
+            <div>
+              <Label className="text-xs mb-1 block">Período Rápido</Label>
+              <div className="flex gap-1">
+                <Button
+                  variant={selectedPeriod === 'hoje' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => applyPeriodFilter('hoje')}
+                  className="h-10 px-3"
+                >
+                  Hoje
+                </Button>
+                <Button
+                  variant={selectedPeriod === 'semana' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => applyPeriodFilter('semana')}
+                  className="h-10 px-3"
+                >
+                  7 dias
+                </Button>
+                <Button
+                  variant={selectedPeriod === 'mes' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => applyPeriodFilter('mes')}
+                  className="h-10 px-3"
+                >
+                  30 dias
+                </Button>
+                <Button
+                  variant={selectedPeriod === 'mes_atual' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => applyPeriodFilter('mes_atual')}
+                  className="h-10 px-3"
+                >
+                  Mês atual
+                </Button>
+              </div>
+            </div>
+
             <div>
               <Label className="text-xs mb-1 block">
                 Data Início
@@ -1204,7 +1282,10 @@ export default function MinhasArbitragens() {
               <Input
                 type="date"
                 value={filterStartDate}
-                onChange={(e) => setFilterStartDate(e.target.value)}
+                onChange={(e) => {
+                  setFilterStartDate(e.target.value);
+                  setSelectedPeriod('custom');
+                }}
                 className="w-40 h-10"
                 placeholder="Data inicial"
               />
@@ -1218,7 +1299,10 @@ export default function MinhasArbitragens() {
               <Input
                 type="date"
                 value={filterEndDate}
-                onChange={(e) => setFilterEndDate(e.target.value)}
+                onChange={(e) => {
+                  setFilterEndDate(e.target.value);
+                  setSelectedPeriod('custom');
+                }}
                 className="w-40 h-10"
                 placeholder="Data final"
               />
