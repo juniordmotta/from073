@@ -1080,9 +1080,9 @@ const Parcerias = () => {
                         </TableCell>
                       )}
                       <TableCell>{formatUserName(partnership.nome_completo)}</TableCell>
-                      <TableCell>{partnership.cpf}</TableCell>
+                      <TableCell>{formatCpf(partnership.cpf)}</TableCell>
                       <TableCell className="max-w-xs truncate">{partnership.endereco}</TableCell>
-                      <TableCell>{formatCurrency(partnership.valor_banca)}</TableCell>
+                      <TableCell>R$ {formatCurrency(partnership.valor_banca)}</TableCell>
                       <TableCell>{partnership.bancos_cadastrados}</TableCell>
                       <TableCell>
                         {format(new Date(partnership.data_inicio), 'dd/MM/yyyy', { locale: ptBR })}
@@ -1155,10 +1155,18 @@ const Parcerias = () => {
                         <TableCell>{formatUserName(entry.partnerships?.nome_completo) || 'N/A'}</TableCell>
                         <TableCell>{fieldLabels[entry.field_changed] || entry.field_changed}</TableCell>
                         <TableCell className="max-w-xs truncate">
-                          {entry.field_changed === 'valor_banca' ? `R$ ${formatCurrency(parseFloat(entry.old_value))}` : entry.old_value}
+                          {entry.field_changed === 'valor_banca' 
+                            ? `R$ ${formatCurrency(parseFloat(entry.old_value))}` 
+                            : entry.field_changed === 'cpf'
+                            ? formatCpf(entry.old_value)
+                            : entry.old_value}
                         </TableCell>
                         <TableCell className="max-w-xs truncate">
-                          {entry.field_changed === 'valor_banca' ? `R$ ${formatCurrency(parseFloat(entry.new_value))}` : entry.new_value}
+                          {entry.field_changed === 'valor_banca' 
+                            ? `R$ ${formatCurrency(parseFloat(entry.new_value))}` 
+                            : entry.field_changed === 'cpf'
+                            ? formatCpf(entry.new_value)
+                            : entry.new_value}
                         </TableCell>
                         <TableCell>{formatUserName(entry.profiles?.name) || 'Sistema'}</TableCell>
                       </TableRow>
