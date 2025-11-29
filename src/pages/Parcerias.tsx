@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Pencil, Trash2, History, TrendingUp, ArrowLeft, LayoutDashboard, Download, AlertTriangle, TrendingDown, DollarSign, Target } from 'lucide-react';
+import { Plus, Pencil, Trash2, History, TrendingUp, ArrowLeft, LayoutDashboard, Download, AlertTriangle, TrendingDown, DollarSign, Target, FilterX } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrency, formatUserName } from '@/lib/utils';
@@ -103,45 +103,66 @@ const Parcerias = () => {
   });
 
   useEffect(() => {
-    fetchPartnerships();
-    if (isAdmin) {
-      fetchUsers();
+    console.log('useEffect disparado - isAdmin:', isAdmin, 'user:', user?.id);
+    if (user) {
+      fetchPartnerships();
+      if (isAdmin) {
+        fetchUsers();
+      }
     }
-  }, [user, selectedUserId]);
+  }, [user, selectedUserId, isAdmin]);
 
   const fetchUsers = async () => {
     try {
+      console.log('Buscando usuários...');
       const { data, error } = await supabase
         .from('profiles')
         .select('id, name, email')
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar usuários:', error);
+        throw error;
+      }
+      console.log('Usuários encontrados:', data);
       setUsers(data || []);
     } catch (error) {
       console.error('Erro ao buscar usuários:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível carregar a lista de usuários',
+        variant: 'destructive',
+      });
     }
   };
 
   const fetchPartnerships = async () => {
     try {
       setLoading(true);
+      console.log('isAdmin:', isAdmin, 'selectedUserId:', selectedUserId);
+      
       let query = supabase
         .from('partnerships')
         .select('*')
         .order('created_at', { ascending: false });
 
-      // Se for admin e tiver filtro, filtrar por usuário
+      // Se for admin e tiver filtro específico, filtrar por usuário
       if (isAdmin && selectedUserId && selectedUserId !== 'all') {
+        console.log('Filtrando por usuário:', selectedUserId);
         query = query.eq('user_id', selectedUserId);
       } else if (!isAdmin) {
         // Se não for admin, só mostrar suas próprias parcerias
+        console.log('Não é admin, mostrando apenas parcerias do usuário:', user?.id);
         query = query.eq('user_id', user?.id);
+      } else {
+        console.log('Admin sem filtro - mostrando todas as parcerias');
       }
 
       const { data, error } = await query;
 
       if (error) throw error;
+
+      console.log('Parcerias encontradas:', data?.length);
 
       // Buscar os perfis dos usuários separadamente se for admin
       if (isAdmin && data && data.length > 0) {
@@ -173,6 +194,12 @@ const Parcerias = () => {
       setLoading(false);
     }
   };
+
+  const clearFilters = () => {
+    setSelectedUserId('all');
+  };
+
+  const hasActiveFilters = selectedUserId !== 'all';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -850,23 +877,43 @@ const Parcerias = () => {
         </div>
 
         {viewMode === 'list' && isAdmin && (
-          <div className="flex gap-4 items-end">
-            <div className="space-y-2 flex-1">
-              <Label htmlFor="user-filter">Filtrar por Usuário</Label>
-              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os usuários" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os usuários</SelectItem>
-                  {users.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.name} ({user.email})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="space-y-2">
+            <div className="flex gap-4 items-end">
+              <div className="space-y-2 flex-1">
+                <Label htmlFor="user-filter">
+                  Filtrar por Usuário
+                  {hasActiveFilters && (
+                    <Badge variant="secondary" className="ml-2 text-xs">
+                      Filtro ativo
+                    </Badge>
+                  )}
+                </Label>
+                <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos os usuários" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os usuários</SelectItem>
+                    {users.map((user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {formatUserName(user.name)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {hasActiveFilters && (
+                <Button variant="outline" onClick={clearFilters}>
+                  <FilterX className="h-4 w-4 mr-2" />
+                  Limpar Filtros
+                </Button>
+              )}
             </div>
+            {users.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                Carregando usuários...
+              </p>
+            )}
           </div>
         )}
 
