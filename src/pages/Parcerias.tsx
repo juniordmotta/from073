@@ -236,12 +236,14 @@ const Parcerias = () => {
     e.preventDefault();
 
     try {
+      const filteredBanks = selectedBanks.filter(b => b && b.trim() !== '' && b.toLowerCase() !== 'não informado');
+      
       const partnershipData = {
         nome_completo: formData.nome_completo,
         cpf: unformatCpf(formData.cpf),
         endereco: formData.endereco,
         valor_banca: parseFloat(formData.valor_banca),
-        bancos_cadastrados: selectedBanks.join(', '),
+        bancos_cadastrados: filteredBanks.length > 0 ? filteredBanks.join(', ') : 'Não informado',
         data_inicio: formData.data_inicio,
         status: formData.status,
         user_id: user?.id,
@@ -314,7 +316,9 @@ const Parcerias = () => {
 
   const openEditDialog = (partnership: Partnership) => {
     setEditingPartnership(partnership);
-    const banksArray = partnership.bancos_cadastrados.split(', ').filter(b => b);
+    const banksArray = partnership.bancos_cadastrados
+      .split(', ')
+      .filter(b => b && b.trim() !== '' && b.toLowerCase() !== 'não informado');
     setSelectedBanks(banksArray);
     setFormData({
       nome_completo: partnership.nome_completo,
@@ -805,6 +809,13 @@ const Parcerias = () => {
           </div>
           {viewMode === 'list' && (
             <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsBanksDialogOpen(true)}
+              >
+                <Building2 className="h-4 w-4 mr-2" />
+                Gerenciar Bancos
+              </Button>
               <Button variant="outline" onClick={handleViewDashboard}>
                 <LayoutDashboard className="h-4 w-4 mr-2" />
                 Dashboard
@@ -893,17 +904,19 @@ const Parcerias = () => {
                         >
                           {selectedBanks.length === 0
                             ? 'Selecionar bancos'
-                            : `${selectedBanks.length} banco(s) selecionado(s)`}
-                          <X
-                            className="ml-2 h-4 w-4 opacity-50"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedBanks([]);
-                            }}
-                          />
+                            : selectedBanks.join(', ')}
+                          {selectedBanks.length > 0 && (
+                            <X
+                              className="ml-2 h-4 w-4 opacity-50"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedBanks([]);
+                              }}
+                            />
+                          )}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-full p-4" align="start">
+                      <PopoverContent className="w-full p-4 bg-popover z-50" align="start">
                         <div className="space-y-2">
                           {banks.length === 0 ? (
                             <div className="space-y-2">
@@ -929,11 +942,16 @@ const Parcerias = () => {
                                   id={bank.id}
                                   checked={selectedBanks.includes(bank.nome)}
                                   onCheckedChange={() => {
-                                    setSelectedBanks(
-                                      selectedBanks.includes(bank.nome)
-                                        ? selectedBanks.filter((b) => b !== bank.nome)
-                                        : [...selectedBanks, bank.nome]
+                                    const newSelectedBanks = selectedBanks.includes(bank.nome)
+                                      ? selectedBanks.filter((b) => b !== bank.nome)
+                                      : [...selectedBanks, bank.nome];
+                                    
+                                    // Remover "Não informado" quando selecionar qualquer banco
+                                    const filteredBanks = newSelectedBanks.filter(
+                                      b => b.toLowerCase() !== 'não informado'
                                     );
+                                    
+                                    setSelectedBanks(filteredBanks);
                                   }}
                                 />
                                 <label
