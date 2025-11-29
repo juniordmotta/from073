@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Layout } from '@/components/Layout';
 import { supabase } from '@/integrations/supabase/client';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
@@ -41,6 +43,7 @@ const roleLabels = {
 
 export default function Usuarios() {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -537,7 +540,8 @@ export default function Usuarios() {
           </div>
         </div>
 
-        <div className="rounded-lg border">
+        {/* Visualização Desktop */}
+        <div className="hidden md:block rounded-lg border">
           <Table>
             <TableHeader>
               <TableRow>
@@ -597,6 +601,72 @@ export default function Usuarios() {
               ))}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Visualização Mobile/Tablet em Cards */}
+        <div className="md:hidden space-y-4">
+          {paginatedUsers.map((user) => (
+            <Card key={user.id} className="p-4">
+              <div className="space-y-3">
+                {/* Header do Card */}
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg">{formatUserName(user.name)}</h3>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                  </div>
+                  <Badge
+                    variant={
+                      user.role === 'admin_master' || user.role === 'admin'
+                        ? 'default'
+                        : 'secondary'
+                    }
+                  >
+                    {roleLabels[user.role as keyof typeof roleLabels]}
+                  </Badge>
+                </div>
+
+                {/* Informações */}
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Meta Mensal:</span>
+                    {user.monthly_goal && user.monthly_goal > 0 ? (
+                      <span className="font-medium">R$ {(user.monthly_goal).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Data de Cadastro:</span>
+                    <span className="font-medium">
+                      {format(new Date(user.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Ações */}
+                <div className="flex gap-2 pt-2 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => openEditDialog(user)}
+                  >
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Editar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setDeleteUserId(user.id)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Excluir
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))}
         </div>
         
         {users.length > itemsPerPage && (
