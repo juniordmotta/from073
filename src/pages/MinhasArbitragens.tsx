@@ -256,32 +256,33 @@ export default function MinhasArbitragens() {
   // Função para aplicar filtros rápidos de período
   const applyPeriodFilter = useCallback((period: 'hoje' | 'semana' | 'mes' | 'mes_atual' | 'custom') => {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const day = today.getDate();
     
     switch (period) {
       case 'hoje':
-        setFilterStartDate(format(today, 'yyyy-MM-dd'));
-        setFilterEndDate(format(today, 'yyyy-MM-dd'));
+        const todayStr = format(new Date(year, month, day), 'yyyy-MM-dd');
+        setFilterStartDate(todayStr);
+        setFilterEndDate(todayStr);
         setSelectedPeriod('hoje');
         break;
       case 'semana':
-        const weekAgo = new Date(today);
-        weekAgo.setDate(weekAgo.getDate() - 7);
+        const weekAgo = new Date(year, month, day - 7);
         setFilterStartDate(format(weekAgo, 'yyyy-MM-dd'));
-        setFilterEndDate(format(today, 'yyyy-MM-dd'));
+        setFilterEndDate(format(new Date(year, month, day), 'yyyy-MM-dd'));
         setSelectedPeriod('semana');
         break;
       case 'mes':
-        const monthAgo = new Date(today);
-        monthAgo.setDate(monthAgo.getDate() - 30);
+        const monthAgo = new Date(year, month, day - 30);
         setFilterStartDate(format(monthAgo, 'yyyy-MM-dd'));
-        setFilterEndDate(format(today, 'yyyy-MM-dd'));
+        setFilterEndDate(format(new Date(year, month, day), 'yyyy-MM-dd'));
         setSelectedPeriod('mes');
         break;
       case 'mes_atual':
-        const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        const firstDayOfMonth = new Date(year, month, 1);
         setFilterStartDate(format(firstDayOfMonth, 'yyyy-MM-dd'));
-        setFilterEndDate(format(today, 'yyyy-MM-dd'));
+        setFilterEndDate(format(new Date(year, month, day), 'yyyy-MM-dd'));
         setSelectedPeriod('mes_atual');
         break;
       case 'custom':
@@ -350,20 +351,19 @@ export default function MinhasArbitragens() {
     // Se apenas data fim preenchida, filtrar apenas aquele dia único
     if (debouncedFilterStartDate && debouncedFilterEndDate) {
       // Ambas preenchidas: filtrar período
-      const startDate = new Date(debouncedFilterStartDate);
-      startDate.setHours(0, 0, 0, 0);
-      const endDate = new Date(debouncedFilterEndDate);
-      endDate.setHours(23, 59, 59, 999);
+      const [startYear, startMonth, startDay] = debouncedFilterStartDate.split('-').map(Number);
+      const [endYear, endMonth, endDay] = debouncedFilterEndDate.split('-').map(Number);
+      const startDate = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
+      const endDate = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
       filtered = filtered.filter((arb) => {
         const arbDate = new Date(arb.created_at);
         return arbDate >= startDate && arbDate <= endDate;
       });
     } else if (!debouncedFilterStartDate && debouncedFilterEndDate) {
       // Apenas data fim: filtrar apenas aquele dia
-      const startOfDay = new Date(debouncedFilterEndDate);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(debouncedFilterEndDate);
-      endOfDay.setHours(23, 59, 59, 999);
+      const [year, month, day] = debouncedFilterEndDate.split('-').map(Number);
+      const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
+      const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
       filtered = filtered.filter((arb) => {
         const arbDate = new Date(arb.created_at);
         return arbDate >= startOfDay && arbDate <= endOfDay;
@@ -1325,6 +1325,13 @@ export default function MinhasArbitragens() {
                       <p className="text-sm text-muted-foreground">
                         * Preencha ambas as datas para filtrar um período, ou apenas a data fim para filtrar um dia específico.
                       </p>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-4 border-t">
+                      <DialogTrigger asChild>
+                        <Button type="button">
+                          OK
+                        </Button>
+                      </DialogTrigger>
                     </div>
                   </DialogContent>
                 </Dialog>

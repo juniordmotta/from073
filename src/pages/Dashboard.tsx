@@ -61,32 +61,33 @@ export default function Dashboard() {
   // Função para aplicar filtros rápidos de período
   const applyPeriodFilter = useCallback((period: 'hoje' | 'semana' | 'mes' | 'mes_atual' | 'custom') => {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const day = today.getDate();
     
     switch (period) {
       case 'hoje':
-        setStartDate(format(today, 'yyyy-MM-dd'));
-        setEndDate(format(today, 'yyyy-MM-dd'));
+        const todayStr = format(new Date(year, month, day), 'yyyy-MM-dd');
+        setStartDate(todayStr);
+        setEndDate(todayStr);
         setSelectedPeriod('hoje');
         break;
       case 'semana':
-        const weekAgo = new Date(today);
-        weekAgo.setDate(weekAgo.getDate() - 7);
+        const weekAgo = new Date(year, month, day - 7);
         setStartDate(format(weekAgo, 'yyyy-MM-dd'));
-        setEndDate(format(today, 'yyyy-MM-dd'));
+        setEndDate(format(new Date(year, month, day), 'yyyy-MM-dd'));
         setSelectedPeriod('semana');
         break;
       case 'mes':
-        const monthAgo = new Date(today);
-        monthAgo.setDate(monthAgo.getDate() - 30);
+        const monthAgo = new Date(year, month, day - 30);
         setStartDate(format(monthAgo, 'yyyy-MM-dd'));
-        setEndDate(format(today, 'yyyy-MM-dd'));
+        setEndDate(format(new Date(year, month, day), 'yyyy-MM-dd'));
         setSelectedPeriod('mes');
         break;
       case 'mes_atual':
-        const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        const firstDayOfMonth = new Date(year, month, 1);
         setStartDate(format(firstDayOfMonth, 'yyyy-MM-dd'));
-        setEndDate(format(today, 'yyyy-MM-dd'));
+        setEndDate(format(new Date(year, month, day), 'yyyy-MM-dd'));
         setSelectedPeriod('mes_atual');
         break;
       case 'custom':
@@ -153,17 +154,16 @@ export default function Dashboard() {
     // Se apenas data fim preenchida, filtrar apenas aquele dia único
     if (debouncedStartDate && debouncedEndDate) {
       // Ambas preenchidas: filtrar período
-      const startOfDay = new Date(debouncedStartDate);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(debouncedEndDate);
-      endOfDay.setHours(23, 59, 59, 999);
+      const [startYear, startMonth, startDay] = debouncedStartDate.split('-').map(Number);
+      const [endYear, endMonth, endDay] = debouncedEndDate.split('-').map(Number);
+      const startOfDay = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
+      const endOfDay = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
       query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
     } else if (!debouncedStartDate && debouncedEndDate) {
       // Apenas data fim: filtrar apenas aquele dia
-      const startOfDay = new Date(debouncedEndDate);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(debouncedEndDate);
-      endOfDay.setHours(23, 59, 59, 999);
+      const [year, month, day] = debouncedEndDate.split('-').map(Number);
+      const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
+      const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
       query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
     }
     // Se apenas data início preenchida, não filtrar
@@ -235,17 +235,16 @@ export default function Dashboard() {
     // Se apenas data fim preenchida, filtrar apenas aquele dia único
     if (debouncedStartDate && debouncedEndDate) {
       // Ambas preenchidas: filtrar período
-      const startOfDay = new Date(debouncedStartDate);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(debouncedEndDate);
-      endOfDay.setHours(23, 59, 59, 999);
+      const [startYear, startMonth, startDay] = debouncedStartDate.split('-').map(Number);
+      const [endYear, endMonth, endDay] = debouncedEndDate.split('-').map(Number);
+      const startOfDay = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
+      const endOfDay = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
       query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
     } else if (!debouncedStartDate && debouncedEndDate) {
       // Apenas data fim: filtrar apenas aquele dia
-      const startOfDay = new Date(debouncedEndDate);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(debouncedEndDate);
-      endOfDay.setHours(23, 59, 59, 999);
+      const [year, month, day] = debouncedEndDate.split('-').map(Number);
+      const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
+      const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
       query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
     }
     // Se apenas data início preenchida, não filtrar
@@ -335,17 +334,16 @@ export default function Dashboard() {
     // Se apenas data fim preenchida, filtrar apenas aquele dia único
     if (debouncedStartDate && debouncedEndDate) {
       // Ambas preenchidas: filtrar período
-      const startOfDay = new Date(debouncedStartDate);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(debouncedEndDate);
-      endOfDay.setHours(23, 59, 59, 999);
+      const [startYear, startMonth, startDay] = debouncedStartDate.split('-').map(Number);
+      const [endYear, endMonth, endDay] = debouncedEndDate.split('-').map(Number);
+      const startOfDay = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
+      const endOfDay = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
       query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
     } else if (!debouncedStartDate && debouncedEndDate) {
       // Apenas data fim: filtrar apenas aquele dia
-      const startOfDay = new Date(debouncedEndDate);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(debouncedEndDate);
-      endOfDay.setHours(23, 59, 59, 999);
+      const [year, month, day] = debouncedEndDate.split('-').map(Number);
+      const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
+      const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
       query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
     }
     // Se apenas data início preenchida, não filtrar
@@ -399,17 +397,16 @@ export default function Dashboard() {
     // Se apenas data fim preenchida, filtrar apenas aquele dia único
     if (debouncedStartDate && debouncedEndDate) {
       // Ambas preenchidas: filtrar período
-      const startOfDay = new Date(debouncedStartDate);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(debouncedEndDate);
-      endOfDay.setHours(23, 59, 59, 999);
+      const [startYear, startMonth, startDay] = debouncedStartDate.split('-').map(Number);
+      const [endYear, endMonth, endDay] = debouncedEndDate.split('-').map(Number);
+      const startOfDay = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
+      const endOfDay = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
       query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
     } else if (!debouncedStartDate && debouncedEndDate) {
       // Apenas data fim: filtrar apenas aquele dia
-      const startOfDay = new Date(debouncedEndDate);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(debouncedEndDate);
-      endOfDay.setHours(23, 59, 59, 999);
+      const [year, month, day] = debouncedEndDate.split('-').map(Number);
+      const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
+      const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
       query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
     }
     // Se apenas data início preenchida, não filtrar
@@ -557,6 +554,13 @@ export default function Dashboard() {
                       <p className="text-sm text-muted-foreground">
                         * Preencha ambas as datas para filtrar um período, ou apenas a data fim para filtrar um dia específico.
                       </p>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-4 border-t">
+                      <DialogTrigger asChild>
+                        <Button type="button">
+                          OK
+                        </Button>
+                      </DialogTrigger>
                     </div>
                   </DialogContent>
                 </Dialog>
