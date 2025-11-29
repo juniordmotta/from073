@@ -62,8 +62,8 @@ export function MonthlyGoalCard({ userId, partnershipId, currentProfit, compact 
         </div>
         <div className="text-xl font-bold">R$ {formatCurrency(goalValue)}</div>
         {goalValue > 0 && (
-          <p className="text-[10px] text-muted-foreground">
-            {progressPercent.toFixed(1)}% atingido
+          <p className={`text-[10px] font-medium ${remaining > 0 ? 'text-muted-foreground' : 'text-success'}`}>
+            {progressPercent.toFixed(1)}% da meta
           </p>
         )}
       </Card>

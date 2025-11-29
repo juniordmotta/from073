@@ -29,6 +29,7 @@ interface User {
   email: string;
   created_at: string;
   role?: string;
+  monthly_goal?: number;
 }
 
 const roleLabels = {
@@ -85,8 +86,9 @@ export default function Usuarios() {
       return;
     }
 
-    // Buscar roles de cada usuário
-    const usersWithRoles = await Promise.all(
+    // Buscar roles e metas de cada usuário
+    const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
+    const usersWithRolesAndGoals = await Promise.all(
       (profilesData || []).map(async (profile) => {
         const { data: roleData } = await supabase
           .from('user_roles')
@@ -94,14 +96,23 @@ export default function Usuarios() {
           .eq('user_id', profile.id)
           .single();
 
+        const { data: goalData } = await supabase
+          .from('monthly_goals')
+          .select('goal_value')
+          .eq('user_id', profile.id)
+          .eq('partnership_id', null)
+          .eq('month', currentMonth)
+          .maybeSingle();
+
         return {
           ...profile,
           role: roleData?.role || 'operador',
+          monthly_goal: goalData?.goal_value || 0,
         };
       })
     );
 
-    setUsers(usersWithRoles);
+    setUsers(usersWithRolesAndGoals);
     setIsLoading(false);
   };
 
@@ -405,6 +416,7 @@ export default function Usuarios() {
                 <TableHead>Nome</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Tipo</TableHead>
+                <TableHead>Meta Mensal</TableHead>
                 <TableHead>Data de Cadastro</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -424,6 +436,13 @@ export default function Usuarios() {
                     >
                       {roleLabels[user.role as keyof typeof roleLabels]}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {user.monthly_goal && user.monthly_goal > 0 ? (
+                      <span className="font-medium">R$ {(user.monthly_goal).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     {format(new Date(user.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
