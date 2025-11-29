@@ -254,6 +254,22 @@ export default function MinhasArbitragens() {
     );
   }, [filteredArbitragens]);
 
+  // Calcular lucro para meta (sem filtro de status, apenas operador)
+  const goalProfit = useMemo(() => {
+    let filtered = [...arbitragens];
+
+    // Aplicar apenas filtro de operador
+    if (debouncedFilterUser.length > 0) {
+      filtered = filtered.filter((arb) => debouncedFilterUser.includes(arb.user_id));
+    }
+
+    // Calcular lucro total (incluindo aguardando e fechados)
+    return filtered.reduce((sum, arb) => {
+      const lucro = arb.status === 'aguardando' ? Number(arb.lucro_projetado) : Number(arb.lucro_real);
+      return sum + lucro;
+    }, 0);
+  }, [arbitragens, debouncedFilterUser]);
+
   const applyFilters = useCallback(() => {
     let filtered = [...arbitragens];
 
@@ -1347,7 +1363,7 @@ export default function MinhasArbitragens() {
             {user?.id && (
               <MonthlyGoalCard
                 userId={user.id}
-                currentProfit={totais.totalLucro}
+                currentProfit={goalProfit}
                 compact
               />
             )}
