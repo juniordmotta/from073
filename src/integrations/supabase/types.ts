@@ -351,6 +351,41 @@ export type Database = {
           },
         ]
       }
+      partnership_houses: {
+        Row: {
+          created_at: string
+          house_name: string
+          id: string
+          partnership_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          house_name: string
+          id?: string
+          partnership_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          house_name?: string
+          id?: string
+          partnership_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partnership_houses_partnership_id_fkey"
+            columns: ["partnership_id"]
+            isOneToOne: false
+            referencedRelation: "partnerships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partnerships: {
         Row: {
           bancos_cadastrados: string

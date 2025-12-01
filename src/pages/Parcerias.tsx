@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Pencil, Trash2, History, TrendingUp, ArrowLeft, LayoutDashboard, Download, AlertTriangle, TrendingDown, DollarSign, Target, X, Building2, Search, Filter } from 'lucide-react';
+import { Plus, Pencil, Trash2, History, TrendingUp, ArrowLeft, LayoutDashboard, Download, AlertTriangle, TrendingDown, DollarSign, Target, X, Building2, Search, Filter, CircleDot } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrency, formatUserName } from '@/lib/utils';
@@ -535,6 +535,14 @@ const Parcerias = () => {
 
       if (arbsError) throw arbsError;
 
+      // Buscar status das casas
+      const { data: houseStatuses, error: housesError } = await supabase
+        .from('partnership_houses')
+        .select('*')
+        .eq('partnership_id', partnershipId);
+
+      if (housesError) throw housesError;
+
       // Buscar custos operacionais do mês atual
       const firstDayOfMonth = new Date();
       firstDayOfMonth.setDate(1);
@@ -632,10 +640,16 @@ const Parcerias = () => {
         }
       });
 
-      // Calcular lucro líquido por casa
+      // Criar mapa de status das casas
+      const houseStatusMap = new Map(
+        houseStatuses?.map(h => [h.house_name, h.status]) || []
+      );
+
+      // Calcular lucro líquido por casa e adicionar status
       const casasArray = Array.from(casasStats.values()).map(casa => ({
         ...casa,
         lucroLiquido: casa.ganhos - casa.perdas,
+        status: houseStatusMap.get(casa.nome) || 'ativa',
       }));
 
       // Calcular totais
@@ -674,6 +688,86 @@ const Parcerias = () => {
   const handleBackToReport = () => {
     setSelectedPartnershipId(null);
     setPartnershipDetails(null);
+  };
+
+  const updateHouseStatus = async (partnershipId: string, houseName: string, newStatus: string) => {
+    try {
+      // Verificar se já existe um registro para esta casa
+      const { data: existing, error: fetchError } = await supabase
+        .from('partnership_houses')
+        .select('id')
+        .eq('partnership_id', partnershipId)
+        .eq('house_name', houseName)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      if (existing) {
+        // Atualizar registro existente
+        const { error: updateError } = await supabase
+          .from('partnership_houses')
+          .update({ status: newStatus })
+          .eq('id', existing.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Criar novo registro
+        const { error: insertError } = await supabase
+          .from('partnership_houses')
+          .insert({
+            partnership_id: partnershipId,
+            house_name: houseName,
+            status: newStatus,
+          });
+
+        if (insertError) throw insertError;
+      }
+
+      toast({
+        title: 'Sucesso',
+        description: `Status da casa ${houseName} atualizado para ${newStatus}`,
+      });
+
+      // Recarregar detalhes da parceria
+      loadPartnershipDetails(partnershipId);
+    } catch (error) {
+      console.error('Erro ao atualizar status da casa:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar o status da casa',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'ativa':
+        return 'bg-success text-success-foreground';
+      case 'bloqueada':
+        return 'bg-destructive text-destructive-foreground';
+      case 'sacar':
+        return 'bg-warning text-warning-foreground';
+      case 'aguardando_pagamento':
+        return 'bg-muted text-muted-foreground';
+      default:
+        return 'bg-secondary text-secondary-foreground';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'ativa':
+        return 'Ativa';
+      case 'bloqueada':
+        return 'Bloqueada';
+      case 'sacar':
+        return 'Sacar';
+      case 'aguardando_pagamento':
+        return 'Aguardando Pagamento';
+      default:
+        return status;
+    }
   };
 
   const handleExportReport = () => {
@@ -1524,6 +1618,7 @@ const Parcerias = () => {
                           <Table>
                             <TableHeader>
                               <TableRow>
+                                <TableHead>Status</TableHead>
                                 <TableHead>Casa</TableHead>
                                 <TableHead className="text-right">Total Apostas</TableHead>
                                 <TableHead className="text-right">Ganhos</TableHead>
@@ -1536,7 +1631,32 @@ const Parcerias = () => {
                             <TableBody>
                               {partnershipDetails.casas.map((casa: any, index: number) => (
                                 <TableRow key={index}>
-                                  <TableCell className="font-medium">{casa.nome}</TableCell>
+                                  <TableCell>
+                                    <Select
+                                      value={casa.status}
+                                      onValueChange={(value) => updateHouseStatus(selectedPartnershipId!, casa.nome, value)}
+                                    >
+                                      <SelectTrigger className="w-[50px] h-8 p-0 border-0">
+                                        <SelectValue>
+                                          <CircleDot className="h-4 w-4" />
+                                        </SelectValue>
+                                      </SelectTrigger>
+                                      <SelectContent className="bg-popover z-50">
+                                        <SelectItem value="ativa">Ativa</SelectItem>
+                                        <SelectItem value="bloqueada">Bloqueada</SelectItem>
+                                        <SelectItem value="sacar">Sacar</SelectItem>
+                                        <SelectItem value="aguardando_pagamento">Aguardando Pagamento</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium">{casa.nome}</span>
+                                      <Badge className={`text-xs ${getStatusColor(casa.status)}`}>
+                                        {getStatusLabel(casa.status)}
+                                      </Badge>
+                                    </div>
+                                  </TableCell>
                                   <TableCell className="text-right">{casa.totalApostas}</TableCell>
                                   <TableCell className="text-right text-success">
                                     R$ {formatCurrency(casa.ganhos)}
