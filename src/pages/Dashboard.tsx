@@ -505,7 +505,7 @@ export default function Dashboard() {
                     <Button
                       variant={selectedPeriod === 'custom' && (startDate || endDate) ? 'default' : 'outline'}
                       size="sm"
-                      className="h-10 px-3"
+                      className="h-10 px-3 relative"
                     >
                       <Calendar className="h-4 w-4 mr-2" />
                       {startDate && endDate ? (
@@ -516,6 +516,17 @@ export default function Dashboard() {
                         format(new Date(endDate), 'dd/MM')
                       ) : (
                         'Selecionar Data'
+                      )}
+                      {(startDate || endDate) && (
+                        <X
+                          className="h-3 w-3 ml-2 opacity-70 hover:opacity-100"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setStartDate('');
+                            setEndDate('');
+                            setSelectedPeriod(null);
+                          }}
+                        />
                       )}
                     </Button>
                   </DialogTrigger>

@@ -569,7 +569,7 @@ const Parcerias = () => {
           stats.totalApostas++;
           
           if (arb.casa_01_resultado === 'green' || arb.casa_01_resultado === 'parcial_green') {
-            stats.ganhos += arb.casa_01_valor_resultado || 0;
+            stats.ganhos += (arb.casa_01_valor_resultado || 0) - (arb.casa_01_valor || 0);
           } else if (arb.casa_01_resultado === 'red' || arb.casa_01_resultado === 'parcial_red' || arb.casa_01_resultado === 'perda_total') {
             stats.perdas += arb.casa_01_valor || 0;
           } else if (arb.casa_01_resultado === 'devolvido') {
@@ -595,7 +595,7 @@ const Parcerias = () => {
           stats.totalApostas++;
           
           if (arb.casa_02_resultado === 'green' || arb.casa_02_resultado === 'parcial_green') {
-            stats.ganhos += arb.casa_02_valor_resultado || 0;
+            stats.ganhos += (arb.casa_02_valor_resultado || 0) - (arb.casa_02_valor || 0);
           } else if (arb.casa_02_resultado === 'red' || arb.casa_02_resultado === 'parcial_red' || arb.casa_02_resultado === 'perda_total') {
             stats.perdas += arb.casa_02_valor || 0;
           } else if (arb.casa_02_resultado === 'devolvido') {
@@ -621,7 +621,7 @@ const Parcerias = () => {
           stats.totalApostas++;
           
           if (arb.casa_03_resultado === 'green' || arb.casa_03_resultado === 'parcial_green') {
-            stats.ganhos += arb.casa_03_valor_resultado || 0;
+            stats.ganhos += (arb.casa_03_valor_resultado || 0) - (arb.casa_03_valor || 0);
           } else if (arb.casa_03_resultado === 'red' || arb.casa_03_resultado === 'parcial_red' || arb.casa_03_resultado === 'perda_total') {
             stats.perdas += arb.casa_03_valor || 0;
           } else if (arb.casa_03_resultado === 'devolvido') {

@@ -1276,7 +1276,7 @@ export default function MinhasArbitragens() {
                     <Button
                       variant={selectedPeriod === 'custom' && (filterStartDate || filterEndDate) ? 'default' : 'outline'}
                       size="sm"
-                      className="h-10 px-3"
+                      className="h-10 px-3 relative"
                     >
                       <Calendar className="h-4 w-4 mr-2" />
                       {filterStartDate && filterEndDate ? (
@@ -1287,6 +1287,17 @@ export default function MinhasArbitragens() {
                         format(new Date(filterEndDate), 'dd/MM')
                       ) : (
                         'Selecionar Data'
+                      )}
+                      {(filterStartDate || filterEndDate) && (
+                        <X
+                          className="h-3 w-3 ml-2 opacity-70 hover:opacity-100"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFilterStartDate('');
+                            setFilterEndDate('');
+                            setSelectedPeriod(null);
+                          }}
+                        />
                       )}
                     </Button>
                   </DialogTrigger>
