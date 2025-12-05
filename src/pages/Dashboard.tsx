@@ -840,14 +840,29 @@ export default function Dashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {openBets.map((bet) => (
+                    {openBets.map((bet) => {
+                      const eventDate = new Date(bet.data_evento);
+                      eventDate.setHours(0, 0, 0, 0);
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      const isEventPast = eventDate < today;
+                      const isEventToday = eventDate.getTime() === today.getTime();
+                      
+                      return (
                       <TableRow key={bet.id}>
                         <TableCell className={`font-medium text-xs break-words whitespace-normal ${isExpandedView ? 'max-w-[300px]' : 'max-w-[200px]'}`}>{bet.descricao}</TableCell>
-                        <TableCell className={`text-xs ${
-                          format(new Date(bet.data_evento), 'dd/MM/yy') === format(new Date(), 'dd/MM/yy')
-                            ? 'border-l-4 border-sky-300 pl-2'
+                        <TableCell className={`text-xs relative ${
+                          isEventPast
+                            ? 'border-l-4 border-red-500'
+                            : isEventToday
+                            ? 'border-l-4 border-sky-300'
                             : ''
                         }`}>
+                          {isEventPast ? (
+                            <div className="absolute left-0 top-1 bottom-1 w-1 bg-red-500 animate-pulse" />
+                          ) : isEventToday ? (
+                            <div className="absolute left-0 top-1 bottom-1 w-1 bg-sky-300 animate-pulse" />
+                          ) : null}
                           {format(new Date(bet.data_evento), 'dd/MM/yy HH:mm')}
                         </TableCell>
                         {isAdmin && <TableCell className="text-xs">{formatUserName(bet.profiles?.name) || '-'}</TableCell>}
@@ -886,7 +901,7 @@ export default function Dashboard() {
                           R$ {formatCurrency(bet.lucro_projetado)}
                         </TableCell>
                       </TableRow>
-                    ))}
+                    )})}
                   </TableBody>
                 </Table>
               </div>
