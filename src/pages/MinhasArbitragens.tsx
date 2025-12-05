@@ -1271,36 +1271,26 @@ export default function MinhasArbitragens() {
                 >
                   Mês atual
                 </Button>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant={selectedPeriod === 'custom' && (filterStartDate || filterEndDate) ? 'default' : 'outline'}
-                      size="sm"
-                      className="h-10 px-3 relative"
-                    >
-                      <Calendar className="h-4 w-4 mr-2" />
-                      {filterStartDate && filterEndDate ? (
-                        <>
-                          {format(new Date(filterStartDate), 'dd/MM')} - {format(new Date(filterEndDate), 'dd/MM')}
-                        </>
-                      ) : filterEndDate ? (
-                        format(new Date(filterEndDate), 'dd/MM')
-                      ) : (
-                        'Selecionar Data'
-                      )}
-                      {(filterStartDate || filterEndDate) && (
-                        <X
-                          className="h-3 w-3 ml-2 opacity-70 hover:opacity-100"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setFilterStartDate('');
-                            setFilterEndDate('');
-                            setSelectedPeriod(null);
-                          }}
-                        />
-                      )}
-                    </Button>
-                  </DialogTrigger>
+                <div className="flex items-center gap-1">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant={selectedPeriod === 'custom' && (filterStartDate || filterEndDate) ? 'default' : 'outline'}
+                        size="sm"
+                        className="h-10 px-3"
+                      >
+                        <Calendar className="h-4 w-4 mr-2" />
+                        {filterStartDate && filterEndDate ? (
+                          <>
+                            {format(new Date(filterStartDate), 'dd/MM')} - {format(new Date(filterEndDate), 'dd/MM')}
+                          </>
+                        ) : filterEndDate ? (
+                          format(new Date(filterEndDate), 'dd/MM')
+                        ) : (
+                          'Selecionar Data'
+                        )}
+                      </Button>
+                    </DialogTrigger>
                   <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                       <DialogTitle>Selecionar Período</DialogTitle>
@@ -1353,7 +1343,22 @@ export default function MinhasArbitragens() {
                       </DialogTrigger>
                     </div>
                   </DialogContent>
-                </Dialog>
+                  </Dialog>
+                  {(filterStartDate || filterEndDate) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-10 px-2"
+                      onClick={() => {
+                        setFilterStartDate('');
+                        setFilterEndDate('');
+                        setSelectedPeriod('custom');
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
 

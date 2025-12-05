@@ -117,7 +117,7 @@ const Parcerias = () => {
   });
 
   useEffect(() => {
-    console.log('useEffect disparado - isAdmin:', isAdmin, 'user:', user?.id);
+    console.log('useEffect disparado - isAdmin:', isAdmin, 'user:', user?.id, 'statusFilter:', statusFilter);
     if (user) {
       fetchPartnerships();
       fetchBanks();
@@ -125,7 +125,7 @@ const Parcerias = () => {
         fetchUsers();
       }
     }
-  }, [user, selectedUserId, isAdmin]);
+  }, [user, selectedUserId, isAdmin, statusFilter]);
 
   const fetchBanks = async () => {
     if (!user) return;

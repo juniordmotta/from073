@@ -500,36 +500,26 @@ export default function Dashboard() {
                 >
                   Mês atual
                 </Button>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant={selectedPeriod === 'custom' && (startDate || endDate) ? 'default' : 'outline'}
-                      size="sm"
-                      className="h-10 px-3 relative"
-                    >
-                      <Calendar className="h-4 w-4 mr-2" />
-                      {startDate && endDate ? (
-                        <>
-                          {format(new Date(startDate), 'dd/MM')} - {format(new Date(endDate), 'dd/MM')}
-                        </>
-                      ) : endDate ? (
-                        format(new Date(endDate), 'dd/MM')
-                      ) : (
-                        'Selecionar Data'
-                      )}
-                      {(startDate || endDate) && (
-                        <X
-                          className="h-3 w-3 ml-2 opacity-70 hover:opacity-100"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setStartDate('');
-                            setEndDate('');
-                            setSelectedPeriod(null);
-                          }}
-                        />
-                      )}
-                    </Button>
-                  </DialogTrigger>
+                <div className="flex items-center gap-1">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant={selectedPeriod === 'custom' && (startDate || endDate) ? 'default' : 'outline'}
+                        size="sm"
+                        className="h-10 px-3"
+                      >
+                        <Calendar className="h-4 w-4 mr-2" />
+                        {startDate && endDate ? (
+                          <>
+                            {format(new Date(startDate), 'dd/MM')} - {format(new Date(endDate), 'dd/MM')}
+                          </>
+                        ) : endDate ? (
+                          format(new Date(endDate), 'dd/MM')
+                        ) : (
+                          'Selecionar Data'
+                        )}
+                      </Button>
+                    </DialogTrigger>
                   <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                       <DialogTitle>Selecionar Período</DialogTitle>
@@ -582,7 +572,22 @@ export default function Dashboard() {
                       </DialogTrigger>
                     </div>
                   </DialogContent>
-                </Dialog>
+                  </Dialog>
+                  {(startDate || endDate) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-10 px-2"
+                      onClick={() => {
+                        setStartDate('');
+                        setEndDate('');
+                        setSelectedPeriod('custom');
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
 
