@@ -1596,6 +1596,7 @@ export default function MinhasArbitragens() {
             {user?.id && (
               <MonthlyGoalCard
                 userId={user.id}
+                selectedUserIds={isAdmin && filterUser.length > 0 ? filterUser : undefined}
                 currentProfit={goalProfit}
                 compact
               />
