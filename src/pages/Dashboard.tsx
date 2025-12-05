@@ -813,6 +813,7 @@ export default function Dashboard() {
           {user?.id && (
             <MonthlyGoalCard
               userId={user.id}
+              selectedUserIds={isAdmin && selectedUser.length > 0 ? selectedUser : undefined}
               currentProfit={goalStats.totalLucro}
               compact
             />

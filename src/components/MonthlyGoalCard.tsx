@@ -8,34 +8,43 @@ import { useGoalNotifications } from '@/hooks/useGoalNotifications';
 
 interface MonthlyGoalCardProps {
   userId: string;
+  selectedUserIds?: string[]; // Array de IDs de usuários filtrados
   partnershipId?: string;
   currentProfit: number;
   compact?: boolean;
 }
 
-export function MonthlyGoalCard({ userId, partnershipId, currentProfit, compact = false }: MonthlyGoalCardProps) {
+export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, currentProfit, compact = false }: MonthlyGoalCardProps) {
   const [goalValue, setGoalValue] = useState<number>(0);
 
   const currentMonth = new Date().toISOString().slice(0, 7) + '-01'; // YYYY-MM-01
 
   useEffect(() => {
     fetchGoal();
-  }, [userId, partnershipId, currentMonth]);
+  }, [userId, selectedUserIds, partnershipId, currentMonth]);
 
   const fetchGoal = async () => {
     try {
+      // Se tiver selectedUserIds, buscar metas de todos os usuários selecionados
+      const userIdsToFetch = selectedUserIds && selectedUserIds.length > 0 
+        ? selectedUserIds 
+        : [userId];
+
       const { data, error } = await supabase
         .from('monthly_goals')
-        .select('goal_value')
-        .eq('user_id', userId)
+        .select('goal_value, user_id')
+        .in('user_id', userIdsToFetch)
         .eq('month', currentMonth)
-        .is('partnership_id', null)
-        .maybeSingle();
+        .is('partnership_id', null);
 
       if (error) throw error;
       
-      if (data) {
-        setGoalValue(data.goal_value);
+      if (data && data.length > 0) {
+        // Somar todas as metas dos usuários selecionados
+        const totalGoal = data.reduce((sum, goal) => sum + Number(goal.goal_value), 0);
+        setGoalValue(totalGoal);
+      } else {
+        setGoalValue(0);
       }
     } catch (error) {
       console.error('Erro ao buscar meta:', error);
