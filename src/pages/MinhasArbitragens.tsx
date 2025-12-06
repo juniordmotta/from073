@@ -135,17 +135,25 @@ export default function MinhasArbitragens() {
   const [users, setUsers] = useState<Array<{ id: string; name: string }>>([]);
   const itemsPerPage = 30;
   
-  // Restaurar filtros do sessionStorage ou usar valores padrão
+  // Restaurar filtros do sessionStorage ou usar valores padrão (mês atual como padrão)
+  const today = new Date();
   const [searchText, setSearchText] = useState(() =>
     sessionStorage.getItem('arbitragens_searchText') || ''
   );
-  const [filterStartDate, setFilterStartDate] = useState(() => 
-    sessionStorage.getItem('arbitragens_filterStartDate') || ''
-  );
-  const [filterEndDate, setFilterEndDate] = useState(() => 
-    sessionStorage.getItem('arbitragens_filterEndDate') || ''
-  );
-  const [selectedPeriod, setSelectedPeriod] = useState<'hoje' | 'semana' | 'mes' | 'mes_atual' | 'custom'>('custom');
+  const [filterStartDate, setFilterStartDate] = useState(() => {
+    const saved = sessionStorage.getItem('arbitragens_filterStartDate');
+    if (saved) return saved;
+    // Padrão: primeiro dia do mês atual
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    return format(firstDayOfMonth, 'yyyy-MM-dd');
+  });
+  const [filterEndDate, setFilterEndDate] = useState(() => {
+    const saved = sessionStorage.getItem('arbitragens_filterEndDate');
+    if (saved) return saved;
+    // Padrão: dia atual
+    return format(today, 'yyyy-MM-dd');
+  });
+  const [selectedPeriod, setSelectedPeriod] = useState<'hoje' | 'semana' | 'mes' | 'mes_atual' | 'custom'>('mes_atual');
   const [filterStatus, setFilterStatus] = useState<string[]>(() => {
     const saved = sessionStorage.getItem('arbitragens_filterStatus');
     if (!saved) return ['aguardando'];

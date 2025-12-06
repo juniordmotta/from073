@@ -81,6 +81,84 @@ const fieldLabels: Record<string, string> = {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
+// Componente para adicionar casa de apostas manualmente
+interface AddHouseFormProps {
+  partnershipId: string;
+  onSuccess: () => void;
+}
+
+const AddHouseForm = ({ partnershipId, onSuccess }: AddHouseFormProps) => {
+  const [houseName, setHouseName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!houseName.trim()) {
+      toast({
+        title: 'Erro',
+        description: 'Informe o nome da casa de apostas',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from('partnership_houses')
+        .insert({
+          partnership_id: partnershipId,
+          house_name: houseName.trim(),
+          status: 'aguardando_verificacao',
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sucesso',
+        description: `Casa "${houseName}" adicionada com status "Aguardando Verificação"`,
+      });
+      
+      setHouseName('');
+      onSuccess();
+    } catch (error) {
+      console.error('Erro ao adicionar casa:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível adicionar a casa de apostas',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="house_name">Nome da Casa</Label>
+        <Input
+          id="house_name"
+          value={houseName}
+          onChange={(e) => setHouseName(e.target.value)}
+          placeholder="Ex: Bet365, Betano, Sportingbet..."
+          required
+        />
+      </div>
+      <p className="text-xs text-muted-foreground">
+        A casa será adicionada com status <Badge variant="outline">Aguardando Verificação</Badge>
+      </p>
+      <div className="flex justify-end gap-2">
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? 'Adicionando...' : 'Adicionar'}
+        </Button>
+      </div>
+    </form>
+  );
+};
+
 const Parcerias = () => {
   const { user, userRole } = useAuth();
   const { toast } = useToast();
@@ -750,6 +828,8 @@ const Parcerias = () => {
         return 'bg-warning text-warning-foreground';
       case 'aguardando_pagamento':
         return 'bg-muted text-muted-foreground';
+      case 'aguardando_verificacao':
+        return 'bg-blue-500 text-white';
       default:
         return 'bg-secondary text-secondary-foreground';
     }
@@ -765,6 +845,8 @@ const Parcerias = () => {
         return 'Sacar';
       case 'aguardando_pagamento':
         return 'Aguardando Pagamento';
+      case 'aguardando_verificacao':
+        return 'Aguardando Verificação';
       default:
         return status;
     }
@@ -1244,7 +1326,18 @@ const Parcerias = () => {
                             {formatUserName(partnership.profiles?.name) || partnership.profiles?.email}
                           </TableCell>
                         )}
-                        <TableCell>{formatUserName(partnership.nome_completo)}</TableCell>
+                        <TableCell>
+                          <button
+                            onClick={() => {
+                              setViewMode('report');
+                              loadArbitragesData();
+                              handlePartnershipClick(partnership.id);
+                            }}
+                            className="text-primary hover:underline cursor-pointer font-medium text-left"
+                          >
+                            {formatUserName(partnership.nome_completo)}
+                          </button>
+                        </TableCell>
                         <TableCell>{formatCpf(partnership.cpf)}</TableCell>
                         <TableCell className="max-w-xs truncate">{partnership.endereco}</TableCell>
                         <TableCell>R$ {formatCurrency(partnership.valor_banca)}</TableCell>
@@ -1295,7 +1388,16 @@ const Parcerias = () => {
                       {/* Header do Card */}
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <h3 className="font-semibold text-lg">{formatUserName(partnership.nome_completo)}</h3>
+                          <button
+                            onClick={() => {
+                              setViewMode('report');
+                              loadArbitragesData();
+                              handlePartnershipClick(partnership.id);
+                            }}
+                            className="text-primary hover:underline cursor-pointer font-semibold text-lg text-left"
+                          >
+                            {formatUserName(partnership.nome_completo)}
+                          </button>
                           {isAdmin && (
                             <p className="text-xs text-muted-foreground">
                               {formatUserName(partnership.profiles?.name) || partnership.profiles?.email}
@@ -1608,7 +1710,26 @@ const Parcerias = () => {
 
                     {/* Tabela de casas */}
                     <Card className="p-6">
-                      <h3 className="text-lg font-semibold mb-4">Desempenho por Casa de Apostas</h3>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold">Desempenho por Casa de Apostas</h3>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button size="sm" variant="outline">
+                              <Plus className="h-4 w-4 mr-2" />
+                              Adicionar Casa
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Adicionar Casa de Apostas</DialogTitle>
+                            </DialogHeader>
+                            <AddHouseForm 
+                              partnershipId={selectedPartnershipId!}
+                              onSuccess={() => loadPartnershipDetails(selectedPartnershipId!)}
+                            />
+                          </DialogContent>
+                        </Dialog>
+                      </div>
                       {partnershipDetails.casas.length === 0 ? (
                         <p className="text-center text-muted-foreground py-4">
                           Nenhuma aposta registrada para esta parceria
@@ -1646,6 +1767,7 @@ const Parcerias = () => {
                                         <SelectItem value="bloqueada">Bloqueada</SelectItem>
                                         <SelectItem value="sacar">Sacar</SelectItem>
                                         <SelectItem value="aguardando_pagamento">Aguardando Pagamento</SelectItem>
+                                        <SelectItem value="aguardando_verificacao">Aguardando Verificação</SelectItem>
                                       </SelectContent>
                                     </Select>
                                   </TableCell>
