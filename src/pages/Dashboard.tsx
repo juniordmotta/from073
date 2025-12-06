@@ -38,9 +38,14 @@ export default function Dashboard() {
     totalLucro: 0,
     taxaSucesso: 0,
   });
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [selectedPeriod, setSelectedPeriod] = useState<'hoje' | 'semana' | 'mes' | 'mes_atual' | 'custom'>('custom');
+  // Inicializar com mês atual por padrão
+  const today = new Date();
+  const [startDate, setStartDate] = useState(() => {
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    return format(firstDayOfMonth, 'yyyy-MM-dd');
+  });
+  const [endDate, setEndDate] = useState(() => format(today, 'yyyy-MM-dd'));
+  const [selectedPeriod, setSelectedPeriod] = useState<'hoje' | 'semana' | 'mes' | 'mes_atual' | 'custom'>('mes_atual');
   const [selectedUser, setSelectedUser] = useState<string[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string[]>(['aguardando']);
   const [users, setUsers] = useState<Array<{ id: string; name: string }>>([]);

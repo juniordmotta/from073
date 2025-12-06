@@ -17,7 +17,27 @@ interface MonthlyGoalCardProps {
 export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, currentProfit, compact = false }: MonthlyGoalCardProps) {
   const [goalValue, setGoalValue] = useState<number>(0);
 
-  const currentMonth = new Date().toISOString().slice(0, 7) + '-01'; // YYYY-MM-01
+  // Calcular o mês atual de forma dinâmica
+  const getCurrentMonth = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  };
+
+  const [currentMonth, setCurrentMonth] = useState(getCurrentMonth());
+
+  // Atualizar o mês quando o componente for montado e verificar periodicamente
+  useEffect(() => {
+    const checkMonth = () => {
+      const newMonth = getCurrentMonth();
+      if (newMonth !== currentMonth) {
+        setCurrentMonth(newMonth);
+      }
+    };
+    
+    // Verificar a cada minuto se mudou o mês
+    const interval = setInterval(checkMonth, 60000);
+    return () => clearInterval(interval);
+  }, [currentMonth]);
 
   useEffect(() => {
     fetchGoal();
