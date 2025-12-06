@@ -321,9 +321,20 @@ export default function MinhasArbitragens() {
     );
   }, [filteredArbitragens]);
 
-  // Calcular lucro para meta (sem filtro de status, apenas operador)
+  // Calcular lucro para meta (sempre mês atual, apenas filtro de operador)
   const goalProfit = useMemo(() => {
+    // Definir período do mês atual
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
     let filtered = [...arbitragens];
+
+    // Filtrar apenas pelo mês atual (created_at)
+    filtered = filtered.filter((arb) => {
+      const arbDate = new Date(arb.created_at);
+      return arbDate >= firstDayOfMonth && arbDate <= lastDayOfMonth;
+    });
 
     // Aplicar apenas filtro de operador
     if (debouncedFilterUser.length > 0) {
