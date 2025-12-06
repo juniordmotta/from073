@@ -111,7 +111,7 @@ const AddHouseForm = ({ partnershipId, onSuccess }: AddHouseFormProps) => {
         .insert({
           partnership_id: partnershipId,
           house_name: houseName.trim(),
-          status: 'aguardando_verificacao',
+          status: 'aguardando_verificacao' as const,
         });
 
       if (error) throw error;

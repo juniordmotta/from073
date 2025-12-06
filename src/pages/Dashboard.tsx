@@ -106,11 +106,15 @@ export default function Dashboard() {
     loadOpenBets();
     loadCosts();
     loadAllArbitrages();
-    loadGoalStats();
     if (isAdmin) {
       loadUsers();
     }
   }, [debouncedSelectedUser, debouncedSelectedStatus, debouncedStartDate, debouncedEndDate, isAdmin]);
+
+  // Load goal stats separadamente (só depende de operador, não de datas)
+  useEffect(() => {
+    loadGoalStats();
+  }, [debouncedSelectedUser, isAdmin]);
 
   const loadUsers = async () => {
     const { data } = await supabase
@@ -387,8 +391,13 @@ export default function Dashboard() {
     }
   }, [isAdmin, user?.id, debouncedSelectedUser, debouncedStartDate, debouncedEndDate]);
 
-  // Carrega estatísticas apenas para o card de meta (sem filtro de status)
+  // Carrega estatísticas apenas para o card de meta (sempre mês atual, sem filtro de data/status)
   const loadGoalStats = useCallback(async () => {
+    // Definir período do mês atual
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
     let query = supabase.from('arbitrages').select('status, lucro_projetado, lucro_real');
     
     if (!isAdmin) {
@@ -397,24 +406,8 @@ export default function Dashboard() {
       query = query.in('user_id', debouncedSelectedUser);
     }
 
-    // Filtrar por data de criação (created_at)
-    // Regra: Se ambas as datas estiverem preenchidas, filtrar período
-    // Se apenas data fim preenchida, filtrar apenas aquele dia único
-    if (debouncedStartDate && debouncedEndDate) {
-      // Ambas preenchidas: filtrar período
-      const [startYear, startMonth, startDay] = debouncedStartDate.split('-').map(Number);
-      const [endYear, endMonth, endDay] = debouncedEndDate.split('-').map(Number);
-      const startOfDay = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
-      const endOfDay = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
-      query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
-    } else if (!debouncedStartDate && debouncedEndDate) {
-      // Apenas data fim: filtrar apenas aquele dia
-      const [year, month, day] = debouncedEndDate.split('-').map(Number);
-      const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
-      const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
-      query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
-    }
-    // Se apenas data início preenchida, não filtrar
+    // Sempre filtrar pelo mês atual (independente dos filtros selecionados)
+    query = query.gte('created_at', firstDayOfMonth.toISOString()).lte('created_at', lastDayOfMonth.toISOString());
 
     const { data } = await query;
 
@@ -426,7 +419,7 @@ export default function Dashboard() {
       
       setGoalStats({ totalLucro });
     }
-  }, [isAdmin, user?.id, debouncedSelectedUser, debouncedStartDate, debouncedEndDate]);
+  }, [isAdmin, user?.id, debouncedSelectedUser]);
 
   // Contar filtros ativos
   const activeFiltersCount = useMemo(() => {
