@@ -203,7 +203,9 @@ const Parcerias = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [deletePartnershipTarget, setDeletePartnershipTarget] = useState<Partnership | null>(null);
   const [houseStatusFilter, setHouseStatusFilter] = useState<string[]>([]);
+  const [houseSearchTerm, setHouseSearchTerm] = useState('');
   const debouncedSearch = useDebounce(searchTerm, 300);
+  const debouncedHouseSearch = useDebounce(houseSearchTerm, 300);
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
@@ -1828,9 +1830,31 @@ const Parcerias = () => {
                           </Dialog>
                         </div>
                         
-                        {/* Filtros por status */}
+                        {/* Filtros por status e pesquisa */}
                         {partnershipDetails.casas.length > 0 && (
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-col gap-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <div className="relative flex-1 min-w-[200px] max-w-[300px]">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                  placeholder="Pesquisar casas..."
+                                  value={houseSearchTerm}
+                                  onChange={(e) => setHouseSearchTerm(e.target.value)}
+                                  className="pl-9 h-9"
+                                />
+                                {houseSearchTerm && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                                    onClick={() => setHouseSearchTerm('')}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
                             {(() => {
                               const statusCounts = {
                                 all: partnershipDetails.casas.length,
@@ -1884,20 +1908,30 @@ const Parcerias = () => {
                                   </Button>
                                 ));
                             })()}
+                            </div>
                           </div>
                         )}
                       </div>
                       
                       {(() => {
-                        const filteredCasas = houseStatusFilter.length === 0 
-                          ? partnershipDetails.casas 
-                          : partnershipDetails.casas.filter((c: any) => houseStatusFilter.includes(c.status));
+                        const searchLower = debouncedHouseSearch.toLowerCase();
+                        const filteredCasas = partnershipDetails.casas.filter((c: any) => {
+                          // Filtro de status
+                          const statusMatch = houseStatusFilter.length === 0 || houseStatusFilter.includes(c.status);
+                          // Filtro de pesquisa (nome, status label, valores)
+                          const searchMatch = !searchLower || 
+                            c.nome.toLowerCase().includes(searchLower) ||
+                            getStatusLabel(c.status).toLowerCase().includes(searchLower) ||
+                            c.totalApostas.toString().includes(searchLower) ||
+                            c.lucroLiquido.toString().includes(searchLower);
+                          return statusMatch && searchMatch;
+                        });
                         
                         return filteredCasas.length === 0 ? (
                           <p className="text-center text-muted-foreground py-4">
                             {partnershipDetails.casas.length === 0 
                               ? 'Nenhuma aposta registrada para esta parceria'
-                              : 'Nenhuma casa com o status selecionado'}
+                              : 'Nenhuma casa encontrada com os filtros aplicados'}
                           </p>
                         ) : (
                         <div className="rounded-md border">
@@ -1916,10 +1950,17 @@ const Parcerias = () => {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {(houseStatusFilter.length === 0 
-                                ? partnershipDetails.casas 
-                                : partnershipDetails.casas.filter((c: any) => houseStatusFilter.includes(c.status))
-                              ).map((casa: any, index: number) => (
+                              {(() => {
+                                const searchLower = debouncedHouseSearch.toLowerCase();
+                                return partnershipDetails.casas.filter((c: any) => {
+                                  const statusMatch = houseStatusFilter.length === 0 || houseStatusFilter.includes(c.status);
+                                  const searchMatch = !searchLower || 
+                                    c.nome.toLowerCase().includes(searchLower) ||
+                                    getStatusLabel(c.status).toLowerCase().includes(searchLower) ||
+                                    c.totalApostas.toString().includes(searchLower) ||
+                                    c.lucroLiquido.toString().includes(searchLower);
+                                  return statusMatch && searchMatch;
+                                }).map((casa: any, index: number) => (
                                 <TableRow key={index}>
                                   <TableCell>
                                     <Select
@@ -1993,7 +2034,8 @@ const Parcerias = () => {
                                     )}
                                   </TableCell>
                                 </TableRow>
-                              ))}
+                              ));
+                              })()}
                             </TableBody>
                           </Table>
                         </div>
