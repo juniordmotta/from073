@@ -746,6 +746,22 @@ const Parcerias = () => {
         status: houseStatusMap.get(casa.nome) || 'ativa',
       }));
 
+      // Adicionar casas manuais que não têm apostas ainda
+      houseStatuses?.forEach(house => {
+        if (!casasStats.has(house.house_name)) {
+          casasArray.push({
+            nome: house.house_name,
+            ganhos: 0,
+            perdas: 0,
+            devolvidos: 0,
+            aguardando: 0,
+            totalApostas: 0,
+            lucroLiquido: 0,
+            status: house.status,
+          });
+        }
+      });
+
       // Calcular totais
       const totalCustos = costs?.reduce((sum, cost) => sum + Number(cost.valor), 0) || 0;
       const lucroBruto = arbs?.reduce((sum, arb) => {
