@@ -202,6 +202,7 @@ const Parcerias = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'ativo' | 'inativo'>('ativo');
   const [searchTerm, setSearchTerm] = useState('');
   const [deletePartnershipTarget, setDeletePartnershipTarget] = useState<Partnership | null>(null);
+  const [houseStatusFilter, setHouseStatusFilter] = useState<string>('all');
   const debouncedSearch = useDebounce(searchTerm, 300);
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
@@ -1790,31 +1791,83 @@ const Parcerias = () => {
 
                     {/* Tabela de casas */}
                     <Card className="p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold">Desempenho por Casa de Apostas</h3>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button size="sm" variant="outline">
-                              <Plus className="h-4 w-4 mr-2" />
-                              Adicionar Casa
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Adicionar Casa de Apostas</DialogTitle>
-                            </DialogHeader>
-                            <AddHouseForm 
-                              partnershipId={selectedPartnershipId!}
-                              onSuccess={() => loadPartnershipDetails(selectedPartnershipId!)}
-                            />
-                          </DialogContent>
-                        </Dialog>
+                      <div className="flex flex-col gap-4 mb-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-semibold">Desempenho por Casa de Apostas</h3>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button size="sm" variant="outline">
+                                <Plus className="h-4 w-4 mr-2" />
+                                Adicionar Casa
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Adicionar Casa de Apostas</DialogTitle>
+                              </DialogHeader>
+                              <AddHouseForm 
+                                partnershipId={selectedPartnershipId!}
+                                onSuccess={() => loadPartnershipDetails(selectedPartnershipId!)}
+                              />
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                        
+                        {/* Filtros por status */}
+                        {partnershipDetails.casas.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {(() => {
+                              const statusCounts = {
+                                all: partnershipDetails.casas.length,
+                                ativa: partnershipDetails.casas.filter((c: any) => c.status === 'ativa').length,
+                                bloqueada: partnershipDetails.casas.filter((c: any) => c.status === 'bloqueada').length,
+                                sacar: partnershipDetails.casas.filter((c: any) => c.status === 'sacar').length,
+                                aguardando_pagamento: partnershipDetails.casas.filter((c: any) => c.status === 'aguardando_pagamento').length,
+                                aguardando_verificacao: partnershipDetails.casas.filter((c: any) => c.status === 'aguardando_verificacao').length,
+                              };
+                              
+                              const statusButtons = [
+                                { value: 'all', label: 'Todas', count: statusCounts.all, className: 'bg-secondary text-secondary-foreground' },
+                                { value: 'ativa', label: 'Ativa', count: statusCounts.ativa, className: 'bg-success text-success-foreground' },
+                                { value: 'bloqueada', label: 'Bloqueada', count: statusCounts.bloqueada, className: 'bg-destructive text-destructive-foreground' },
+                                { value: 'sacar', label: 'Sacar', count: statusCounts.sacar, className: 'bg-warning text-warning-foreground' },
+                                { value: 'aguardando_pagamento', label: 'Aguardando Pagamento', count: statusCounts.aguardando_pagamento, className: 'bg-muted text-muted-foreground' },
+                                { value: 'aguardando_verificacao', label: 'Aguardando Verificação', count: statusCounts.aguardando_verificacao, className: 'bg-blue-500 text-white' },
+                              ];
+                              
+                              return statusButtons
+                                .filter(btn => btn.count > 0 || btn.value === 'all')
+                                .map(btn => (
+                                  <Button
+                                    key={btn.value}
+                                    size="sm"
+                                    variant={houseStatusFilter === btn.value ? 'default' : 'outline'}
+                                    onClick={() => setHouseStatusFilter(btn.value)}
+                                    className={houseStatusFilter === btn.value ? btn.className : ''}
+                                  >
+                                    {btn.label}
+                                    <Badge variant="secondary" className="ml-2 h-5 min-w-[20px] flex items-center justify-center text-xs">
+                                      {btn.count}
+                                    </Badge>
+                                  </Button>
+                                ));
+                            })()}
+                          </div>
+                        )}
                       </div>
-                      {partnershipDetails.casas.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-4">
-                          Nenhuma aposta registrada para esta parceria
-                        </p>
-                      ) : (
+                      
+                      {(() => {
+                        const filteredCasas = houseStatusFilter === 'all' 
+                          ? partnershipDetails.casas 
+                          : partnershipDetails.casas.filter((c: any) => c.status === houseStatusFilter);
+                        
+                        return filteredCasas.length === 0 ? (
+                          <p className="text-center text-muted-foreground py-4">
+                            {partnershipDetails.casas.length === 0 
+                              ? 'Nenhuma aposta registrada para esta parceria'
+                              : 'Nenhuma casa com o status selecionado'}
+                          </p>
+                        ) : (
                         <div className="rounded-md border">
                           <Table>
                             <TableHeader>
@@ -1831,7 +1884,10 @@ const Parcerias = () => {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {partnershipDetails.casas.map((casa: any, index: number) => (
+                              {(houseStatusFilter === 'all' 
+                                ? partnershipDetails.casas 
+                                : partnershipDetails.casas.filter((c: any) => c.status === houseStatusFilter)
+                              ).map((casa: any, index: number) => (
                                 <TableRow key={index}>
                                   <TableCell>
                                     <Select
@@ -1909,7 +1965,8 @@ const Parcerias = () => {
                             </TableBody>
                           </Table>
                         </div>
-                      )}
+                        );
+                      })()}
                     </Card>
                   </>
                 ) : null}
