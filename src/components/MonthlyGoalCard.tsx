@@ -66,12 +66,20 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
         ? selectedUserIds 
         : [userId];
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('monthly_goals')
         .select('goal_value, user_id')
         .in('user_id', userIdsToFetch)
-        .eq('month', currentMonth)
-        .is('partnership_id', null);
+        .eq('month', currentMonth);
+
+      // Filtrar por partnership_id ou metas gerais (NULL)
+      if (partnershipId) {
+        query = query.eq('partnership_id', partnershipId);
+      } else {
+        query = query.is('partnership_id', null);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       
@@ -111,7 +119,7 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
       for (const uid of userIdsToUpdate) {
         const { error } = await supabase.from('monthly_goals').upsert({
           user_id: uid,
-          partnership_id: null,
+          partnership_id: partnershipId || null,
           month: currentMonth,
           goal_value: valuePerUser,
         }, {
@@ -123,7 +131,9 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
 
       toast({
         title: 'Meta atualizada!',
-        description: 'A meta mensal foi salva com sucesso.',
+        description: partnershipId 
+          ? 'A meta da parceria foi salva com sucesso.' 
+          : 'A meta mensal foi salva com sucesso.',
       });
 
       setEditOpen(false);
@@ -154,6 +164,10 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
   // Formatar nome do mês atual
   const monthName = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+  
+  // Título baseado no contexto
+  const cardTitle = partnershipId ? 'Meta da Parceria' : 'Meta do Mês';
+  const dialogTitle = partnershipId ? 'Editar Meta da Parceria' : 'Editar Meta do Mês';
 
   if (compact) {
     return (
@@ -162,7 +176,7 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
               <Target className="h-3 w-3 text-primary" />
-              <span className="text-xs text-muted-foreground">Meta do Mês</span>
+              <span className="text-xs text-muted-foreground">{cardTitle}</span>
             </div>
             {canEdit && (
               <Button 
@@ -188,7 +202,7 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Editar Meta do Mês</DialogTitle>
+              <DialogTitle>{dialogTitle}</DialogTitle>
               <DialogDescription>
                 {capitalizedMonth}
               </DialogDescription>
@@ -229,7 +243,7 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Target className="h-4 w-4 text-primary" />
-              Meta do Mês
+              {cardTitle}
             </CardTitle>
             {canEdit && (
               <Button 
@@ -281,7 +295,7 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Editar Meta do Mês</DialogTitle>
+            <DialogTitle>{dialogTitle}</DialogTitle>
             <DialogDescription>
               {capitalizedMonth}
             </DialogDescription>
