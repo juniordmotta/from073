@@ -331,7 +331,7 @@ export default function Dashboard() {
         profiles:user_id (name)
       `)
       .eq('status', 'aguardando')
-      .order('data_evento', { ascending: true })
+      .order('data_evento', { ascending: false })
       .limit(50);
     
     if (!isAdmin) {

@@ -449,20 +449,23 @@ export default function MinhasArbitragens() {
       });
     }
 
-    // Ordenação especial quando status = "all"
+    // Ordenação baseada no filtro de status
     if (debouncedFilterStatus.includes('all')) {
       // Separar aguardando e fechadas
       const aguardando = filtered.filter(arb => arb.status === 'aguardando');
       const fechadas = filtered.filter(arb => arb.status !== 'aguardando');
       
-      // Ordenar aguardando por data_evento
+      // Ordenar aguardando por data_evento (mais próximo primeiro)
       aguardando.sort((a, b) => new Date(a.data_evento).getTime() - new Date(b.data_evento).getTime());
       
-      // Ordenar fechadas por created_at (mais recentes primeiro)
-      fechadas.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      // Ordenar fechadas por data_evento (mais recentes primeiro)
+      fechadas.sort((a, b) => new Date(b.data_evento).getTime() - new Date(a.data_evento).getTime());
       
       // Combinar: aguardando primeiro, depois fechadas
       filtered = [...aguardando, ...fechadas];
+    } else {
+      // Quando filtro de status está ativo, ordenar por data_evento mais recente primeiro
+      filtered.sort((a, b) => new Date(b.data_evento).getTime() - new Date(a.data_evento).getTime());
     }
 
     setFilteredArbitragens(filtered);
