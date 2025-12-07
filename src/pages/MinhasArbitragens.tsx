@@ -3078,30 +3078,19 @@ export default function MinhasArbitragens() {
                     <Label htmlFor="porcentagem_add">Porcentagem (%)</Label>
                     <Input
                       id="porcentagem_add"
-                      type="number"
-                      step="0.01"
+                      type="text"
                       placeholder="Calculado automaticamente"
-                      value={formData.porcentagem}
+                      value={parseFloat(formData.porcentagem) < 0 ? '' : formData.porcentagem}
                       readOnly
                       className={`bg-muted ${
                         parseFloat(formData.porcentagem) > 0 
                           ? 'text-success font-semibold border-success' 
-                          : parseFloat(formData.porcentagem) < 0 
-                          ? 'text-destructive font-semibold border-destructive' 
                           : ''
                       }`}
                     />
-                    {formData.porcentagem && (
-                      <p className={`text-xs font-medium ${
-                        parseFloat(formData.porcentagem) > 0 
-                          ? 'text-success' 
-                          : 'text-destructive'
-                      }`}>
-                        {parseFloat(formData.porcentagem) > 0 
-                          ? '✅ Arbitragem válida!' 
-                          : parseFloat(formData.porcentagem) < 0 
-                          ? '⚠️ Não é uma arbitragem válida' 
-                          : ''}
+                    {formData.porcentagem && parseFloat(formData.porcentagem) > 0 && (
+                      <p className="text-xs font-medium text-success">
+                        ✅ Arbitragem válida!
                       </p>
                     )}
                   </div>
