@@ -202,7 +202,7 @@ const Parcerias = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'ativo' | 'inativo'>('ativo');
   const [searchTerm, setSearchTerm] = useState('');
   const [deletePartnershipTarget, setDeletePartnershipTarget] = useState<Partnership | null>(null);
-  const [houseStatusFilter, setHouseStatusFilter] = useState<string>('all');
+  const [houseStatusFilter, setHouseStatusFilter] = useState<string[]>([]);
   const debouncedSearch = useDebounce(searchTerm, 300);
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
@@ -1835,15 +1835,32 @@ const Parcerias = () => {
                                 { value: 'aguardando_verificacao', label: 'Aguardando Verificação', count: statusCounts.aguardando_verificacao, className: 'bg-blue-500 text-white' },
                               ];
                               
+                              const toggleStatus = (value: string) => {
+                                if (value === 'all') {
+                                  setHouseStatusFilter([]);
+                                } else {
+                                  setHouseStatusFilter(prev => 
+                                    prev.includes(value) 
+                                      ? prev.filter(s => s !== value)
+                                      : [...prev, value]
+                                  );
+                                }
+                              };
+                              
+                              const isSelected = (value: string) => {
+                                if (value === 'all') return houseStatusFilter.length === 0;
+                                return houseStatusFilter.includes(value);
+                              };
+                              
                               return statusButtons
                                 .filter(btn => btn.count > 0 || btn.value === 'all')
                                 .map(btn => (
                                   <Button
                                     key={btn.value}
                                     size="sm"
-                                    variant={houseStatusFilter === btn.value ? 'default' : 'outline'}
-                                    onClick={() => setHouseStatusFilter(btn.value)}
-                                    className={houseStatusFilter === btn.value ? btn.className : ''}
+                                    variant={isSelected(btn.value) ? 'default' : 'outline'}
+                                    onClick={() => toggleStatus(btn.value)}
+                                    className={isSelected(btn.value) ? btn.className : ''}
                                   >
                                     {btn.label}
                                     <Badge variant="secondary" className="ml-2 h-5 min-w-[20px] flex items-center justify-center text-xs">
@@ -1857,9 +1874,9 @@ const Parcerias = () => {
                       </div>
                       
                       {(() => {
-                        const filteredCasas = houseStatusFilter === 'all' 
+                        const filteredCasas = houseStatusFilter.length === 0 
                           ? partnershipDetails.casas 
-                          : partnershipDetails.casas.filter((c: any) => c.status === houseStatusFilter);
+                          : partnershipDetails.casas.filter((c: any) => houseStatusFilter.includes(c.status));
                         
                         return filteredCasas.length === 0 ? (
                           <p className="text-center text-muted-foreground py-4">
@@ -1884,9 +1901,9 @@ const Parcerias = () => {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {(houseStatusFilter === 'all' 
+                              {(houseStatusFilter.length === 0 
                                 ? partnershipDetails.casas 
-                                : partnershipDetails.casas.filter((c: any) => c.status === houseStatusFilter)
+                                : partnershipDetails.casas.filter((c: any) => houseStatusFilter.includes(c.status))
                               ).map((casa: any, index: number) => (
                                 <TableRow key={index}>
                                   <TableCell>
