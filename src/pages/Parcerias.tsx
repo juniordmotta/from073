@@ -784,6 +784,21 @@ const Parcerias = () => {
         }
       });
 
+      // Ordenar casas por status na ordem: aguardando_verificacao, aguardando_pagamento, sacar, ativa, bloqueada
+      const statusOrder: Record<string, number> = {
+        'aguardando_verificacao': 0,
+        'aguardando_pagamento': 1,
+        'sacar': 2,
+        'ativa': 3,
+        'bloqueada': 4,
+      };
+      
+      casasArray.sort((a, b) => {
+        const orderA = statusOrder[a.status] ?? 5;
+        const orderB = statusOrder[b.status] ?? 5;
+        return orderA - orderB;
+      });
+
       // Calcular totais
       const totalCustos = costs?.reduce((sum, cost) => sum + Number(cost.valor), 0) || 0;
       const lucroBruto = arbs?.reduce((sum, arb) => {
