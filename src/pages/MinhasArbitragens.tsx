@@ -1793,8 +1793,9 @@ export default function MinhasArbitragens() {
                         const eventDateTime = new Date(arb.data_evento);
                         const now = new Date();
                         const isGameStarted = eventDateTime <= now;
+                        const shouldPulse = isGameStarted && arb.status === 'aguardando';
                         return (
-                          <div className={`text-[10px] mb-0.5 ${isGameStarted ? 'text-destructive font-semibold animate-pulse' : 'text-muted-foreground'}`}>
+                          <div className={`text-[10px] mb-0.5 ${shouldPulse ? 'text-destructive font-semibold animate-pulse' : isGameStarted ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
                             <Clock className="inline h-3 w-3 mr-1" />
                             {format(eventDateTime, 'dd/MM/yy HH:mm')}
                           </div>
@@ -1919,8 +1920,9 @@ export default function MinhasArbitragens() {
                       const eventDateTime = new Date(arb.data_evento);
                       const now = new Date();
                       const isGameStarted = eventDateTime <= now;
+                      const shouldPulse = isGameStarted && arb.status === 'aguardando';
                       return (
-                        <div className={`text-sm mb-1 ${isGameStarted ? 'text-destructive font-semibold animate-pulse' : 'text-muted-foreground'}`}>
+                        <div className={`text-sm mb-1 ${shouldPulse ? 'text-destructive font-semibold animate-pulse' : isGameStarted ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
                           <Clock className="inline h-3 w-3 mr-1" />
                           {format(eventDateTime, 'dd/MM/yy HH:mm')}
                           {timeToEvent > 0 && (
@@ -2174,8 +2176,9 @@ export default function MinhasArbitragens() {
                           const eventDateTime = new Date(arb.data_evento);
                           const now = new Date();
                           const isGameStarted = eventDateTime <= now;
+                          const shouldPulse = isGameStarted && arb.status === 'aguardando';
                           return (
-                            <span className={`${isGameStarted ? 'text-destructive font-semibold animate-pulse' : 'text-muted-foreground'}`}>
+                            <span className={`${shouldPulse ? 'text-destructive font-semibold animate-pulse' : isGameStarted ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
                               {format(eventDateTime, 'dd/MM/yy HH:mm')}
                             </span>
                           );
