@@ -3084,22 +3084,22 @@ export default function MinhasArbitragens() {
                       value={formData.porcentagem}
                       readOnly
                       className={`bg-muted ${
-                        parseFloat(formData.porcentagem) < 0 
+                        parseFloat(formData.porcentagem) > 0 
                           ? 'text-success font-semibold border-success' 
-                          : parseFloat(formData.porcentagem) > 0 
+                          : parseFloat(formData.porcentagem) < 0 
                           ? 'text-destructive font-semibold border-destructive' 
                           : ''
                       }`}
                     />
                     {formData.porcentagem && (
                       <p className={`text-xs font-medium ${
-                        parseFloat(formData.porcentagem) < 0 
+                        parseFloat(formData.porcentagem) > 0 
                           ? 'text-success' 
                           : 'text-destructive'
                       }`}>
-                        {parseFloat(formData.porcentagem) < 0 
+                        {parseFloat(formData.porcentagem) > 0 
                           ? '✅ Arbitragem válida!' 
-                          : parseFloat(formData.porcentagem) > 0 
+                          : parseFloat(formData.porcentagem) < 0 
                           ? '⚠️ Não é uma arbitragem válida' 
                           : ''}
                       </p>
