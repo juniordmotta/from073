@@ -49,6 +49,7 @@ export default function Dashboard() {
   const [selectedUser, setSelectedUser] = useState<string[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string[]>(['aguardando']);
   const [users, setUsers] = useState<Array<{ id: string; name: string }>>([]);
+  const [userLoaded, setUserLoaded] = useState(false);
   const [openBets, setOpenBets] = useState<any[]>([]);
   const [totalCosts, setTotalCosts] = useState(0);
   const [allArbitrages, setAllArbitrages] = useState<any[]>([]);
@@ -124,9 +125,10 @@ export default function Dashboard() {
     
     if (data) {
       setUsers(data);
-      // Inicializar com todos os usuários selecionados
-      if (selectedUser.length === 0 && isAdmin) {
-        setSelectedUser(data.map(u => u.id));
+      // Inicializar com o usuário logado selecionado por padrão
+      if (!userLoaded && user?.id) {
+        setSelectedUser([user.id]);
+        setUserLoaded(true);
       }
     }
   };

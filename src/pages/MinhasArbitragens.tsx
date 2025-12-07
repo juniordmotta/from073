@@ -48,7 +48,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter, X, Maximize2, Minimize2, Search, LayoutGrid, Table as TableIcon, Star, Calendar } from 'lucide-react';
+import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter, X, Maximize2, Minimize2, Search, LayoutGrid, Table as TableIcon, Star, Calendar, Building2 } from 'lucide-react';
 import { format, differenceInMilliseconds } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -103,21 +103,36 @@ interface Partnership {
   data_inicio: string;
 }
 
-const statusMap = {
-  aguardando: { label: 'Aguardando', variant: 'secondary' as const },
-  green: { label: 'Green', variant: 'default' as const },
-  red: { label: 'Red', variant: 'destructive' as const },
-  parcial_green: { label: 'Meio Green', variant: 'default' as const },
-  parcial_red: { label: 'Meio Red', variant: 'destructive' as const },
-  devolvido: { label: 'Devolvido', variant: 'secondary' as const },
+// Mapa para resultado individual de cada casa (usado no dropdown de seleção)
+const resultadoMap: Record<string, { label: string; variant: 'secondary' | 'default' | 'destructive' }> = {
+  aguardando: { label: 'Aguardando', variant: 'secondary' },
+  green: { label: 'Green', variant: 'default' },
+  red: { label: 'Red', variant: 'destructive' },
+  devolvido: { label: 'Devolvido', variant: 'secondary' },
+};
+
+// Função para obter status consolidado baseado no lucro real (para status geral da arbitragem)
+const getConsolidatedStatus = (status: string, lucroReal: number) => {
+  if (status === 'aguardando') {
+    return { label: 'Aguardando', variant: 'secondary' as const };
+  }
+  if (status === 'devolvido') {
+    return { label: 'Devolvido', variant: 'secondary' as const };
+  }
+  // Para qualquer status fechado, verificar o lucro real
+  if (lucroReal > 0) {
+    return { label: 'Green', variant: 'default' as const };
+  } else if (lucroReal < 0) {
+    return { label: 'Red', variant: 'destructive' as const };
+  } else {
+    return { label: 'Devolvido', variant: 'secondary' as const };
+  }
 };
 
 const resultOptions = [
   { value: 'aguardando', label: 'Aguardando' },
   { value: 'green', label: 'Green' },
   { value: 'red', label: 'Red' },
-  { value: 'parcial_green', label: 'Meio Green' },
-  { value: 'parcial_red', label: 'Meio Red' },
   { value: 'devolvido', label: 'Devolvido' },
 ];
 
@@ -133,6 +148,8 @@ export default function MinhasArbitragens() {
   const [editArbitrage, setEditArbitrage] = useState<Arbitrage | null>(null);
   const [viewGanhosArbitrage, setViewGanhosArbitrage] = useState<Arbitrage | null>(null);
   const [users, setUsers] = useState<Array<{ id: string; name: string }>>([]);
+  const [goToHousesOpen, setGoToHousesOpen] = useState(false);
+  const [selectedPartnershipForHouses, setSelectedPartnershipForHouses] = useState<string>('');
   const itemsPerPage = 30;
   
   // Restaurar filtros do sessionStorage ou usar valores padrão (mês atual como padrão)
@@ -165,21 +182,7 @@ export default function MinhasArbitragens() {
       return saved === 'all' ? ['all'] : [saved];
     }
   });
-  const [filterUser, setFilterUser] = useState<string[]>(() => {
-    const saved = sessionStorage.getItem('arbitragens_filterUser');
-    if (!saved) return [];
-    
-    try {
-      // Tentar parsear como array (novo formato)
-      const parsed = JSON.parse(saved);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      // Se falhar, é o formato antigo (string única ou "all")
-      // Limpar o valor antigo e começar vazio
-      sessionStorage.removeItem('arbitragens_filterUser');
-      return [];
-    }
-  });
+  const [filterUser, setFilterUser] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(() => {
     const saved = sessionStorage.getItem('arbitragens_currentPage');
     return saved ? parseInt(saved) : 1;
@@ -531,10 +534,9 @@ export default function MinhasArbitragens() {
     if (data) {
       setUsers(data);
       
-      // Se não há filtro salvo, inicializar com todos os usuários
-      const savedFilter = sessionStorage.getItem('arbitragens_filterUser');
-      if (!savedFilter && isAdmin) {
-        setFilterUser(data.map(u => u.id));
+      // Por padrão, selecionar o usuário logado
+      if (filterUser.length === 0 && user?.id) {
+        setFilterUser([user.id]);
       }
     }
   };
@@ -1251,6 +1253,60 @@ export default function MinhasArbitragens() {
                 )}
               </Button>
             )}
+
+            {/* Botão Ir para Casas */}
+            <Dialog open={goToHousesOpen} onOpenChange={setGoToHousesOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2 h-8">
+                  <Building2 className="h-4 w-4" />
+                  Ir para Casas
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Selecionar Parceria</DialogTitle>
+                  <DialogDescription>
+                    Escolha a parceria para ver o desempenho das casas de apostas.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Parceria</Label>
+                    <Select
+                      value={selectedPartnershipForHouses}
+                      onValueChange={setSelectedPartnershipForHouses}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma parceria" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {partnerships.filter(p => p.status === 'ativo').map((partnership) => (
+                          <SelectItem key={partnership.id} value={partnership.id}>
+                            {formatUserName(partnership.nome_completo)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setGoToHousesOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        if (selectedPartnershipForHouses) {
+                          navigate(`/parcerias?partnership=${selectedPartnershipForHouses}&view=report`);
+                          setGoToHousesOpen(false);
+                        }
+                      }}
+                      disabled={!selectedPartnershipForHouses}
+                    >
+                      Ir para Casas
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
           
           <div className="flex items-end gap-2 flex-wrap">
@@ -1653,8 +1709,8 @@ export default function MinhasArbitragens() {
                   >
                     {/* Header Compacto */}
                     <div className="flex items-center justify-between mb-2">
-                      <Badge variant={statusMap[arb.status as keyof typeof statusMap]?.variant} className="text-[10px]">
-                        {statusMap[arb.status as keyof typeof statusMap]?.label}
+                      <Badge variant={getConsolidatedStatus(arb.status, arb.lucro_real).variant} className="text-[10px]">
+                        {getConsolidatedStatus(arb.status, arb.lucro_real).label}
                       </Badge>
                       <div className="flex gap-1">
                         <Button
@@ -1751,8 +1807,8 @@ export default function MinhasArbitragens() {
                   <div className="flex items-start justify-between mb-4">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <Badge variant={statusMap[arb.status as keyof typeof statusMap]?.variant}>
-                          {statusMap[arb.status as keyof typeof statusMap]?.label}
+                        <Badge variant={getConsolidatedStatus(arb.status, arb.lucro_real).variant}>
+                          {getConsolidatedStatus(arb.status, arb.lucro_real).label}
                         </Badge>
                         {isAdmin && (
                           <span className="text-xs text-muted-foreground">
@@ -1834,7 +1890,7 @@ export default function MinhasArbitragens() {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
-                              {statusMap[arb.casa_01_resultado as keyof typeof statusMap]?.label || 'Definir'}
+                              {resultadoMap[arb.casa_01_resultado]?.label || 'Definir'}
                               <ChevronDown className="h-3 w-3" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -1872,7 +1928,7 @@ export default function MinhasArbitragens() {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
-                              {statusMap[arb.casa_02_resultado as keyof typeof statusMap]?.label || 'Definir'}
+                              {resultadoMap[arb.casa_02_resultado]?.label || 'Definir'}
                               <ChevronDown className="h-3 w-3" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -1911,7 +1967,7 @@ export default function MinhasArbitragens() {
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
-                                {statusMap[arb.casa_03_resultado as keyof typeof statusMap]?.label || 'Definir'}
+                                {resultadoMap[arb.casa_03_resultado || '']?.label || 'Definir'}
                                 <ChevronDown className="h-3 w-3" />
                               </Button>
                             </DropdownMenuTrigger>
@@ -2066,7 +2122,7 @@ export default function MinhasArbitragens() {
                               size="sm"
                               className="h-7 text-xs gap-1"
                             >
-                              {statusMap[arb.casa_01_resultado as keyof typeof statusMap]?.label || 'Definir'}
+                              {resultadoMap[arb.casa_01_resultado]?.label || 'Definir'}
                               <ChevronDown className="h-3 w-3" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -2108,7 +2164,7 @@ export default function MinhasArbitragens() {
                               size="sm"
                               className="h-7 text-xs gap-1"
                             >
-                              {statusMap[arb.casa_02_resultado as keyof typeof statusMap]?.label || 'Definir'}
+                              {resultadoMap[arb.casa_02_resultado]?.label || 'Definir'}
                               <ChevronDown className="h-3 w-3" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -2151,7 +2207,7 @@ export default function MinhasArbitragens() {
                                 size="sm"
                                 className="h-7 text-xs gap-1"
                               >
-                                {statusMap[arb.casa_03_resultado as keyof typeof statusMap]?.label || 'Definir'}
+                                {resultadoMap[arb.casa_03_resultado || '']?.label || 'Definir'}
                                 <ChevronDown className="h-3 w-3" />
                               </Button>
                             </DropdownMenuTrigger>
@@ -2199,8 +2255,8 @@ export default function MinhasArbitragens() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={statusMap[arb.status as keyof typeof statusMap]?.variant}>
-                        {statusMap[arb.status as keyof typeof statusMap]?.label}
+                      <Badge variant={getConsolidatedStatus(arb.status, arb.lucro_real).variant}>
+                        {getConsolidatedStatus(arb.status, arb.lucro_real).label}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -2469,8 +2525,8 @@ export default function MinhasArbitragens() {
                   <div>{viewGanhosArbitrage.casa_01_odd}x</div>
                   <div className="text-muted-foreground">Resultado:</div>
                   <div>
-                    <Badge variant={statusMap[viewGanhosArbitrage.casa_01_resultado as keyof typeof statusMap]?.variant}>
-                      {statusMap[viewGanhosArbitrage.casa_01_resultado as keyof typeof statusMap]?.label || 'Aguardando'}
+                    <Badge variant={resultadoMap[viewGanhosArbitrage.casa_01_resultado]?.variant || 'secondary'}>
+                      {resultadoMap[viewGanhosArbitrage.casa_01_resultado]?.label || 'Aguardando'}
                     </Badge>
                   </div>
                   <div className="text-muted-foreground font-semibold">Ganho/Perda:</div>
@@ -2499,8 +2555,8 @@ export default function MinhasArbitragens() {
                   <div>{viewGanhosArbitrage.casa_02_odd}x</div>
                   <div className="text-muted-foreground">Resultado:</div>
                   <div>
-                    <Badge variant={statusMap[viewGanhosArbitrage.casa_02_resultado as keyof typeof statusMap]?.variant}>
-                      {statusMap[viewGanhosArbitrage.casa_02_resultado as keyof typeof statusMap]?.label || 'Aguardando'}
+                    <Badge variant={resultadoMap[viewGanhosArbitrage.casa_02_resultado]?.variant || 'secondary'}>
+                      {resultadoMap[viewGanhosArbitrage.casa_02_resultado]?.label || 'Aguardando'}
                     </Badge>
                   </div>
                   <div className="text-muted-foreground font-semibold">Ganho/Perda:</div>
@@ -2530,8 +2586,8 @@ export default function MinhasArbitragens() {
                     <div>{viewGanhosArbitrage.casa_03_odd}x</div>
                     <div className="text-muted-foreground">Resultado:</div>
                     <div>
-                      <Badge variant={statusMap[viewGanhosArbitrage.casa_03_resultado as keyof typeof statusMap]?.variant}>
-                        {statusMap[viewGanhosArbitrage.casa_03_resultado as keyof typeof statusMap]?.label || 'Aguardando'}
+                      <Badge variant={resultadoMap[viewGanhosArbitrage.casa_03_resultado || '']?.variant || 'secondary'}>
+                        {resultadoMap[viewGanhosArbitrage.casa_03_resultado || '']?.label || 'Aguardando'}
                       </Badge>
                     </div>
                     <div className="text-muted-foreground font-semibold">Ganho/Perda:</div>

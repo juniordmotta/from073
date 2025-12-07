@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -163,6 +164,7 @@ const Parcerias = () => {
   const { user, userRole } = useAuth();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [partnerships, setPartnerships] = useState<Partnership[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -183,6 +185,19 @@ const Parcerias = () => {
   const debouncedSearch = useDebounce(searchTerm, 300);
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
+
+  // Verificar parâmetros da URL para navegação direta
+  useEffect(() => {
+    const partnershipParam = searchParams.get('partnership');
+    const viewParam = searchParams.get('view');
+    
+    if (partnershipParam && viewParam === 'report') {
+      setSelectedPartnershipId(partnershipParam);
+      setViewMode('report');
+      // Limpar parâmetros da URL
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   const [formData, setFormData] = useState({
     nome_completo: '',
