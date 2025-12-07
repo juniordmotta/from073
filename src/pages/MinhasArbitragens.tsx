@@ -46,6 +46,7 @@ import { formatCurrency, formatUserName } from '@/lib/utils';
 import { parseArbitrageText } from '@/utils/arbitrageParser';
 import { MonthlyGoalCard } from '@/components/MonthlyGoalCard';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { highlightText } from '@/lib/utils/highlightText';
 
 interface Arbitrage {
   id: string;
@@ -1734,7 +1735,7 @@ export default function MinhasArbitragens() {
             </div>
             {isMobile ? (
             // Visualização Mobile Compacta
-            <div className="space-y-3">
+            <div className={`space-y-3 ${debouncedSearchText ? 'animate-fade-in' : ''}`}>
               {paginatedArbitragens.map((arb) => {
                 const eventDate = new Date(arb.data_evento);
                 eventDate.setHours(0, 0, 0, 0);
@@ -1746,7 +1747,7 @@ export default function MinhasArbitragens() {
                 return (
                   <div
                     key={arb.id}
-                    className={`rounded-lg border bg-card p-3 ${
+                    className={`rounded-lg border bg-card p-3 ${debouncedSearchText ? 'animate-fade-in' : ''} ${
                       isEventPast && arb.status === 'aguardando'
                         ? 'border-l-4 border-red-500'
                         : isEventToday
@@ -1793,18 +1794,18 @@ export default function MinhasArbitragens() {
                           </div>
                         );
                       })()}
-                      <div className="font-medium text-sm line-clamp-2">{arb.descricao}</div>
+                      <div className="font-medium text-sm line-clamp-2">{highlightText(arb.descricao, debouncedSearchText)}</div>
                     </div>
 
                     {/* Casas - Layout Horizontal Compacto */}
                     <div className="grid grid-cols-2 gap-2 mb-2">
                       <div className="text-[10px] space-y-0.5">
-                        <div className="font-medium truncate">{arb.casa_01_nome}</div>
+                        <div className="font-medium truncate">{highlightText(arb.casa_01_nome, debouncedSearchText)}</div>
                         <div className="text-muted-foreground">{Number(arb.casa_01_odd).toFixed(2)}x</div>
                         <div className="text-muted-foreground">R$ {formatCurrency(arb.casa_01_valor)}</div>
                       </div>
                       <div className="text-[10px] space-y-0.5">
-                        <div className="font-medium truncate">{arb.casa_02_nome}</div>
+                        <div className="font-medium truncate">{highlightText(arb.casa_02_nome, debouncedSearchText)}</div>
                         <div className="text-muted-foreground">{Number(arb.casa_02_odd).toFixed(2)}x</div>
                         <div className="text-muted-foreground">R$ {formatCurrency(arb.casa_02_valor)}</div>
                       </div>
@@ -1833,7 +1834,7 @@ export default function MinhasArbitragens() {
             </div>
           ) : (
             // Visualização Desktop Normal
-            <div className="space-y-4">
+            <div className={`space-y-4 ${debouncedSearchText ? 'animate-fade-in' : ''}`}>
               {paginatedArbitragens.map((arb) => {
                 const timeToEvent = differenceInMilliseconds(new Date(arb.data_evento), new Date());
                 const days = Math.floor(timeToEvent / (1000 * 60 * 60 * 24));
@@ -1850,7 +1851,7 @@ export default function MinhasArbitragens() {
                 return (
                 <div
                   key={arb.id}
-                  className={`rounded-lg border bg-card p-4 ${
+                  className={`rounded-lg border bg-card p-4 ${debouncedSearchText ? 'animate-fade-in' : ''} ${
                     isEventPast && arb.status === 'aguardando'
                       ? 'border-l-4 border-red-500'
                       : isEventToday
@@ -1925,9 +1926,9 @@ export default function MinhasArbitragens() {
                         </div>
                       );
                     })()}
-                    <div className="font-medium text-lg">{arb.descricao}</div>
+                    <div className="font-medium text-lg">{highlightText(arb.descricao, debouncedSearchText)}</div>
                     {arb.esporte_liga && (
-                      <div className="text-sm text-muted-foreground">{arb.esporte_liga}</div>
+                      <div className="text-sm text-muted-foreground">{highlightText(arb.esporte_liga, debouncedSearchText)}</div>
                     )}
                   </div>
 
@@ -1942,7 +1943,7 @@ export default function MinhasArbitragens() {
                               {formatUserName(arb.partnerships_casa_01.nome_completo)}
                             </div>
                           )}
-                          <div className="font-medium">{arb.casa_01_nome}</div>
+                          <div className="font-medium">{highlightText(arb.casa_01_nome, debouncedSearchText)}</div>
                           {arb.casa_01_mercado && (
                             <div className="text-xs text-muted-foreground">{arb.casa_01_mercado}</div>
                           )}
@@ -1980,7 +1981,7 @@ export default function MinhasArbitragens() {
                               {formatUserName(arb.partnerships_casa_02.nome_completo)}
                             </div>
                           )}
-                          <div className="font-medium">{arb.casa_02_nome}</div>
+                          <div className="font-medium">{highlightText(arb.casa_02_nome, debouncedSearchText)}</div>
                           {arb.casa_02_mercado && (
                             <div className="text-xs text-muted-foreground">{arb.casa_02_mercado}</div>
                           )}
@@ -2019,7 +2020,7 @@ export default function MinhasArbitragens() {
                                 {formatUserName(arb.partnerships_casa_03.nome_completo)}
                               </div>
                             )}
-                            <div className="font-medium">{arb.casa_03_nome}</div>
+                            <div className="font-medium">{highlightText(arb.casa_03_nome!, debouncedSearchText)}</div>
                             {arb.casa_03_mercado && (
                               <div className="text-xs text-muted-foreground">{arb.casa_03_mercado}</div>
                             )}

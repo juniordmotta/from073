@@ -28,6 +28,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ValidatedInput } from '@/components/ui/validated-input';
 import { createUserSchema } from '@/lib/validations/user';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { highlightText } from '@/lib/utils/highlightText';
 
 interface User {
   id: string;
@@ -555,7 +556,7 @@ export default function Usuarios() {
         </Card>
 
         {/* Visualização Desktop */}
-        <div className="hidden md:block rounded-lg border">
+        <div className={`hidden md:block rounded-lg border ${debouncedSearch ? 'animate-fade-in' : ''}`}>
           <Table>
             <TableHeader>
               <TableRow>
@@ -569,9 +570,9 @@ export default function Usuarios() {
             </TableHeader>
             <TableBody>
               {paginatedUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{formatUserName(user.name)}</TableCell>
-                  <TableCell>{user.email}</TableCell>
+                <TableRow key={user.id} className={debouncedSearch ? 'animate-fade-in' : ''}>
+                  <TableCell className="font-medium">{highlightText(formatUserName(user.name), debouncedSearch)}</TableCell>
+                  <TableCell>{highlightText(user.email, debouncedSearch)}</TableCell>
                   <TableCell>
                     <Badge
                       variant={
@@ -618,15 +619,15 @@ export default function Usuarios() {
         </div>
 
         {/* Visualização Mobile/Tablet em Cards */}
-        <div className="md:hidden space-y-4">
+        <div className={`md:hidden space-y-4 ${debouncedSearch ? 'animate-fade-in' : ''}`}>
           {paginatedUsers.map((user) => (
-            <Card key={user.id} className="p-4">
+            <Card key={user.id} className={`p-4 ${debouncedSearch ? 'animate-fade-in' : ''}`}>
               <div className="space-y-3">
                 {/* Header do Card */}
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{formatUserName(user.name)}</h3>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                    <h3 className="font-semibold text-lg">{highlightText(formatUserName(user.name), debouncedSearch)}</h3>
+                    <p className="text-sm text-muted-foreground">{highlightText(user.email, debouncedSearch)}</p>
                   </div>
                   <Badge
                     variant={

@@ -31,6 +31,7 @@ import { BanksDialog } from '@/components/BanksDialog';
 import { ValidatedInput } from '@/components/ui/validated-input';
 import { houseSchema } from '@/lib/validations/forms';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { highlightText } from '@/lib/utils/highlightText';
 
 interface Partnership {
   id: string;
@@ -86,23 +87,6 @@ const fieldLabels: Record<string, string> = {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
-// Função para destacar texto encontrado na pesquisa
-const highlightText = (text: string, search: string) => {
-  if (!search || !text) return text;
-  
-  const regex = new RegExp(`(${search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-  const parts = text.split(regex);
-  
-  return parts.map((part, index) => 
-    regex.test(part) ? (
-      <mark key={index} className="bg-yellow-300 dark:bg-yellow-500/50 px-0.5 rounded">
-        {part}
-      </mark>
-    ) : (
-      part
-    )
-  );
-};
 // Componente para adicionar casa de apostas manualmente
 interface AddHouseFormProps {
   partnershipId: string;
@@ -1405,7 +1389,7 @@ const Parcerias = () => {
         {viewMode === 'list' && (
           <>
             {/* Visualização Desktop */}
-            <div className="hidden md:block rounded-md border">
+            <div className={`hidden md:block rounded-md border ${debouncedSearch ? 'animate-fade-in' : ''}`}>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -1435,7 +1419,7 @@ const Parcerias = () => {
                     </TableRow>
                   ) : (
                     filteredPartnerships.map((partnership) => (
-                      <TableRow key={partnership.id}>
+                      <TableRow key={partnership.id} className={debouncedSearch ? 'animate-fade-in' : ''}>
                         {isAdmin && (
                           <TableCell>
                             {formatUserName(partnership.profiles?.name) || partnership.profiles?.email}
@@ -1450,11 +1434,11 @@ const Parcerias = () => {
                             }}
                             className="text-primary hover:underline cursor-pointer font-medium text-left"
                           >
-                            {formatUserName(partnership.nome_completo)}
+                            {highlightText(formatUserName(partnership.nome_completo), debouncedSearch)}
                           </button>
                         </TableCell>
-                        <TableCell>{formatCpf(partnership.cpf)}</TableCell>
-                        <TableCell className="max-w-xs truncate">{partnership.endereco}</TableCell>
+                        <TableCell>{highlightText(formatCpf(partnership.cpf), debouncedSearch)}</TableCell>
+                        <TableCell className="max-w-xs truncate">{highlightText(partnership.endereco, debouncedSearch)}</TableCell>
                         <TableCell>R$ {formatCurrency(partnership.valor_banca)}</TableCell>
                         <TableCell>{partnership.bancos_cadastrados}</TableCell>
                         <TableCell>
@@ -1491,14 +1475,14 @@ const Parcerias = () => {
             </div>
 
             {/* Visualização Mobile/Tablet em Cards */}
-            <div className="md:hidden space-y-4">
+            <div className={`md:hidden space-y-4 ${debouncedSearch ? 'animate-fade-in' : ''}`}>
               {loading ? (
                 <div className="text-center py-8">Carregando...</div>
-              ) : partnerships.length === 0 ? (
+              ) : filteredPartnerships.length === 0 ? (
                 <div className="text-center py-8">Nenhuma parceria encontrada</div>
               ) : (
-                partnerships.map((partnership) => (
-                  <Card key={partnership.id} className="p-4">
+                filteredPartnerships.map((partnership) => (
+                  <Card key={partnership.id} className={`p-4 ${debouncedSearch ? 'animate-fade-in' : ''}`}>
                     <div className="space-y-3">
                       {/* Header do Card */}
                       <div className="flex items-start justify-between">
@@ -1511,7 +1495,7 @@ const Parcerias = () => {
                             }}
                             className="text-primary hover:underline cursor-pointer font-semibold text-lg text-left"
                           >
-                            {formatUserName(partnership.nome_completo)}
+                            {highlightText(formatUserName(partnership.nome_completo), debouncedSearch)}
                           </button>
                           {isAdmin && (
                             <p className="text-xs text-muted-foreground">
@@ -1528,7 +1512,7 @@ const Parcerias = () => {
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">CPF:</span>
-                          <span className="font-medium">{formatCpf(partnership.cpf)}</span>
+                          <span className="font-medium">{highlightText(formatCpf(partnership.cpf), debouncedSearch)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Valor da Banca:</span>
@@ -1542,7 +1526,7 @@ const Parcerias = () => {
                         </div>
                         <div className="space-y-1">
                           <span className="text-muted-foreground">Endereço:</span>
-                          <p className="font-medium text-xs">{partnership.endereco}</p>
+                          <p className="font-medium text-xs">{highlightText(partnership.endereco, debouncedSearch)}</p>
                         </div>
                         <div className="space-y-1">
                           <span className="text-muted-foreground">Bancos:</span>
