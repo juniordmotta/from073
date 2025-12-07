@@ -3083,15 +3083,27 @@ export default function MinhasArbitragens() {
                       placeholder="Calculado automaticamente"
                       value={formData.porcentagem}
                       readOnly
-                      className="bg-muted"
+                      className={`bg-muted ${
+                        parseFloat(formData.porcentagem) < 0 
+                          ? 'text-success font-semibold border-success' 
+                          : parseFloat(formData.porcentagem) > 0 
+                          ? 'text-destructive font-semibold border-destructive' 
+                          : ''
+                      }`}
                     />
-                    <p className="text-xs text-muted-foreground">
-                      {parseFloat(formData.porcentagem) > 0 
-                        ? '⚠️ Não é uma arbitragem válida' 
-                        : parseFloat(formData.porcentagem) < 0 
-                        ? '✅ Arbitragem válida!' 
-                        : ''}
-                    </p>
+                    {formData.porcentagem && (
+                      <p className={`text-xs font-medium ${
+                        parseFloat(formData.porcentagem) < 0 
+                          ? 'text-success' 
+                          : 'text-destructive'
+                      }`}>
+                        {parseFloat(formData.porcentagem) < 0 
+                          ? '✅ Arbitragem válida!' 
+                          : parseFloat(formData.porcentagem) > 0 
+                          ? '⚠️ Não é uma arbitragem válida' 
+                          : ''}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="retorno_previsto_add">Retorno Previsto (R$)</Label>
