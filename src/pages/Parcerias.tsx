@@ -850,6 +850,32 @@ const Parcerias = () => {
     }
   };
 
+  const deleteManualHouse = async (partnershipId: string, houseName: string) => {
+    try {
+      const { error } = await supabase
+        .from('partnership_houses')
+        .delete()
+        .eq('partnership_id', partnershipId)
+        .eq('house_name', houseName);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sucesso',
+        description: `Casa "${houseName}" removida com sucesso`,
+      });
+
+      loadPartnershipDetails(partnershipId);
+    } catch (error) {
+      console.error('Erro ao deletar casa:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível remover a casa',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'ativa':
@@ -1779,6 +1805,7 @@ const Parcerias = () => {
                                 <TableHead className="text-right">Devolvidos</TableHead>
                                 <TableHead className="text-right">Aguardando</TableHead>
                                 <TableHead className="text-right">Lucro Líquido</TableHead>
+                                <TableHead className="w-[50px]"></TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -1822,6 +1849,18 @@ const Parcerias = () => {
                                   <TableCell className="text-right text-muted-foreground">{casa.aguardando}</TableCell>
                                   <TableCell className={`text-right font-semibold ${casa.lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
                                     R$ {formatCurrency(casa.lucroLiquido)}
+                                  </TableCell>
+                                  <TableCell>
+                                    {casa.totalApostas === 0 && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                        onClick={() => deleteManualHouse(selectedPartnershipId!, casa.nome)}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    )}
                                   </TableCell>
                                 </TableRow>
                               ))}
