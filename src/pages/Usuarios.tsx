@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -28,6 +27,7 @@ import { formatUserName } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ValidatedInput } from '@/components/ui/validated-input';
 import { createUserSchema } from '@/lib/validations/user';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 
 interface User {
   id: string;
@@ -51,7 +51,7 @@ export default function Usuarios() {
   const [isLoading, setIsLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+  const [deleteUser, setDeleteUser] = useState<User | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -283,7 +283,7 @@ export default function Usuarios() {
   };
 
   const handleDeleteUser = async () => {
-    if (!deleteUserId) return;
+    if (!deleteUser) return;
     
     setIsLoading(true);
 
@@ -291,7 +291,7 @@ export default function Usuarios() {
     const { error: roleError } = await supabase
       .from('user_roles')
       .delete()
-      .eq('user_id', deleteUserId);
+      .eq('user_id', deleteUser.id);
 
     if (roleError) {
       toast({
@@ -307,7 +307,7 @@ export default function Usuarios() {
     const { error: profileError } = await supabase
       .from('profiles')
       .delete()
-      .eq('id', deleteUserId);
+      .eq('id', deleteUser.id);
 
     if (profileError) {
       toast({
@@ -324,7 +324,7 @@ export default function Usuarios() {
       description: 'O usuário foi removido com sucesso.',
     });
     
-    setDeleteUserId(null);
+    setDeleteUser(null);
     loadUsers();
     setIsLoading(false);
   };
@@ -605,7 +605,7 @@ export default function Usuarios() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => setDeleteUserId(user.id)}
+                        onClick={() => setDeleteUser(user)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -672,7 +672,7 @@ export default function Usuarios() {
                     variant="outline"
                     size="sm"
                     className="flex-1"
-                    onClick={() => setDeleteUserId(user.id)}
+                    onClick={() => setDeleteUser(user)}
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Excluir
@@ -759,23 +759,13 @@ export default function Usuarios() {
           </DialogContent>
         </Dialog>
 
-        {/* Dialog de Confirmação de Exclusão */}
-        <AlertDialog open={!!deleteUserId} onOpenChange={() => setDeleteUserId(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-              <AlertDialogDescription>
-                Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteUser}>
-                Excluir
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <ConfirmDeleteDialog
+          open={!!deleteUser}
+          onOpenChange={(open) => !open && setDeleteUser(null)}
+          onConfirm={handleDeleteUser}
+          title="Excluir Usuário"
+          itemName={deleteUser?.name}
+        />
 
         {/* Dialog de Histórico de Alterações */}
         <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>

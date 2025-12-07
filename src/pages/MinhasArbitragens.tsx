@@ -23,16 +23,6 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -55,6 +45,7 @@ import { useNavigate } from 'react-router-dom';
 import { formatCurrency, formatUserName } from '@/lib/utils';
 import { parseArbitrageText } from '@/utils/arbitrageParser';
 import { MonthlyGoalCard } from '@/components/MonthlyGoalCard';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 
 interface Arbitrage {
   id: string;
@@ -2419,20 +2410,13 @@ export default function MinhasArbitragens() {
         )}
       </div>
 
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-              <AlertDialogDescription>
-                Tem certeza que deseja excluir esta arbitragem? Esta ação não pode ser desfeita.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete}>Excluir</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+      <ConfirmDeleteDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Excluir Arbitragem"
+        description="Tem certeza que deseja excluir esta arbitragem? Esta ação não pode ser desfeita."
+      />
 
         <Dialog open={!!editArbitrage} onOpenChange={() => setEditArbitrage(null)}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

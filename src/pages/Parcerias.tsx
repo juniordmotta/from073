@@ -30,6 +30,7 @@ import { MonthlyGoalCard } from '@/components/MonthlyGoalCard';
 import { BanksDialog } from '@/components/BanksDialog';
 import { ValidatedInput } from '@/components/ui/validated-input';
 import { houseSchema } from '@/lib/validations/forms';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 
 interface Partnership {
   id: string;
@@ -200,6 +201,7 @@ const Parcerias = () => {
   const [isBanksDialogOpen, setIsBanksDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'all' | 'ativo' | 'inativo'>('ativo');
   const [searchTerm, setSearchTerm] = useState('');
+  const [deletePartnershipTarget, setDeletePartnershipTarget] = useState<Partnership | null>(null);
   const debouncedSearch = useDebounce(searchTerm, 300);
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
@@ -426,14 +428,14 @@ const Parcerias = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta parceria?')) return;
+  const handleDelete = async () => {
+    if (!deletePartnershipTarget) return;
 
     try {
       const { error } = await supabase
         .from('partnerships')
         .delete()
-        .eq('id', id);
+        .eq('id', deletePartnershipTarget.id);
 
       if (error) throw error;
 
@@ -442,6 +444,7 @@ const Parcerias = () => {
         description: 'Parceria excluída com sucesso',
       });
 
+      setDeletePartnershipTarget(null);
       fetchPartnerships();
     } catch (error) {
       console.error('Erro ao excluir parceria:', error);
@@ -1439,7 +1442,7 @@ const Parcerias = () => {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleDelete(partnership.id)}
+                              onClick={() => setDeletePartnershipTarget(partnership)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -1527,7 +1530,7 @@ const Parcerias = () => {
                           variant="outline"
                           size="sm"
                           className="flex-1"
-                          onClick={() => handleDelete(partnership.id)}
+                          onClick={() => setDeletePartnershipTarget(partnership)}
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
                           Excluir
@@ -2080,6 +2083,14 @@ const Parcerias = () => {
         onOpenChange={setIsBanksDialogOpen}
         userId={user?.id || ''}
         onBanksUpdate={fetchBanks}
+      />
+
+      <ConfirmDeleteDialog
+        open={!!deletePartnershipTarget}
+        onOpenChange={(open) => !open && setDeletePartnershipTarget(null)}
+        onConfirm={handleDelete}
+        title="Excluir Parceria"
+        itemName={deletePartnershipTarget?.nome_completo}
       />
     </Layout>
   );
