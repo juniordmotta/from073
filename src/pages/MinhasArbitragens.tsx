@@ -48,7 +48,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter, X, Maximize2, Minimize2, Search, LayoutGrid, Table as TableIcon, Star, Calendar, Building2 } from 'lucide-react';
+import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter, X, Maximize2, Minimize2, Search, LayoutGrid, Table as TableIcon, Star, Calendar, Building2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { format, differenceInMilliseconds } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -232,6 +232,9 @@ export default function MinhasArbitragens() {
   // Estado para modo de visualização
   const [isExpandedView, setIsExpandedView] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  
+  // Estado para ordenação
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
   // Forçar visualização em cards no mobile
   useEffect(() => {
@@ -449,28 +452,37 @@ export default function MinhasArbitragens() {
       });
     }
 
-    // Ordenação baseada no filtro de status
+    // Ordenação baseada no filtro de status e preferência do usuário
     if (debouncedFilterStatus.includes('all')) {
       // Separar aguardando e fechadas
       const aguardando = filtered.filter(arb => arb.status === 'aguardando');
       const fechadas = filtered.filter(arb => arb.status !== 'aguardando');
       
-      // Ordenar aguardando por data_evento (mais próximo primeiro)
-      aguardando.sort((a, b) => new Date(a.data_evento).getTime() - new Date(b.data_evento).getTime());
+      // Ordenar aguardando por data_evento conforme preferência
+      aguardando.sort((a, b) => {
+        const diff = new Date(a.data_evento).getTime() - new Date(b.data_evento).getTime();
+        return sortOrder === 'asc' ? diff : -diff;
+      });
       
-      // Ordenar fechadas por data_evento (mais recentes primeiro)
-      fechadas.sort((a, b) => new Date(b.data_evento).getTime() - new Date(a.data_evento).getTime());
+      // Ordenar fechadas por data_evento conforme preferência
+      fechadas.sort((a, b) => {
+        const diff = new Date(a.data_evento).getTime() - new Date(b.data_evento).getTime();
+        return sortOrder === 'asc' ? diff : -diff;
+      });
       
       // Combinar: aguardando primeiro, depois fechadas
       filtered = [...aguardando, ...fechadas];
     } else {
-      // Quando filtro de status está ativo, ordenar por data_evento mais recente primeiro
-      filtered.sort((a, b) => new Date(b.data_evento).getTime() - new Date(a.data_evento).getTime());
+      // Quando filtro de status está ativo, ordenar conforme preferência
+      filtered.sort((a, b) => {
+        const diff = new Date(a.data_evento).getTime() - new Date(b.data_evento).getTime();
+        return sortOrder === 'asc' ? diff : -diff;
+      });
     }
 
     setFilteredArbitragens(filtered);
     setCurrentPage(1);
-  }, [arbitragens, debouncedSearchText, debouncedFilterStartDate, debouncedFilterEndDate, debouncedFilterStatus, debouncedFilterUser, debouncedFilterPartnership]);
+  }, [arbitragens, debouncedSearchText, debouncedFilterStartDate, debouncedFilterEndDate, debouncedFilterStatus, debouncedFilterUser, debouncedFilterPartnership, sortOrder]);
 
   const loadArbitragens = useCallback(async () => {
     if (!user?.id) return;
@@ -1693,7 +1705,39 @@ export default function MinhasArbitragens() {
           </div>
         ) : viewMode === 'cards' ? (
           // Visualização em Cards
-          isMobile ? (
+          <>
+            {/* Botão de ordenação para cards */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 bg-sky-300 rounded-full"></span>
+                  Hoje
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                  Atrasado
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="h-8 text-xs gap-1"
+              >
+                {sortOrder === 'asc' ? (
+                  <>
+                    <ArrowUp className="h-3.5 w-3.5" />
+                    Mais antigo
+                  </>
+                ) : (
+                  <>
+                    <ArrowDown className="h-3.5 w-3.5" />
+                    Mais recente
+                  </>
+                )}
+              </Button>
+            </div>
+            {isMobile ? (
             // Visualização Mobile Compacta
             <div className="space-y-3">
               {paginatedArbitragens.map((arb) => {
@@ -2037,7 +2081,8 @@ export default function MinhasArbitragens() {
               );
             })}
           </div>
-          )
+          )}
+          </>
         ) : (
           // Visualização em Tabela
           <div className="rounded-lg border">
@@ -2047,7 +2092,22 @@ export default function MinhasArbitragens() {
                   <TableHead className={isExpandedView ? 'min-w-[120px]' : ''}>Adicionado em</TableHead>
                   <TableHead className={isExpandedView ? 'min-w-[300px]' : 'min-w-[200px]'}>
                     <div className="flex flex-col gap-1">
-                      <span>Descrição</span>
+                      <div className="flex items-center gap-2">
+                        <span>Descrição</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                          className="h-6 w-6 p-0"
+                          title={sortOrder === 'asc' ? 'Ordenado: Mais antigo primeiro' : 'Ordenado: Mais recente primeiro'}
+                        >
+                          {sortOrder === 'asc' ? (
+                            <ArrowUp className="h-3.5 w-3.5 text-primary" />
+                          ) : (
+                            <ArrowDown className="h-3.5 w-3.5 text-primary" />
+                          )}
+                        </Button>
+                      </div>
                       <div className="flex gap-3 text-[10px] font-normal">
                         <span className="flex items-center gap-1">
                           <span className="w-2 h-2 bg-sky-300 rounded-full"></span>
