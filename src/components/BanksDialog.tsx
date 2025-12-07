@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ValidatedInput } from '@/components/ui/validated-input';
 import { bankSchema } from '@/lib/validations/forms';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 
 interface Bank {
   id: string;
@@ -31,6 +32,7 @@ export function BanksDialog({ isOpen, onOpenChange, userId, onBanksUpdate }: Ban
   const [loading, setLoading] = useState(false);
   const [editingBank, setEditingBank] = useState<Bank | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Bank | null>(null);
   const [formData, setFormData] = useState({ nome: '' });
   const [touched, setTouched] = useState({ nome: false });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -132,14 +134,14 @@ export function BanksDialog({ isOpen, onOpenChange, userId, onBanksUpdate }: Ban
     }
   };
 
-  const handleDelete = async (bank: Bank) => {
-    if (!confirm(`Tem certeza que deseja excluir o banco "${bank.nome}"?`)) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
 
     try {
       const { error } = await supabase
         .from('banks')
         .delete()
-        .eq('id', bank.id);
+        .eq('id', deleteTarget.id);
 
       if (error) throw error;
 
@@ -148,6 +150,7 @@ export function BanksDialog({ isOpen, onOpenChange, userId, onBanksUpdate }: Ban
         description: 'Banco excluído com sucesso',
       });
 
+      setDeleteTarget(null);
       fetchBanks();
       onBanksUpdate();
     } catch (error) {
@@ -241,7 +244,7 @@ export function BanksDialog({ isOpen, onOpenChange, userId, onBanksUpdate }: Ban
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => handleDelete(bank)}
+                                onClick={() => setDeleteTarget(bank)}
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
@@ -280,6 +283,13 @@ export function BanksDialog({ isOpen, onOpenChange, userId, onBanksUpdate }: Ban
             </form>
           )}
         </div>
+
+        <ConfirmDeleteDialog
+          open={!!deleteTarget}
+          onOpenChange={(open) => !open && setDeleteTarget(null)}
+          onConfirm={handleDelete}
+          itemName={deleteTarget?.nome}
+        />
       </DialogContent>
     </Dialog>
   );

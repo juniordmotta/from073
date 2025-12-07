@@ -15,6 +15,7 @@ import { ptBR } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
 import { ValidatedInput } from '@/components/ui/validated-input';
 import { operationalCostSchema } from '@/lib/validations/forms';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 
 interface OperationalCost {
   id: string;
@@ -39,6 +40,7 @@ export default function CustosOperacionais() {
   const [isLoading, setIsLoading] = useState(false);
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
+  const [deleteTarget, setDeleteTarget] = useState<OperationalCost | null>(null);
   const [formData, setFormData] = useState({
     descricao: '',
     valor: '',
@@ -186,12 +188,14 @@ export default function CustosOperacionais() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    
     try {
       const { error } = await supabase
         .from('operational_costs')
         .delete()
-        .eq('id', id);
+        .eq('id', deleteTarget.id);
 
       if (error) throw error;
 
@@ -200,6 +204,7 @@ export default function CustosOperacionais() {
         description: 'O custo operacional foi removido com sucesso.',
       });
 
+      setDeleteTarget(null);
       loadCosts();
     } catch (error: any) {
       toast({
@@ -371,7 +376,7 @@ export default function CustosOperacionais() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDelete(cost.id)}
+                            onClick={() => setDeleteTarget(cost)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -384,6 +389,13 @@ export default function CustosOperacionais() {
             </div>
           </CardContent>
         </Card>
+
+        <ConfirmDeleteDialog
+          open={!!deleteTarget}
+          onOpenChange={(open) => !open && setDeleteTarget(null)}
+          onConfirm={handleDelete}
+          itemName={deleteTarget?.descricao}
+        />
       </div>
     </Layout>
   );
