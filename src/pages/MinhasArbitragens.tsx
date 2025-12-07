@@ -1291,7 +1291,16 @@ export default function MinhasArbitragens() {
                     Escolha a parceria para ver o desempenho das casas de apostas.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4">
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (selectedPartnershipForHouses) {
+                      navigate(`/parcerias?partnership=${selectedPartnershipForHouses}&view=report`);
+                      setGoToHousesOpen(false);
+                    }
+                  }} 
+                  className="space-y-4"
+                >
                   <div className="space-y-2">
                     <Label>Parceria</Label>
                     <Select
@@ -1311,22 +1320,14 @@ export default function MinhasArbitragens() {
                     </Select>
                   </div>
                   <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setGoToHousesOpen(false)}>
+                    <Button type="button" variant="outline" onClick={() => setGoToHousesOpen(false)}>
                       Cancelar
                     </Button>
-                    <Button
-                      onClick={() => {
-                        if (selectedPartnershipForHouses) {
-                          navigate(`/parcerias?partnership=${selectedPartnershipForHouses}&view=report`);
-                          setGoToHousesOpen(false);
-                        }
-                      }}
-                      disabled={!selectedPartnershipForHouses}
-                    >
+                    <Button type="submit" disabled={!selectedPartnershipForHouses}>
                       Ir para Casas
                     </Button>
                   </div>
-                </div>
+                </form>
               </DialogContent>
             </Dialog>
           </div>

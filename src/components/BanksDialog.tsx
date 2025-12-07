@@ -239,6 +239,7 @@ export function BanksDialog({ isOpen, onOpenChange, userId, onBanksUpdate }: Ban
                   onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                   placeholder="Ex: Banco do Brasil, Nubank, etc."
                   required
+                  autoFocus
                 />
               </div>
               <div className="flex justify-end gap-2">

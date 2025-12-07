@@ -147,6 +147,7 @@ const AddHouseForm = ({ partnershipId, onSuccess }: AddHouseFormProps) => {
           onChange={(e) => setHouseName(e.target.value)}
           placeholder="Ex: Bet365, Betano, Sportingbet..."
           required
+          autoFocus
         />
       </div>
       <p className="text-xs text-muted-foreground">
@@ -1110,6 +1111,7 @@ const Parcerias = () => {
                     value={formData.nome_completo}
                     onChange={(e) => setFormData({ ...formData, nome_completo: e.target.value })}
                     required
+                    autoFocus
                   />
                 </div>
 
