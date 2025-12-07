@@ -107,7 +107,9 @@ interface Partnership {
 const resultadoMap: Record<string, { label: string; variant: 'secondary' | 'default' | 'destructive' }> = {
   aguardando: { label: 'Aguardando', variant: 'secondary' },
   green: { label: 'Green', variant: 'default' },
+  green_parcial: { label: 'Green Parcial', variant: 'default' },
   red: { label: 'Red', variant: 'destructive' },
+  red_parcial: { label: 'Red Parcial', variant: 'destructive' },
   devolvido: { label: 'Devolvido', variant: 'secondary' },
 };
 
@@ -129,10 +131,13 @@ const getConsolidatedStatus = (status: string, lucroReal: number) => {
   }
 };
 
+// Opções de resultado individual para cada casa (com parciais)
 const resultOptions = [
   { value: 'aguardando', label: 'Aguardando' },
   { value: 'green', label: 'Green' },
+  { value: 'green_parcial', label: 'Green Parcial' },
   { value: 'red', label: 'Red' },
+  { value: 'red_parcial', label: 'Red Parcial' },
   { value: 'devolvido', label: 'Devolvido' },
 ];
 
