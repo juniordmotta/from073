@@ -203,6 +203,7 @@ export default function CustosOperacionais() {
                     value={formData.descricao}
                     onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
                     required
+                    autoFocus
                   />
                 </div>
 

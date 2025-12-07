@@ -420,6 +420,7 @@ export default function Usuarios() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
+                    autoFocus
                   />
                 </div>
 
@@ -695,6 +696,7 @@ export default function Usuarios() {
                   value={editFormData.name}
                   onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
                   required
+                  autoFocus
                 />
               </div>
 

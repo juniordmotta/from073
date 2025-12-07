@@ -207,13 +207,13 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
                 {capitalizedMonth}
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); handleSaveGoal(); }} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="goal-value">Meta Mensal</Label>
+                <Label htmlFor="goal-value-compact">Meta Mensal</Label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
                   <Input
-                    id="goal-value"
+                    id="goal-value-compact"
                     type="text"
                     placeholder="0,00"
                     className="pl-10"
@@ -223,13 +223,14 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
                       const formatted = (parseInt(value || '0') / 100).toFixed(2).replace('.', ',');
                       setEditGoalValue(formatted);
                     }}
+                    autoFocus
                   />
                 </div>
               </div>
-              <Button onClick={handleSaveGoal} className="w-full" disabled={isSaving}>
+              <Button type="submit" className="w-full" disabled={isSaving}>
                 {isSaving ? 'Salvando...' : 'Salvar Meta'}
               </Button>
-            </div>
+            </form>
           </DialogContent>
         </Dialog>
       </>
@@ -300,13 +301,13 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
               {capitalizedMonth}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <form onSubmit={(e) => { e.preventDefault(); handleSaveGoal(); }} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="goal-value">Meta Mensal</Label>
+              <Label htmlFor="goal-value-full">Meta Mensal</Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
                 <Input
-                  id="goal-value"
+                  id="goal-value-full"
                   type="text"
                   placeholder="0,00"
                   className="pl-10"
@@ -316,13 +317,14 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
                     const formatted = (parseInt(value || '0') / 100).toFixed(2).replace('.', ',');
                     setEditGoalValue(formatted);
                   }}
+                  autoFocus
                 />
               </div>
             </div>
-            <Button onClick={handleSaveGoal} className="w-full" disabled={isSaving}>
+            <Button type="submit" className="w-full" disabled={isSaving}>
               {isSaving ? 'Salvando...' : 'Salvar Meta'}
             </Button>
-          </div>
+          </form>
         </DialogContent>
       </Dialog>
     </>
