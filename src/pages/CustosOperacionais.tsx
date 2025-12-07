@@ -13,6 +13,8 @@ import { Plus, DollarSign, Trash2 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
+import { ValidatedInput } from '@/components/ui/validated-input';
+import { operationalCostSchema } from '@/lib/validations/forms';
 
 interface OperationalCost {
   id: string;
@@ -42,6 +44,33 @@ export default function CustosOperacionais() {
     valor: '',
     data: format(new Date(), 'yyyy-MM-dd'),
   });
+  const [touched, setTouched] = useState({
+    descricao: false,
+    valor: false,
+    data: false,
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Validação em tempo real
+  useEffect(() => {
+    const result = operationalCostSchema.safeParse(formData);
+    if (!result.success) {
+      const newErrors: Record<string, string> = {};
+      result.error.issues.forEach((err) => {
+        if (err.path[0]) {
+          newErrors[err.path[0] as string] = err.message;
+        }
+      });
+      setErrors(newErrors);
+    } else {
+      setErrors({});
+    }
+  }, [formData]);
+
+  const isFormValid = Object.keys(errors).length === 0 && 
+    formData.descricao.trim().length > 0 && 
+    formData.valor.length > 0 && 
+    formData.data.length > 0;
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
@@ -103,6 +132,15 @@ export default function CustosOperacionais() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Marcar todos os campos como tocados
+    setTouched({ descricao: true, valor: true, data: true });
+    
+    // Validar antes de submeter
+    const result = operationalCostSchema.safeParse(formData);
+    if (!result.success) {
+      return;
+    }
+    
     if (!user?.id) {
       toast({
         variant: 'destructive',
@@ -117,7 +155,7 @@ export default function CustosOperacionais() {
     try {
       const { error } = await supabase.from('operational_costs').insert({
         user_id: user.id,
-        descricao: formData.descricao,
+        descricao: formData.descricao.trim(),
         valor: parseFloat(formData.valor),
         data: formData.data,
       });
@@ -135,6 +173,7 @@ export default function CustosOperacionais() {
         valor: '',
         data: format(new Date(), 'yyyy-MM-dd'),
       });
+      setTouched({ descricao: false, valor: false, data: false });
       loadCosts();
     } catch (error: any) {
       toast({
@@ -195,43 +234,49 @@ export default function CustosOperacionais() {
               </DialogHeader>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="descricao">Descrição</Label>
-                  <Input
-                    id="descricao"
-                    placeholder="Ex: Mensalidade plataforma"
-                    value={formData.descricao}
-                    onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                    required
-                    autoFocus
-                  />
-                </div>
+                <ValidatedInput
+                  id="descricao"
+                  label="Descrição"
+                  placeholder="Ex: Mensalidade plataforma"
+                  value={formData.descricao}
+                  onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+                  onBlur={() => setTouched({ ...touched, descricao: true })}
+                  required
+                  autoFocus
+                  error={errors.descricao}
+                  touched={touched.descricao}
+                  showSuccess
+                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="valor">Valor (R$)</Label>
-                  <Input
-                    id="valor"
-                    type="number"
-                    step="0.01"
-                    placeholder="Ex: 50.00"
-                    value={formData.valor}
-                    onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
-                    required
-                  />
-                </div>
+                <ValidatedInput
+                  id="valor"
+                  label="Valor (R$)"
+                  type="number"
+                  step="0.01"
+                  placeholder="Ex: 50.00"
+                  value={formData.valor}
+                  onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
+                  onBlur={() => setTouched({ ...touched, valor: true })}
+                  required
+                  error={errors.valor}
+                  touched={touched.valor}
+                  showSuccess
+                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="data">Data</Label>
-                  <Input
-                    id="data"
-                    type="date"
-                    value={formData.data}
-                    onChange={(e) => setFormData({ ...formData, data: e.target.value })}
-                    required
-                  />
-                </div>
+                <ValidatedInput
+                  id="data"
+                  label="Data"
+                  type="date"
+                  value={formData.data}
+                  onChange={(e) => setFormData({ ...formData, data: e.target.value })}
+                  onBlur={() => setTouched({ ...touched, data: true })}
+                  required
+                  error={errors.data}
+                  touched={touched.data}
+                  showSuccess
+                />
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button type="submit" className="w-full" disabled={isLoading || !isFormValid}>
                   {isLoading ? 'Salvando...' : 'Salvar Custo'}
                 </Button>
               </form>
