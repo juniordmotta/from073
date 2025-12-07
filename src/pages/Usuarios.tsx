@@ -58,12 +58,10 @@ export default function Usuarios() {
     email: '',
     password: '',
     role: 'operador',
-    monthlyGoal: '',
   });
   const [editFormData, setEditFormData] = useState({
     name: '',
     role: 'operador',
-    monthlyGoal: '',
   });
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyData, setHistoryData] = useState<any[]>([]);
@@ -195,42 +193,12 @@ export default function Usuarios() {
 
     console.log('Usuário criado:', data);
 
-    // Salvar meta mensal (sempre salva, mesmo se for zero)
-    if (data?.userId) {
-      const goalValue = formData.monthlyGoal 
-        ? parseFloat(formData.monthlyGoal.replace(/\D/g, '')) / 100 
-        : 0;
-      const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
-      
-      console.log('Salvando meta:', { userId: data.userId, goalValue, currentMonth });
-      
-      const { error: goalError } = await supabase.from('monthly_goals').upsert({
-        user_id: data.userId,
-        partnership_id: null,
-        month: currentMonth,
-        goal_value: goalValue,
-      }, {
-        onConflict: 'user_id,partnership_id,month',
-      });
-
-      if (goalError) {
-        console.error('Erro ao salvar meta:', goalError);
-        toast({
-          variant: 'destructive',
-          title: 'Erro ao salvar meta',
-          description: goalError.message,
-        });
-      } else {
-        console.log('Meta salva com sucesso!');
-      }
-    }
-
     toast({
       title: 'Usuário criado!',
       description: 'O novo usuário foi cadastrado com sucesso.',
     });
     setOpen(false);
-    setFormData({ name: '', email: '', password: '', role: 'operador', monthlyGoal: '' });
+    setFormData({ name: '', email: '', password: '', role: 'operador' });
     loadUsers();
 
     setIsLoading(false);
@@ -272,34 +240,6 @@ export default function Usuarios() {
       });
       setIsLoading(false);
       return;
-    }
-
-    // Atualizar meta mensal (sempre atualiza, mesmo se for zero)
-    const goalValue = editFormData.monthlyGoal 
-      ? parseFloat(editFormData.monthlyGoal.replace(/\D/g, '')) / 100 
-      : 0;
-    const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
-    
-    console.log('Atualizando meta:', { userId: editingUser.id, goalValue, currentMonth });
-    
-    const { error: goalError } = await supabase.from('monthly_goals').upsert({
-      user_id: editingUser.id,
-      partnership_id: null,
-      month: currentMonth,
-      goal_value: goalValue,
-    }, {
-      onConflict: 'user_id,partnership_id,month',
-    });
-
-    if (goalError) {
-      console.error('Erro ao atualizar meta:', goalError);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao atualizar meta',
-        description: goalError.message,
-      });
-    } else {
-      console.log('Meta atualizada com sucesso!');
     }
 
     toast({
@@ -360,38 +300,11 @@ export default function Usuarios() {
     setIsLoading(false);
   };
 
-  const openEditDialog = async (user: User) => {
+  const openEditDialog = (user: User) => {
     setEditingUser(user);
-    
-    // Buscar meta atual do usuário
-    const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
-    console.log('Buscando meta para usuário:', user.id, 'mês:', currentMonth);
-    
-    const { data: goalData, error: goalError } = await supabase
-      .from('monthly_goals')
-      .select('goal_value')
-      .eq('user_id', user.id)
-      .is('partnership_id', null)
-      .eq('month', currentMonth)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    
-    if (goalError) {
-      console.error('Erro ao buscar meta:', goalError);
-    }
-    
-    console.log('Meta encontrada:', goalData);
-    
-    const goalValue = goalData?.goal_value || 0;
-    const formattedGoal = goalValue > 0 ? (goalValue).toFixed(2).replace('.', ',') : '';
-    
-    console.log('Meta formatada para exibição:', formattedGoal);
-    
     setEditFormData({
       name: user.name,
       role: user.role || 'operador',
-      monthlyGoal: formattedGoal,
     });
     setEditOpen(true);
   };
@@ -549,24 +462,6 @@ export default function Usuarios() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="monthlyGoal">Meta Mensal (opcional)</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
-                    <Input
-                      id="monthlyGoal"
-                      type="text"
-                      placeholder="0,00"
-                      className="pl-10"
-                      value={formData.monthlyGoal}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, '');
-                        const formatted = (parseInt(value || '0') / 100).toFixed(2).replace('.', ',');
-                        setFormData({ ...formData, monthlyGoal: formatted });
-                      }}
-                    />
-                  </div>
-                </div>
 
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? 'Criando...' : 'Criar Usuário'}
@@ -819,24 +714,6 @@ export default function Usuarios() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="edit-monthlyGoal">Meta Mensal (opcional)</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
-                  <Input
-                    id="edit-monthlyGoal"
-                    type="text"
-                    placeholder="0,00"
-                    className="pl-10"
-                    value={editFormData.monthlyGoal}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, '');
-                      const formatted = (parseInt(value || '0') / 100).toFixed(2).replace('.', ',');
-                      setEditFormData({ ...editFormData, monthlyGoal: formatted });
-                    }}
-                  />
-                </div>
-              </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Salvando...' : 'Salvar Alterações'}
