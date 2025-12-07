@@ -2097,22 +2097,7 @@ export default function MinhasArbitragens() {
                   <TableHead className={isExpandedView ? 'min-w-[120px]' : ''}>Adicionado em</TableHead>
                   <TableHead className={isExpandedView ? 'min-w-[300px]' : 'min-w-[200px]'}>
                     <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <span>Data do Jogo / Descrição</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                          className="h-6 w-6 p-0"
-                          title={sortOrder === 'desc' ? 'Próximo jogo primeiro' : 'Jogo mais distante primeiro'}
-                        >
-                          {sortOrder === 'desc' ? (
-                            <ArrowUp className="h-3.5 w-3.5 text-primary" />
-                          ) : (
-                            <ArrowDown className="h-3.5 w-3.5 text-primary" />
-                          )}
-                        </Button>
-                      </div>
+                      <span>Data do Jogo / Descrição</span>
                       <div className="flex gap-3 text-[10px] font-normal">
                         <span className="flex items-center gap-1">
                           <span className="w-2 h-2 bg-sky-300 rounded-full"></span>
