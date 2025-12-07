@@ -194,6 +194,7 @@ const Parcerias = () => {
     if (partnershipParam && viewParam === 'report') {
       setSelectedPartnershipId(partnershipParam);
       setViewMode('report');
+      loadPartnershipDetails(partnershipParam);
       // Limpar parâmetros da URL
       setSearchParams({});
     }
