@@ -82,6 +82,10 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
     partnershipId,
   });
 
+  // Formatar nome do mês atual
+  const monthName = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
   if (compact) {
     return (
       <Card className="p-3">
@@ -89,6 +93,7 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
           <Target className="h-3 w-3 text-primary" />
           <span className="text-xs text-muted-foreground">Meta do Mês</span>
         </div>
+        <div className="text-[10px] text-muted-foreground mb-1">{capitalizedMonth}</div>
         <div className="text-xl font-bold">R$ {formatCurrency(goalValue)}</div>
         {goalValue > 0 && (
           <p className={`text-[10px] font-medium ${remaining > 0 ? 'text-muted-foreground' : 'text-success'}`}>
@@ -106,6 +111,7 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
           <Target className="h-4 w-4 text-primary" />
           Meta do Mês
         </CardTitle>
+        <div className="text-xs text-muted-foreground mt-1">{capitalizedMonth}</div>
       </CardHeader>
       <CardContent className="space-y-3">
         <div>
