@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
@@ -9,6 +8,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Plus, Pencil, Trash2, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { ValidatedInput } from '@/components/ui/validated-input';
+import { bankSchema } from '@/lib/validations/forms';
 
 interface Bank {
   id: string;
@@ -31,12 +32,30 @@ export function BanksDialog({ isOpen, onOpenChange, userId, onBanksUpdate }: Ban
   const [editingBank, setEditingBank] = useState<Bank | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ nome: '' });
+  const [touched, setTouched] = useState({ nome: false });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (isOpen) {
       fetchBanks();
     }
   }, [isOpen, userId]);
+
+  // Validação em tempo real
+  useEffect(() => {
+    const result = bankSchema.safeParse(formData);
+    if (!result.success) {
+      const newErrors: Record<string, string> = {};
+      result.error.issues.forEach((err) => {
+        if (err.path[0]) {
+          newErrors[err.path[0] as string] = err.message;
+        }
+      });
+      setErrors(newErrors);
+    } else {
+      setErrors({});
+    }
+  }, [formData]);
 
   const fetchBanks = async () => {
     setLoading(true);
@@ -64,12 +83,12 @@ export function BanksDialog({ isOpen, onOpenChange, userId, onBanksUpdate }: Ban
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.nome.trim()) {
-      toast({
-        title: 'Erro',
-        description: 'Nome do banco é obrigatório',
-        variant: 'destructive',
-      });
+    // Marcar todos os campos como tocados
+    setTouched({ nome: true });
+
+    // Validar antes de submeter
+    const result = bankSchema.safeParse(formData);
+    if (!result.success) {
       return;
     }
 
@@ -77,7 +96,7 @@ export function BanksDialog({ isOpen, onOpenChange, userId, onBanksUpdate }: Ban
       if (editingBank) {
         const { error } = await supabase
           .from('banks')
-          .update({ nome: formData.nome })
+          .update({ nome: formData.nome.trim() })
           .eq('id', editingBank.id);
 
         if (error) throw error;
@@ -89,7 +108,7 @@ export function BanksDialog({ isOpen, onOpenChange, userId, onBanksUpdate }: Ban
       } else {
         const { error } = await supabase
           .from('banks')
-          .insert([{ user_id: userId, nome: formData.nome }]);
+          .insert([{ user_id: userId, nome: formData.nome.trim() }]);
 
         if (error) throw error;
 
@@ -128,6 +147,7 @@ export function BanksDialog({ isOpen, onOpenChange, userId, onBanksUpdate }: Ban
         title: 'Banco excluído',
         description: 'Banco excluído com sucesso',
       });
+
       fetchBanks();
       onBanksUpdate();
     } catch (error) {
@@ -143,6 +163,7 @@ export function BanksDialog({ isOpen, onOpenChange, userId, onBanksUpdate }: Ban
   const openEditForm = (bank: Bank) => {
     setEditingBank(bank);
     setFormData({ nome: bank.nome });
+    setTouched({ nome: false });
     setShowForm(true);
   };
 
@@ -150,7 +171,11 @@ export function BanksDialog({ isOpen, onOpenChange, userId, onBanksUpdate }: Ban
     setFormData({ nome: '' });
     setEditingBank(null);
     setShowForm(false);
+    setTouched({ nome: false });
+    setErrors({});
   };
+
+  const isFormValid = Object.keys(errors).length === 0 && formData.nome.trim().length > 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -231,22 +256,24 @@ export function BanksDialog({ isOpen, onOpenChange, userId, onBanksUpdate }: Ban
             </>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="nome">Nome do Banco *</Label>
-                <Input
-                  id="nome"
-                  value={formData.nome}
-                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                  placeholder="Ex: Banco do Brasil, Nubank, etc."
-                  required
-                  autoFocus
-                />
-              </div>
+              <ValidatedInput
+                id="nome"
+                label="Nome do Banco"
+                value={formData.nome}
+                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                onBlur={() => setTouched({ ...touched, nome: true })}
+                placeholder="Ex: Banco do Brasil, Nubank, etc."
+                required
+                autoFocus
+                error={errors.nome}
+                touched={touched.nome}
+                showSuccess
+              />
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Cancelar
                 </Button>
-                <Button type="submit">
+                <Button type="submit" disabled={!isFormValid}>
                   {editingBank ? 'Atualizar' : 'Criar'}
                 </Button>
               </div>

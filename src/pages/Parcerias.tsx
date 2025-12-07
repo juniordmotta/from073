@@ -28,6 +28,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { MonthlyGoalCard } from '@/components/MonthlyGoalCard';
 import { BanksDialog } from '@/components/BanksDialog';
+import { ValidatedInput } from '@/components/ui/validated-input';
+import { houseSchema } from '@/lib/validations/forms';
 
 interface Partnership {
   id: string;
@@ -92,17 +94,28 @@ interface AddHouseFormProps {
 const AddHouseForm = ({ partnershipId, onSuccess }: AddHouseFormProps) => {
   const [houseName, setHouseName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [touched, setTouched] = useState(false);
+  const [error, setError] = useState<string | undefined>();
   const { toast } = useToast();
+
+  // Validação em tempo real
+  useEffect(() => {
+    const result = houseSchema.safeParse({ house_name: houseName });
+    if (!result.success) {
+      const issue = result.error.issues.find(i => i.path[0] === 'house_name');
+      setError(issue?.message);
+    } else {
+      setError(undefined);
+    }
+  }, [houseName]);
+
+  const isValid = !error && houseName.trim().length >= 2;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setTouched(true);
     
-    if (!houseName.trim()) {
-      toast({
-        title: 'Erro',
-        description: 'Informe o nome da casa de apostas',
-        variant: 'destructive',
-      });
+    if (!isValid) {
       return;
     }
 
@@ -124,6 +137,7 @@ const AddHouseForm = ({ partnershipId, onSuccess }: AddHouseFormProps) => {
       });
       
       setHouseName('');
+      setTouched(false);
       onSuccess();
     } catch (error) {
       console.error('Erro ao adicionar casa:', error);
@@ -139,22 +153,24 @@ const AddHouseForm = ({ partnershipId, onSuccess }: AddHouseFormProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="house_name">Nome da Casa</Label>
-        <Input
-          id="house_name"
-          value={houseName}
-          onChange={(e) => setHouseName(e.target.value)}
-          placeholder="Ex: Bet365, Betano, Sportingbet..."
-          required
-          autoFocus
-        />
-      </div>
+      <ValidatedInput
+        id="house_name"
+        label="Nome da Casa"
+        value={houseName}
+        onChange={(e) => setHouseName(e.target.value)}
+        onBlur={() => setTouched(true)}
+        placeholder="Ex: Bet365, Betano, Sportingbet..."
+        required
+        autoFocus
+        error={error}
+        touched={touched}
+        showSuccess
+      />
       <p className="text-xs text-muted-foreground">
         A casa será adicionada com status <Badge variant="outline">Aguardando Verificação</Badge>
       </p>
       <div className="flex justify-end gap-2">
-        <Button type="submit" disabled={isLoading}>
+        <Button type="submit" disabled={isLoading || !isValid}>
           {isLoading ? 'Adicionando...' : 'Adicionar'}
         </Button>
       </div>

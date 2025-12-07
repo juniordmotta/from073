@@ -26,6 +26,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatUserName } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ValidatedInput } from '@/components/ui/validated-input';
+import { createUserSchema } from '@/lib/validations/user';
 
 interface User {
   id: string;
@@ -57,12 +59,18 @@ export default function Usuarios() {
     name: '',
     email: '',
     password: '',
-    role: 'operador',
+    role: 'operador' as 'admin_master' | 'admin' | 'operador',
   });
   const [editFormData, setEditFormData] = useState({
     name: '',
-    role: 'operador',
+    role: 'operador' as 'admin_master' | 'admin' | 'operador',
   });
+  const [formTouched, setFormTouched] = useState({
+    name: false,
+    email: false,
+    password: false,
+  });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyData, setHistoryData] = useState<any[]>([]);
   const [historyFilter, setHistoryFilter] = useState<string>('all');
@@ -70,6 +78,27 @@ export default function Usuarios() {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const debouncedSearch = useDebounce(searchTerm, 300);
+
+  // Validação em tempo real para criação de usuário
+  useEffect(() => {
+    const result = createUserSchema.safeParse(formData);
+    if (!result.success) {
+      const newErrors: Record<string, string> = {};
+      result.error.issues.forEach((err) => {
+        if (err.path[0]) {
+          newErrors[err.path[0] as string] = err.message;
+        }
+      });
+      setFormErrors(newErrors);
+    } else {
+      setFormErrors({});
+    }
+  }, [formData]);
+
+  const isCreateFormValid = Object.keys(formErrors).length === 0 && 
+    formData.name.trim().length > 0 && 
+    formData.email.trim().length > 0 && 
+    formData.password.length >= 6;
 
   // Filtrar usuários com base na busca e filtro de role
   const filteredUsers = useMemo(() => {
@@ -304,7 +333,7 @@ export default function Usuarios() {
     setEditingUser(user);
     setEditFormData({
       name: user.name,
-      role: user.role || 'operador',
+      role: (user.role || 'operador') as 'admin_master' | 'admin' | 'operador',
     });
     setEditOpen(true);
   };
@@ -413,45 +442,51 @@ export default function Usuarios() {
               </DialogHeader>
 
               <form onSubmit={handleCreateUser} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                    autoFocus
-                  />
-                </div>
+                <ValidatedInput
+                  id="name"
+                  label="Nome"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onBlur={() => setFormTouched({ ...formTouched, name: true })}
+                  required
+                  autoFocus
+                  error={formErrors.name}
+                  touched={formTouched.name}
+                  showSuccess
+                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    required
-                  />
-                </div>
+                <ValidatedInput
+                  id="email"
+                  label="Email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onBlur={() => setFormTouched({ ...formTouched, email: true })}
+                  required
+                  error={formErrors.email}
+                  touched={formTouched.email}
+                  showSuccess
+                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="password">Senha</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    required
-                    minLength={6}
-                  />
-                </div>
+                <ValidatedInput
+                  id="password"
+                  label="Senha"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onBlur={() => setFormTouched({ ...formTouched, password: true })}
+                  required
+                  error={formErrors.password}
+                  touched={formTouched.password}
+                  showSuccess
+                  hint="Mínimo 6 caracteres"
+                />
 
                 <div className="space-y-2">
                   <Label htmlFor="role">Tipo de Usuário</Label>
                   <Select
                     value={formData.role}
-                    onValueChange={(value) => setFormData({ ...formData, role: value })}
+                    onValueChange={(value: 'admin_master' | 'admin' | 'operador') => setFormData({ ...formData, role: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -704,7 +739,7 @@ export default function Usuarios() {
                 <Label htmlFor="edit-role">Tipo de Usuário</Label>
                 <Select
                   value={editFormData.role}
-                  onValueChange={(value) => setEditFormData({ ...editFormData, role: value })}
+                  onValueChange={(value: 'admin_master' | 'admin' | 'operador') => setEditFormData({ ...editFormData, role: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
