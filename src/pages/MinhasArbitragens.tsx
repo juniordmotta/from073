@@ -453,6 +453,8 @@ export default function MinhasArbitragens() {
     }
 
     // Ordenação baseada no filtro de status e preferência do usuário
+    // sortOrder 'desc' = Jogo mais próximo primeiro (hoje, amanhã, etc.)
+    // sortOrder 'asc' = Jogo mais distante primeiro
     if (debouncedFilterStatus.includes('all')) {
       // Separar aguardando e fechadas
       const aguardando = filtered.filter(arb => arb.status === 'aguardando');
@@ -461,13 +463,13 @@ export default function MinhasArbitragens() {
       // Ordenar aguardando por data_evento conforme preferência
       aguardando.sort((a, b) => {
         const diff = new Date(a.data_evento).getTime() - new Date(b.data_evento).getTime();
-        return sortOrder === 'asc' ? diff : -diff;
+        return sortOrder === 'desc' ? diff : -diff; // desc = crescente (mais próximo primeiro)
       });
       
       // Ordenar fechadas por data_evento conforme preferência
       fechadas.sort((a, b) => {
         const diff = new Date(a.data_evento).getTime() - new Date(b.data_evento).getTime();
-        return sortOrder === 'asc' ? diff : -diff;
+        return sortOrder === 'desc' ? diff : -diff; // desc = crescente (mais próximo primeiro)
       });
       
       // Combinar: aguardando primeiro, depois fechadas
@@ -476,7 +478,7 @@ export default function MinhasArbitragens() {
       // Quando filtro de status está ativo, ordenar conforme preferência
       filtered.sort((a, b) => {
         const diff = new Date(a.data_evento).getTime() - new Date(b.data_evento).getTime();
-        return sortOrder === 'asc' ? diff : -diff;
+        return sortOrder === 'desc' ? diff : -diff; // desc = crescente (mais próximo primeiro)
       });
     }
 
@@ -1725,15 +1727,15 @@ export default function MinhasArbitragens() {
                 className="h-8 text-xs gap-1"
                 title="Ordenar por data do jogo"
               >
-                {sortOrder === 'asc' ? (
+                {sortOrder === 'desc' ? (
                   <>
                     <ArrowUp className="h-3.5 w-3.5" />
-                    Jogo mais antigo
+                    Próximo jogo
                   </>
                 ) : (
                   <>
                     <ArrowDown className="h-3.5 w-3.5" />
-                    Jogo mais recente
+                    Jogo distante
                   </>
                 )}
               </Button>
@@ -2100,9 +2102,9 @@ export default function MinhasArbitragens() {
                           size="sm"
                           onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
                           className="h-6 w-6 p-0"
-                          title={sortOrder === 'asc' ? 'Ordenar por data do jogo: Mais antigo primeiro' : 'Ordenar por data do jogo: Mais recente primeiro'}
+                          title={sortOrder === 'desc' ? 'Próximo jogo primeiro' : 'Jogo mais distante primeiro'}
                         >
-                          {sortOrder === 'asc' ? (
+                          {sortOrder === 'desc' ? (
                             <ArrowUp className="h-3.5 w-3.5 text-primary" />
                           ) : (
                             <ArrowDown className="h-3.5 w-3.5 text-primary" />
