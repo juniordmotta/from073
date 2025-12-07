@@ -868,6 +868,7 @@ export default function Dashboard() {
                             const eventDateTime = new Date(bet.data_evento);
                             const now = new Date();
                             const isGameStarted = eventDateTime <= now;
+                            // No Dashboard, openBets são sempre status 'aguardando'
                             return (
                               <span className={isGameStarted ? 'text-destructive font-semibold animate-pulse' : ''}>
                                 {format(eventDateTime, 'dd/MM/yy HH:mm')}
