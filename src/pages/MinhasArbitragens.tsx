@@ -1734,10 +1734,17 @@ export default function MinhasArbitragens() {
 
                     {/* Evento */}
                     <div className="mb-2">
-                      <div className={`text-[10px] mb-0.5 ${isEventPast && arb.status === 'aguardando' ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
-                        <Clock className="inline h-3 w-3 mr-1" />
-                        {format(new Date(arb.data_evento), 'dd/MM/yy HH:mm')}
-                      </div>
+                      {(() => {
+                        const eventDateTime = new Date(arb.data_evento);
+                        const now = new Date();
+                        const isGameStarted = eventDateTime <= now;
+                        return (
+                          <div className={`text-[10px] mb-0.5 ${isGameStarted ? 'text-destructive font-semibold animate-pulse' : 'text-muted-foreground'}`}>
+                            <Clock className="inline h-3 w-3 mr-1" />
+                            {format(eventDateTime, 'dd/MM/yy HH:mm')}
+                          </div>
+                        );
+                      })()}
                       <div className="font-medium text-sm line-clamp-2">{arb.descricao}</div>
                     </div>
 
@@ -1853,15 +1860,22 @@ export default function MinhasArbitragens() {
 
                   {/* Informações do Evento */}
                   <div className="mb-4 pb-4 border-b">
-                    <div className={`text-sm mb-1 ${isEventPast && arb.status === 'aguardando' ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
-                      <Clock className="inline h-3 w-3 mr-1" />
-                      {format(new Date(arb.data_evento), 'dd/MM/yy HH:mm')}
-                      {timeToEvent > 0 && (
-                        <span className="ml-2">
-                          ({days > 0 && `${days}d `}{hours}h {minutes}m)
-                        </span>
-                      )}
-                    </div>
+                    {(() => {
+                      const eventDateTime = new Date(arb.data_evento);
+                      const now = new Date();
+                      const isGameStarted = eventDateTime <= now;
+                      return (
+                        <div className={`text-sm mb-1 ${isGameStarted ? 'text-destructive font-semibold animate-pulse' : 'text-muted-foreground'}`}>
+                          <Clock className="inline h-3 w-3 mr-1" />
+                          {format(eventDateTime, 'dd/MM/yy HH:mm')}
+                          {timeToEvent > 0 && (
+                            <span className="ml-2">
+                              ({days > 0 && `${days}d `}{hours}h {minutes}m)
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                     <div className="font-medium text-lg">{arb.descricao}</div>
                     {arb.esporte_liga && (
                       <div className="text-sm text-muted-foreground">{arb.esporte_liga}</div>
@@ -2085,9 +2099,16 @@ export default function MinhasArbitragens() {
                     </TableCell>
                     <TableCell className={`max-w-[200px] text-xs ${isExpandedView ? 'max-w-[350px]' : 'max-w-[250px]'}`}>
                       <div className="flex flex-col gap-0.5">
-                        <span className={`${isEventPast && arb.status === 'aguardando' ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
-                          {format(new Date(arb.data_evento), 'dd/MM/yy HH:mm')}
-                        </span>
+                        {(() => {
+                          const eventDateTime = new Date(arb.data_evento);
+                          const now = new Date();
+                          const isGameStarted = eventDateTime <= now;
+                          return (
+                            <span className={`${isGameStarted ? 'text-destructive font-semibold animate-pulse' : 'text-muted-foreground'}`}>
+                              {format(eventDateTime, 'dd/MM/yy HH:mm')}
+                            </span>
+                          );
+                        })()}
                         <span className="font-medium break-words whitespace-normal">{arb.descricao}</span>
                         {arb.esporte_liga && (
                           <span className="text-muted-foreground break-words whitespace-normal">{arb.esporte_liga}</span>

@@ -864,7 +864,16 @@ export default function Dashboard() {
                           ) : isEventToday ? (
                             <div className="absolute left-0 top-1 bottom-1 w-1 bg-sky-300 animate-pulse" />
                           ) : null}
-                          {format(new Date(bet.data_evento), 'dd/MM/yy HH:mm')}
+                          {(() => {
+                            const eventDateTime = new Date(bet.data_evento);
+                            const now = new Date();
+                            const isGameStarted = eventDateTime <= now;
+                            return (
+                              <span className={isGameStarted ? 'text-destructive font-semibold animate-pulse' : ''}>
+                                {format(eventDateTime, 'dd/MM/yy HH:mm')}
+                              </span>
+                            );
+                          })()}
                         </TableCell>
                         {isAdmin && <TableCell className="text-xs">{formatUserName(bet.profiles?.name) || '-'}</TableCell>}
                         <TableCell className="text-xs">
