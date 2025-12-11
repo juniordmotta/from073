@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -801,18 +802,24 @@ export default function Dashboard() {
               <DollarSign className="h-3 w-3 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">Total Investido</span>
             </div>
-            <div className="text-xl font-bold">R$ {formatCurrency(stats.totalInvestido)}</div>
+            <div className="text-2xl font-bold">R$ {formatCurrency(stats.totalInvestido)}</div>
             {isOnlyAguardando && totalBanca > 0 ? (
               <>
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground mt-1">
                   de R$ {formatCurrency(totalBanca)} da banca
                 </p>
-                <p className="text-[10px] text-muted-foreground font-medium">
-                  ({formatCurrency(bancaPercentage)}% utilizado)
-                </p>
+                <div className="mt-2">
+                  <Progress 
+                    value={Math.min(bancaPercentage, 100)} 
+                    className="h-2"
+                  />
+                  <p className="text-xs text-muted-foreground font-medium mt-1">
+                    {formatCurrency(bancaPercentage)}% utilizado
+                  </p>
+                </div>
               </>
             ) : (
-              <p className="text-[10px] text-muted-foreground">em todas as casas</p>
+              <p className="text-xs text-muted-foreground">em todas as casas</p>
             )}
           </Card>
 

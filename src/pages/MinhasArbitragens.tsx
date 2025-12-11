@@ -47,6 +47,7 @@ import { parseArbitrageText } from '@/utils/arbitrageParser';
 import { MonthlyGoalCard } from '@/components/MonthlyGoalCard';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { highlightText } from '@/lib/utils/highlightText';
+import { Progress } from '@/components/ui/progress';
 
 interface Arbitrage {
   id: string;
@@ -1710,15 +1711,21 @@ export default function MinhasArbitragens() {
             </div>
             <div className="rounded-lg border bg-card p-3">
               <div className="text-xs text-muted-foreground mb-1">Total Investido</div>
-              <div className="text-xl font-bold">R$ {formatCurrency(totais.totalInvestido)}</div>
+              <div className="text-2xl font-bold">R$ {formatCurrency(totais.totalInvestido)}</div>
               {isOnlyAguardando && totalBanca > 0 ? (
                 <>
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground mt-1">
                     de R$ {formatCurrency(totalBanca)} da banca
                   </p>
-                  <p className="text-[10px] text-muted-foreground font-medium">
-                    ({formatCurrency(bancaPercentage)}% utilizado)
-                  </p>
+                  <div className="mt-2">
+                    <Progress 
+                      value={Math.min(bancaPercentage, 100)} 
+                      className="h-2"
+                    />
+                    <p className="text-xs text-muted-foreground font-medium mt-1">
+                      {formatCurrency(bancaPercentage)}% utilizado
+                    </p>
+                  </div>
                 </>
               ) : null}
             </div>
