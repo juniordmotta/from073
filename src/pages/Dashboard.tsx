@@ -55,6 +55,7 @@ export default function Dashboard() {
   const [allArbitrages, setAllArbitrages] = useState<any[]>([]);
   const [isExpandedView, setIsExpandedView] = useState(false);
   const [goalStats, setGoalStats] = useState<GoalStats>({ totalLucro: 0 });
+  const [totalBanca, setTotalBanca] = useState(0);
   
   // Debounce dos filtros
   const debouncedStartDate = useDebounce(startDate, 300);
@@ -107,6 +108,7 @@ export default function Dashboard() {
     loadOpenBets();
     loadCosts();
     loadAllArbitrages();
+    loadBancaTotal();
     if (isAdmin) {
       loadUsers();
     }
@@ -422,6 +424,38 @@ export default function Dashboard() {
       setGoalStats({ totalLucro });
     }
   }, [isAdmin, user?.id, debouncedSelectedUser]);
+
+  // Carregar total da banca das parcerias ativas
+  const loadBancaTotal = useCallback(async () => {
+    let query = supabase
+      .from('partnerships')
+      .select('valor_banca')
+      .eq('status', 'ativo');
+    
+    if (!isAdmin) {
+      query = query.eq('user_id', user?.id);
+    } else if (debouncedSelectedUser.length > 0) {
+      query = query.in('user_id', debouncedSelectedUser);
+    }
+
+    const { data } = await query;
+
+    if (data) {
+      const total = data.reduce((sum, p) => sum + Number(p.valor_banca || 0), 0);
+      setTotalBanca(total);
+    }
+  }, [isAdmin, user?.id, debouncedSelectedUser]);
+
+  // Verificar se o filtro de status é apenas "aguardando"
+  const isOnlyAguardando = useMemo(() => {
+    return selectedStatus.length === 1 && selectedStatus.includes('aguardando');
+  }, [selectedStatus]);
+
+  // Calcular porcentagem de investimento em relação à banca
+  const bancaPercentage = useMemo(() => {
+    if (totalBanca === 0) return 0;
+    return (stats.totalInvestido / totalBanca) * 100;
+  }, [stats.totalInvestido, totalBanca]);
 
   // Contar filtros ativos
   const activeFiltersCount = useMemo(() => {
@@ -768,7 +802,18 @@ export default function Dashboard() {
               <span className="text-xs text-muted-foreground">Total Investido</span>
             </div>
             <div className="text-xl font-bold">R$ {formatCurrency(stats.totalInvestido)}</div>
-            <p className="text-[10px] text-muted-foreground">em todas as casas</p>
+            {isOnlyAguardando && totalBanca > 0 ? (
+              <>
+                <p className="text-[10px] text-muted-foreground">
+                  de R$ {formatCurrency(totalBanca)} da banca
+                </p>
+                <p className="text-[10px] text-muted-foreground font-medium">
+                  ({formatCurrency(bancaPercentage)}% utilizado)
+                </p>
+              </>
+            ) : (
+              <p className="text-[10px] text-muted-foreground">em todas as casas</p>
+            )}
           </Card>
 
           <Card className="p-3">
