@@ -787,16 +787,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-          <Card className="p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <Target className="h-3 w-3 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">Total Arbitragens</span>
-            </div>
-            <div className="text-xl font-bold">{stats.totalArbitragens}</div>
-            <p className="text-[10px] text-muted-foreground">cadastradas</p>
-          </Card>
-
+        <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
           <Card className="p-3">
             <div className="flex items-center gap-2 mb-1">
               <DollarSign className="h-3 w-3 text-muted-foreground" />
@@ -823,34 +814,40 @@ export default function Dashboard() {
             )}
           </Card>
 
-          <Card className="p-3">
-            <div className="flex items-center gap-2 mb-1">
-              {stats.totalLucro >= 0 ? (
-                <TrendingUp className="h-3 w-3 text-success" />
-              ) : (
-                <TrendingDown className="h-3 w-3 text-destructive" />
-              )}
-              <span className="text-xs text-muted-foreground">Lucro Total</span>
+          <Card className="p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Target className="h-3 w-3 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Total Arbitragens</span>
+              </div>
+              <span className="text-lg font-bold">{stats.totalArbitragens}</span>
             </div>
-            <div className={`text-xl font-bold ${stats.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
-              R$ {formatCurrency(stats.totalLucro)}
+            <div className="border-t pt-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {stats.totalLucro >= 0 ? (
+                  <TrendingUp className="h-3 w-3 text-success" />
+                ) : (
+                  <TrendingDown className="h-3 w-3 text-destructive" />
+                )}
+                <span className="text-xs text-muted-foreground">Lucro Total</span>
+              </div>
+              <span className={`text-lg font-bold ${stats.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
+                R$ {formatCurrency(stats.totalLucro)}
+              </span>
             </div>
-            <p className="text-[10px] text-muted-foreground">real + projetado</p>
-          </Card>
-
-          <Card className="p-3">
-            <div className="flex items-center gap-2 mb-1">
-              {stats.totalInvestido > 0 && (stats.totalLucro / stats.totalInvestido) >= 0 ? (
-                <TrendingUp className="h-3 w-3 text-success" />
-              ) : (
-                <TrendingDown className="h-3 w-3 text-destructive" />
-              )}
-              <span className="text-xs text-muted-foreground">ROI</span>
+            <div className="border-t pt-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {stats.totalInvestido > 0 && (stats.totalLucro / stats.totalInvestido) >= 0 ? (
+                  <TrendingUp className="h-3 w-3 text-success" />
+                ) : (
+                  <TrendingDown className="h-3 w-3 text-destructive" />
+                )}
+                <span className="text-xs text-muted-foreground">ROI</span>
+              </div>
+              <span className={`text-lg font-bold ${stats.totalInvestido > 0 && (stats.totalLucro / stats.totalInvestido) >= 0 ? 'text-success' : 'text-destructive'}`}>
+                {stats.totalInvestido > 0 ? formatCurrency((stats.totalLucro / stats.totalInvestido) * 100) : '0'}%
+              </span>
             </div>
-            <div className={`text-xl font-bold ${stats.totalInvestido > 0 && (stats.totalLucro / stats.totalInvestido) >= 0 ? 'text-success' : 'text-destructive'}`}>
-              {stats.totalInvestido > 0 ? formatCurrency((stats.totalLucro / stats.totalInvestido) * 100) : '0'}%
-            </div>
-            <p className="text-[10px] text-muted-foreground">sobre investimento</p>
           </Card>
 
           <Card className="p-3">
