@@ -1704,11 +1704,7 @@ export default function MinhasArbitragens() {
 
         {/* Card de Totais */}
         {filteredArbitragens.length > 0 && (
-          <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-            <div className="rounded-lg border bg-card p-3">
-              <div className="text-xs text-muted-foreground mb-1">Total de Arbitragens</div>
-              <div className="text-xl font-bold">{filteredArbitragens.length}</div>
-            </div>
+          <div className="grid gap-3 grid-cols-1 md:grid-cols-3">
             <div className="rounded-lg border bg-card p-3">
               <div className="text-xs text-muted-foreground mb-1">Total Investido</div>
               <div className="text-2xl font-bold">R$ {formatCurrency(totais.totalInvestido)}</div>
@@ -1729,19 +1725,23 @@ export default function MinhasArbitragens() {
                 </>
               ) : null}
             </div>
-            <div className="rounded-lg border bg-card p-3">
-              <div className="text-xs text-muted-foreground mb-1">Lucro Total</div>
-              <div className={`text-xl font-bold ${totais.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
-                R$ {formatCurrency(totais.totalLucro)}
+            <div className="rounded-lg border bg-card p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Total de Arbitragens</span>
+                <span className="text-lg font-bold">{filteredArbitragens.length}</span>
               </div>
-              <p className="text-[10px] text-muted-foreground">Inclui projetado</p>
-            </div>
-            <div className="rounded-lg border bg-card p-3">
-              <div className="text-xs text-muted-foreground mb-1">ROI</div>
-              <div className={`text-xl font-bold ${totais.totalInvestido > 0 && (totais.totalLucro / totais.totalInvestido) >= 0 ? 'text-success' : 'text-destructive'}`}>
-                {totais.totalInvestido > 0 ? formatCurrency((totais.totalLucro / totais.totalInvestido) * 100) : '0'}%
+              <div className="border-t pt-2 flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Lucro Total</span>
+                <span className={`text-lg font-bold ${totais.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
+                  R$ {formatCurrency(totais.totalLucro)}
+                </span>
               </div>
-              <p className="text-[10px] text-muted-foreground">Sobre investimento</p>
+              <div className="border-t pt-2 flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">ROI</span>
+                <span className={`text-lg font-bold ${totais.totalInvestido > 0 && (totais.totalLucro / totais.totalInvestido) >= 0 ? 'text-success' : 'text-destructive'}`}>
+                  {totais.totalInvestido > 0 ? formatCurrency((totais.totalLucro / totais.totalInvestido) * 100) : '0'}%
+                </span>
+              </div>
             </div>
             {user?.id && (
               <MonthlyGoalCard
