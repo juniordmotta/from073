@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Layout } from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,8 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, DollarSign, Trash2 } from 'lucide-react';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCurrency } from '@/lib/utils';
 import { ValidatedInput } from '@/components/ui/validated-input';
 import { operationalCostSchema } from '@/lib/validations/forms';
@@ -38,8 +39,7 @@ export default function CustosOperacionais() {
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
-  const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
+  const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [deleteTarget, setDeleteTarget] = useState<OperationalCost | null>(null);
   const [formData, setFormData] = useState({
     descricao: '',
@@ -75,6 +75,30 @@ export default function CustosOperacionais() {
     formData.data.length > 0;
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
+
+  // Gerar lista de meses (últimos 12 meses + próximos 2)
+  const monthOptions = useMemo(() => {
+    const months = [];
+    const today = new Date();
+    for (let i = 11; i >= -2; i--) {
+      const date = i >= 0 ? subMonths(today, i) : addMonths(today, Math.abs(i));
+      months.push({
+        value: format(date, 'yyyy-MM'),
+        label: format(date, 'MMMM yyyy', { locale: ptBR }),
+      });
+    }
+    return months;
+  }, []);
+
+  // Calcular datas de início e fim do mês selecionado
+  const { startDate, endDate } = useMemo(() => {
+    const [year, month] = selectedMonth.split('-').map(Number);
+    const date = new Date(year, month - 1, 1);
+    return {
+      startDate: format(startOfMonth(date), 'yyyy-MM-dd'),
+      endDate: format(endOfMonth(date), 'yyyy-MM-dd'),
+    };
+  }, [selectedMonth]);
 
   useEffect(() => {
     loadCosts();
@@ -311,25 +335,20 @@ export default function CustosOperacionais() {
             <CardTitle>Filtros</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="startDate">Data Inicial</Label>
-                <Input
-                  id="startDate"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="endDate">Data Final</Label>
-                <Input
-                  id="endDate"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
+            <div className="space-y-2 max-w-xs">
+              <Label htmlFor="month">Mês</Label>
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger id="month">
+                  <SelectValue placeholder="Selecione o mês" />
+                </SelectTrigger>
+                <SelectContent>
+                  {monthOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label.charAt(0).toUpperCase() + option.label.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
