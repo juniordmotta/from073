@@ -100,9 +100,9 @@ interface Partnership {
 const resultadoMap: Record<string, { label: string; variant: 'secondary' | 'default' | 'destructive' }> = {
   aguardando: { label: 'Aguardando', variant: 'secondary' },
   green: { label: 'Green', variant: 'default' },
-  green_parcial: { label: 'Green Parcial', variant: 'default' },
+  parcial_green: { label: 'Meio Green', variant: 'default' },
   red: { label: 'Red', variant: 'destructive' },
-  red_parcial: { label: 'Red Parcial', variant: 'destructive' },
+  parcial_red: { label: 'Meio Red', variant: 'destructive' },
   devolvido: { label: 'Devolvido', variant: 'secondary' },
 };
 
@@ -128,9 +128,9 @@ const getConsolidatedStatus = (status: string, lucroReal: number) => {
 const resultOptions = [
   { value: 'aguardando', label: 'Aguardando' },
   { value: 'green', label: 'Green' },
-  { value: 'green_parcial', label: 'Green Parcial' },
+  { value: 'parcial_green', label: 'Meio Green' },
   { value: 'red', label: 'Red' },
-  { value: 'red_parcial', label: 'Red Parcial' },
+  { value: 'parcial_red', label: 'Meio Red' },
   { value: 'devolvido', label: 'Devolvido' },
 ];
 
