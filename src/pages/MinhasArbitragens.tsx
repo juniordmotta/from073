@@ -473,10 +473,9 @@ export default function MinhasArbitragens() {
         return sortOrder === 'desc' ? diff : -diff; // desc = crescente (mais próximo primeiro)
       });
       
-      // Ordenar fechadas por data_evento conforme preferência
+      // Ordenar fechadas por data_evento - mais recente primeiro (decrescente)
       fechadas.sort((a, b) => {
-        const diff = new Date(a.data_evento).getTime() - new Date(b.data_evento).getTime();
-        return sortOrder === 'desc' ? diff : -diff; // desc = crescente (mais próximo primeiro)
+        return new Date(b.data_evento).getTime() - new Date(a.data_evento).getTime();
       });
       
       // Combinar: aguardando primeiro, depois fechadas
