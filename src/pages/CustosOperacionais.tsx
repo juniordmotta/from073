@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, DollarSign, Trash2 } from 'lucide-react';
+import { Plus, DollarSign, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -36,6 +36,7 @@ export default function CustosOperacionais() {
   const { user, userRole } = useAuth();
   const { toast } = useToast();
   const [costs, setCosts] = useState<OperationalCost[]>([]);
+  const [availableMonths, setAvailableMonths] = useState<string[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -76,19 +77,44 @@ export default function CustosOperacionais() {
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
-  // Gerar lista de meses (últimos 12 meses + próximos 2)
-  const monthOptions = useMemo(() => {
-    const months = [];
-    const today = new Date();
-    for (let i = 11; i >= -2; i--) {
-      const date = i >= 0 ? subMonths(today, i) : addMonths(today, Math.abs(i));
-      months.push({
-        value: format(date, 'yyyy-MM'),
-        label: format(date, 'MMMM yyyy', { locale: ptBR }),
-      });
+  const currentMonth = format(new Date(), 'yyyy-MM');
+
+  // Carregar meses disponíveis (que têm custos)
+  const loadAvailableMonths = async () => {
+    let query = supabase
+      .from('operational_costs')
+      .select('data');
+
+    if (!isAdmin) {
+      query = query.eq('user_id', user?.id);
     }
-    return months;
-  }, []);
+
+    const { data } = await query;
+    
+    if (data) {
+      const months = new Set<string>();
+      months.add(currentMonth); // Sempre incluir mês atual
+      data.forEach((cost) => {
+        const month = format(new Date(cost.data), 'yyyy-MM');
+        months.add(month);
+      });
+      // Ordenar do mais recente ao mais antigo
+      const sortedMonths = Array.from(months).sort((a, b) => b.localeCompare(a));
+      setAvailableMonths(sortedMonths);
+    }
+  };
+
+  // Gerar opções de meses baseadas nos meses disponíveis
+  const monthOptions = useMemo(() => {
+    return availableMonths.map((month) => {
+      const [year, monthNum] = month.split('-').map(Number);
+      const date = new Date(year, monthNum - 1, 1);
+      return {
+        value: month,
+        label: format(date, 'MMMM yyyy', { locale: ptBR }),
+      };
+    });
+  }, [availableMonths]);
 
   // Calcular datas de início e fim do mês selecionado
   const { startDate, endDate } = useMemo(() => {
@@ -101,11 +127,32 @@ export default function CustosOperacionais() {
   }, [selectedMonth]);
 
   useEffect(() => {
+    loadAvailableMonths();
+  }, [isAdmin, user?.id]);
+
+  useEffect(() => {
     loadCosts();
     if (isAdmin) {
       loadProfiles();
     }
   }, [startDate, endDate, isAdmin]);
+
+  // Navegação entre meses
+  const currentMonthIndex = availableMonths.indexOf(selectedMonth);
+  const canGoPrevious = currentMonthIndex < availableMonths.length - 1;
+  const canGoNext = currentMonthIndex > 0;
+
+  const goToPreviousMonth = () => {
+    if (canGoPrevious) {
+      setSelectedMonth(availableMonths[currentMonthIndex + 1]);
+    }
+  };
+
+  const goToNextMonth = () => {
+    if (canGoNext) {
+      setSelectedMonth(availableMonths[currentMonthIndex - 1]);
+    }
+  };
 
   const loadProfiles = async () => {
     const { data } = await supabase
@@ -201,6 +248,7 @@ export default function CustosOperacionais() {
       });
       setTouched({ descricao: false, valor: false, data: false });
       loadCosts();
+      loadAvailableMonths();
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -230,6 +278,7 @@ export default function CustosOperacionais() {
 
       setDeleteTarget(null);
       loadCosts();
+      loadAvailableMonths();
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -335,20 +384,38 @@ export default function CustosOperacionais() {
             <CardTitle>Filtros</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2 max-w-xs">
+            <div className="space-y-2">
               <Label htmlFor="month">Mês</Label>
-              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger id="month">
-                  <SelectValue placeholder="Selecione o mês" />
-                </SelectTrigger>
-                <SelectContent>
-                  {monthOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label.charAt(0).toUpperCase() + option.label.slice(1)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={goToPreviousMonth}
+                  disabled={!canGoPrevious}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                  <SelectTrigger id="month" className="w-[200px]">
+                    <SelectValue placeholder="Selecione o mês" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {monthOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label.charAt(0).toUpperCase() + option.label.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={goToNextMonth}
+                  disabled={!canGoNext}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
