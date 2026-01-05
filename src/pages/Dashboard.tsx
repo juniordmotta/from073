@@ -3,6 +3,7 @@ import { Layout } from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useCountUp } from '@/hooks/useCountUp';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -458,6 +459,14 @@ export default function Dashboard() {
     return (stats.totalInvestido / totalBanca) * 100;
   }, [stats.totalInvestido, totalBanca]);
 
+  // Animated values for cards
+  const animatedTotalInvestido = useCountUp(stats.totalInvestido);
+  const animatedTotalLucro = useCountUp(stats.totalLucro);
+  const animatedTotalArbitragens = useCountUp(stats.totalArbitragens, { decimals: 0 });
+  const animatedTotalCosts = useCountUp(totalCosts);
+  const animatedBancaPercentage = useCountUp(bancaPercentage);
+  const animatedRoi = useCountUp(stats.totalInvestido > 0 ? (stats.totalLucro / stats.totalInvestido) * 100 : 0);
+
   // Contar filtros ativos
   const activeFiltersCount = useMemo(() => {
     let count = 0;
@@ -793,7 +802,7 @@ export default function Dashboard() {
               <DollarSign className="h-3 w-3 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">Total Investido</span>
             </div>
-            <div className="text-2xl font-bold">R$ {formatCurrency(stats.totalInvestido)}</div>
+            <div className="text-2xl font-bold">R$ {formatCurrency(animatedTotalInvestido)}</div>
             {isOnlyAguardando && totalBanca > 0 ? (
               <>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -801,11 +810,11 @@ export default function Dashboard() {
                 </p>
                 <div className="mt-2">
                   <Progress 
-                    value={Math.min(bancaPercentage, 100)} 
+                    value={Math.min(animatedBancaPercentage, 100)} 
                     className="h-2"
                   />
                   <p className="text-xs text-muted-foreground font-medium mt-1">
-                    {formatCurrency(bancaPercentage)}% utilizado
+                    {formatCurrency(animatedBancaPercentage)}% utilizado
                   </p>
                 </div>
               </>
@@ -820,7 +829,7 @@ export default function Dashboard() {
                 <Target className="h-3 w-3 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">Total Arbitragens</span>
               </div>
-              <span className="text-lg font-bold">{stats.totalArbitragens}</span>
+              <span className="text-lg font-bold">{animatedTotalArbitragens}</span>
             </div>
             <div className="border-t pt-2 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -832,7 +841,7 @@ export default function Dashboard() {
                 <span className="text-xs text-muted-foreground">Lucro Total</span>
               </div>
               <span className={`text-lg font-bold ${stats.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
-                R$ {formatCurrency(stats.totalLucro)}
+                R$ {formatCurrency(animatedTotalLucro)}
               </span>
             </div>
             <div className="border-t pt-2 flex items-center justify-between">
@@ -845,7 +854,7 @@ export default function Dashboard() {
                 <span className="text-xs text-muted-foreground">ROI</span>
               </div>
               <span className={`text-lg font-bold ${stats.totalInvestido > 0 && (stats.totalLucro / stats.totalInvestido) >= 0 ? 'text-success' : 'text-destructive'}`}>
-                {stats.totalInvestido > 0 ? formatCurrency((stats.totalLucro / stats.totalInvestido) * 100) : '0'}%
+                {formatCurrency(animatedRoi)}%
               </span>
             </div>
           </Card>
@@ -855,9 +864,10 @@ export default function Dashboard() {
               <DollarSign className="h-3 w-3 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">Custos</span>
             </div>
-            <div className="text-xl font-bold text-destructive">R$ {formatCurrency(totalCosts)}</div>
+            <div className="text-xl font-bold text-destructive">R$ {formatCurrency(animatedTotalCosts)}</div>
             <p className="text-[10px] text-muted-foreground">período selecionado</p>
           </Card>
+
 
           {user?.id && (
             <MonthlyGoalCard
