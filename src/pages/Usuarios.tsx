@@ -20,7 +20,7 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Pencil, Trash2, History, Search, Filter, X } from 'lucide-react';
+import { UserPlus, Pencil, Trash2, History, Search, Filter, X, Eye, EyeOff } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatUserName } from '@/lib/utils';
@@ -65,7 +65,9 @@ export default function Usuarios() {
   const [editFormData, setEditFormData] = useState({
     name: '',
     role: 'operador' as 'admin_master' | 'admin' | 'operador',
+    password: '',
   });
+  const [showEditPassword, setShowEditPassword] = useState(false);
   const [formTouched, setFormTouched] = useState({
     name: false,
     email: false,
@@ -272,6 +274,26 @@ export default function Usuarios() {
       return;
     }
 
+    // Se uma nova senha foi fornecida, atualizar via edge function
+    if (editFormData.password && editFormData.password.length >= 6) {
+      const { error: passwordError } = await supabase.functions.invoke('update-user-password', {
+        body: {
+          userId: editingUser.id,
+          password: editFormData.password,
+        },
+      });
+
+      if (passwordError) {
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao atualizar senha',
+          description: passwordError.message,
+        });
+        setIsLoading(false);
+        return;
+      }
+    }
+
     toast({
       title: 'Usuário atualizado!',
       description: 'As informações foram atualizadas com sucesso.',
@@ -335,7 +357,9 @@ export default function Usuarios() {
     setEditFormData({
       name: user.name,
       role: (user.role || 'operador') as 'admin_master' | 'admin' | 'operador',
+      password: '',
     });
+    setShowEditPassword(false);
     setEditOpen(true);
   };
 
@@ -752,6 +776,27 @@ export default function Usuarios() {
                 </Select>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="edit-password">Nova Senha (opcional)</Label>
+                <div className="relative">
+                  <Input
+                    id="edit-password"
+                    type={showEditPassword ? 'text' : 'password'}
+                    value={editFormData.password}
+                    onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
+                    placeholder="Deixe em branco para manter a atual"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowEditPassword(!showEditPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showEditPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground">Mínimo 6 caracteres</p>
+              </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Salvando...' : 'Salvar Alterações'}
