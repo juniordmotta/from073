@@ -32,11 +32,13 @@ export default function Graficos() {
   const [selectedStatus, setSelectedStatus] = useState<string[]>(['all']);
   const [users, setUsers] = useState<Array<{ id: string; name: string }>>([]);
   const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
+  const [dateFilterType, setDateFilterType] = useState<'adicionado' | 'jogo'>('adicionado');
   
   const debouncedStartDate = useDebounce(startDate, 300);
   const debouncedEndDate = useDebounce(endDate, 300);
   const debouncedSelectedUser = useDebounce(selectedUser, 300);
   const debouncedSelectedStatus = useDebounce(selectedStatus, 300);
+  const debouncedDateFilterType = useDebounce(dateFilterType, 300);
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
@@ -45,7 +47,7 @@ export default function Graficos() {
     if (isAdmin) {
       loadUsers();
     }
-  }, [debouncedSelectedUser, debouncedSelectedStatus, debouncedStartDate, debouncedEndDate, groupBy, isAdmin]);
+  }, [debouncedSelectedUser, debouncedSelectedStatus, debouncedStartDate, debouncedEndDate, groupBy, isAdmin, debouncedDateFilterType]);
 
   const loadUsers = async () => {
     const { data } = await supabase
@@ -64,7 +66,7 @@ export default function Graficos() {
   const loadChartData = useCallback(async () => {
     let query = supabase
       .from('arbitrages')
-      .select('created_at, lucro_projetado, lucro_real, casa_01_valor, casa_02_valor, casa_03_valor, status');
+      .select('created_at, data_evento, lucro_projetado, lucro_real, casa_01_valor, casa_02_valor, casa_03_valor, status');
     
     if (!isAdmin) {
       query = query.eq('user_id', user?.id);
@@ -90,14 +92,15 @@ export default function Graficos() {
       }
     }
 
+    const dateColumn = debouncedDateFilterType === 'jogo' ? 'data_evento' : 'created_at';
     if (debouncedStartDate) {
-      query = query.gte('created_at', new Date(debouncedStartDate).toISOString());
+      query = query.gte(dateColumn, new Date(debouncedStartDate).toISOString());
     }
 
     if (debouncedEndDate) {
       const endOfDay = new Date(debouncedEndDate);
       endOfDay.setHours(23, 59, 59, 999);
-      query = query.lte('created_at', endOfDay.toISOString());
+      query = query.lte(dateColumn, endOfDay.toISOString());
     }
 
     query = query.order('created_at', { ascending: true });
@@ -144,7 +147,7 @@ export default function Graficos() {
 
       setChartData(chartArray);
     }
-  }, [isAdmin, user?.id, debouncedSelectedUser, debouncedSelectedStatus, debouncedStartDate, debouncedEndDate, groupBy]);
+  }, [isAdmin, user?.id, debouncedSelectedUser, debouncedSelectedStatus, debouncedStartDate, debouncedEndDate, groupBy, debouncedDateFilterType]);
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -169,6 +172,29 @@ export default function Graficos() {
           <h1 className="text-3xl font-bold">Gráficos de Evolução</h1>
           
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Toggle Adicionado/Jogo */}
+            <div className="space-y-1">
+              <Label className="text-xs">Filtrar por</Label>
+              <div className="flex rounded-lg border overflow-hidden">
+                <Button
+                  variant={dateFilterType === 'adicionado' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setDateFilterType('adicionado')}
+                  className="h-10 px-3 rounded-none"
+                >
+                  Adicionado
+                </Button>
+                <Button
+                  variant={dateFilterType === 'jogo' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setDateFilterType('jogo')}
+                  className="h-10 px-3 rounded-none"
+                >
+                  Jogo
+                </Button>
+              </div>
+            </div>
+            
             <div className="space-y-1">
               <Label className="text-xs">Data Início</Label>
               <Input

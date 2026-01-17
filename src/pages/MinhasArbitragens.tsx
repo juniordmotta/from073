@@ -169,6 +169,10 @@ export default function MinhasArbitragens() {
     return format(today, 'yyyy-MM-dd');
   });
   const [selectedPeriod, setSelectedPeriod] = useState<'hoje' | 'semana' | 'mes' | 'mes_atual' | 'custom'>('mes_atual');
+  const [dateFilterType, setDateFilterType] = useState<'adicionado' | 'jogo'>(() => {
+    const saved = sessionStorage.getItem('arbitragens_dateFilterType');
+    return (saved === 'jogo') ? 'jogo' : 'adicionado';
+  });
   const [filterStatus, setFilterStatus] = useState<string[]>(() => {
     const saved = sessionStorage.getItem('arbitragens_filterStatus');
     if (!saved) return ['aguardando'];
@@ -383,7 +387,7 @@ export default function MinhasArbitragens() {
       });
     }
 
-    // Filtrar por data de criação (created_at) - coluna "ADICIONADO EM"
+    // Filtrar por data (created_at ou data_evento conforme selecionado)
     // Regra: Se ambas as datas estiverem preenchidas, filtrar período
     // Se apenas data fim preenchida, filtrar apenas aquele dia único
     if (debouncedFilterStartDate && debouncedFilterEndDate) {
@@ -393,7 +397,7 @@ export default function MinhasArbitragens() {
       const startDate = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
       const endDate = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
       filtered = filtered.filter((arb) => {
-        const arbDate = new Date(arb.created_at);
+        const arbDate = new Date(dateFilterType === 'jogo' ? arb.data_evento : arb.created_at);
         return arbDate >= startDate && arbDate <= endDate;
       });
     } else if (!debouncedFilterStartDate && debouncedFilterEndDate) {
@@ -402,7 +406,7 @@ export default function MinhasArbitragens() {
       const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
       const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
       filtered = filtered.filter((arb) => {
-        const arbDate = new Date(arb.created_at);
+        const arbDate = new Date(dateFilterType === 'jogo' ? arb.data_evento : arb.created_at);
         return arbDate >= startOfDay && arbDate <= endOfDay;
       });
     }
@@ -490,7 +494,7 @@ export default function MinhasArbitragens() {
 
     setFilteredArbitragens(filtered);
     setCurrentPage(1);
-  }, [arbitragens, debouncedSearchText, debouncedFilterStartDate, debouncedFilterEndDate, debouncedFilterStatus, debouncedFilterUser, debouncedFilterPartnership, sortOrder]);
+  }, [arbitragens, debouncedSearchText, debouncedFilterStartDate, debouncedFilterEndDate, debouncedFilterStatus, debouncedFilterUser, debouncedFilterPartnership, sortOrder, dateFilterType]);
 
   const loadArbitragens = useCallback(async () => {
     if (!user?.id) return;
@@ -713,6 +717,10 @@ export default function MinhasArbitragens() {
   useEffect(() => {
     sessionStorage.setItem('arbitragens_filterStatus', JSON.stringify(filterStatus));
   }, [filterStatus]);
+
+  useEffect(() => {
+    sessionStorage.setItem('arbitragens_dateFilterType', dateFilterType);
+  }, [dateFilterType]);
 
   useEffect(() => {
     sessionStorage.setItem('arbitragens_filterUser', JSON.stringify(filterUser));
@@ -1368,6 +1376,29 @@ export default function MinhasArbitragens() {
           </div>
           
           <div className="flex items-end gap-2 flex-wrap">
+            {/* Toggle Adicionado/Jogo */}
+            <div>
+              <Label className="text-xs mb-1 block">Filtrar por</Label>
+              <div className="flex rounded-lg border overflow-hidden">
+                <Button
+                  variant={dateFilterType === 'adicionado' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setDateFilterType('adicionado')}
+                  className="h-10 px-3 rounded-none"
+                >
+                  Adicionado
+                </Button>
+                <Button
+                  variant={dateFilterType === 'jogo' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setDateFilterType('jogo')}
+                  className="h-10 px-3 rounded-none"
+                >
+                  Jogo
+                </Button>
+              </div>
+            </div>
+            
             {/* Filtros Rápidos de Período */}
             <div>
               <Label className="text-xs mb-1 block">Período Rápido</Label>
@@ -1428,14 +1459,14 @@ export default function MinhasArbitragens() {
                     <DialogHeader>
                       <DialogTitle>Selecionar Período</DialogTitle>
                       <DialogDescription>
-                        Selecione a data inicial e final para filtrar as arbitragens adicionadas nesse período.
+                        Selecione a data inicial e final para filtrar as arbitragens {dateFilterType === 'jogo' ? 'com jogos' : 'adicionadas'} nesse período.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                       <div className="space-y-2">
                         <Label htmlFor="start-date">
                           Data Início
-                          <span className="text-muted-foreground ml-1">(Adicionado em)</span>
+                          <span className="text-muted-foreground ml-1">({dateFilterType === 'jogo' ? 'Data do Jogo' : 'Adicionado em'})</span>
                         </Label>
                         <Input
                           id="start-date"
@@ -1451,7 +1482,7 @@ export default function MinhasArbitragens() {
                       <div className="space-y-2">
                         <Label htmlFor="end-date">
                           Data Fim
-                          <span className="text-muted-foreground ml-1">(Adicionado em)</span>
+                          <span className="text-muted-foreground ml-1">({dateFilterType === 'jogo' ? 'Data do Jogo' : 'Adicionado em'})</span>
                         </Label>
                         <Input
                           id="end-date"

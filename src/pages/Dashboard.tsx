@@ -58,12 +58,14 @@ export default function Dashboard() {
   const [isExpandedView, setIsExpandedView] = useState(false);
   const [goalStats, setGoalStats] = useState<GoalStats>({ totalLucro: 0 });
   const [totalBanca, setTotalBanca] = useState(0);
+  const [dateFilterType, setDateFilterType] = useState<'adicionado' | 'jogo'>('adicionado');
   
   // Debounce dos filtros
   const debouncedStartDate = useDebounce(startDate, 300);
   const debouncedEndDate = useDebounce(endDate, 300);
   const debouncedSelectedUser = useDebounce(selectedUser, 300);
   const debouncedSelectedStatus = useDebounce(selectedStatus, 300);
+  const debouncedDateFilterType = useDebounce(dateFilterType, 300);
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
@@ -114,7 +116,7 @@ export default function Dashboard() {
     if (isAdmin) {
       loadUsers();
     }
-  }, [debouncedSelectedUser, debouncedSelectedStatus, debouncedStartDate, debouncedEndDate, isAdmin]);
+  }, [debouncedSelectedUser, debouncedSelectedStatus, debouncedStartDate, debouncedEndDate, debouncedDateFilterType, isAdmin]);
 
   // Load goal stats separadamente (só depende de operador, não de datas)
   useEffect(() => {
@@ -164,7 +166,8 @@ export default function Dashboard() {
       }
     }
 
-    // Filtrar por data de criação (created_at)
+    // Filtrar por data (created_at ou data_evento conforme selecionado)
+    const dateColumn = debouncedDateFilterType === 'jogo' ? 'data_evento' : 'created_at';
     // Regra: Se ambas as datas estiverem preenchidas, filtrar período
     // Se apenas data fim preenchida, filtrar apenas aquele dia único
     if (debouncedStartDate && debouncedEndDate) {
@@ -173,13 +176,13 @@ export default function Dashboard() {
       const [endYear, endMonth, endDay] = debouncedEndDate.split('-').map(Number);
       const startOfDay = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
       const endOfDay = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
-      query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
+      query = query.gte(dateColumn, startOfDay.toISOString()).lte(dateColumn, endOfDay.toISOString());
     } else if (!debouncedStartDate && debouncedEndDate) {
       // Apenas data fim: filtrar apenas aquele dia
       const [year, month, day] = debouncedEndDate.split('-').map(Number);
       const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
       const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
-      query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
+      query = query.gte(dateColumn, startOfDay.toISOString()).lte(dateColumn, endOfDay.toISOString());
     }
     // Se apenas data início preenchida, não filtrar
 
@@ -210,7 +213,7 @@ export default function Dashboard() {
         taxaSucesso,
       });
     }
-  }, [isAdmin, user?.id, debouncedSelectedUser, debouncedSelectedStatus, debouncedStartDate, debouncedEndDate]);
+  }, [isAdmin, user?.id, debouncedSelectedUser, debouncedSelectedStatus, debouncedStartDate, debouncedEndDate, debouncedDateFilterType]);
 
   const loadAllArbitrages = useCallback(async () => {
     let query = supabase
@@ -245,7 +248,8 @@ export default function Dashboard() {
       }
     }
 
-    // Filtrar por data de criação (created_at)
+    // Filtrar por data (created_at ou data_evento conforme selecionado)
+    const dateColumn = debouncedDateFilterType === 'jogo' ? 'data_evento' : 'created_at';
     // Regra: Se ambas as datas estiverem preenchidas, filtrar período
     // Se apenas data fim preenchida, filtrar apenas aquele dia único
     if (debouncedStartDate && debouncedEndDate) {
@@ -254,13 +258,13 @@ export default function Dashboard() {
       const [endYear, endMonth, endDay] = debouncedEndDate.split('-').map(Number);
       const startOfDay = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
       const endOfDay = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
-      query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
+      query = query.gte(dateColumn, startOfDay.toISOString()).lte(dateColumn, endOfDay.toISOString());
     } else if (!debouncedStartDate && debouncedEndDate) {
       // Apenas data fim: filtrar apenas aquele dia
       const [year, month, day] = debouncedEndDate.split('-').map(Number);
       const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
       const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
-      query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
+      query = query.gte(dateColumn, startOfDay.toISOString()).lte(dateColumn, endOfDay.toISOString());
     }
     // Se apenas data início preenchida, não filtrar
 
@@ -269,7 +273,7 @@ export default function Dashboard() {
     if (data) {
       setAllArbitrages(data);
     }
-  }, [isAdmin, user?.id, debouncedSelectedUser, debouncedSelectedStatus, debouncedStartDate, debouncedEndDate]);
+  }, [isAdmin, user?.id, debouncedSelectedUser, debouncedSelectedStatus, debouncedStartDate, debouncedEndDate, debouncedDateFilterType]);
 
   const handleExportExcel = () => {
     if (allArbitrages.length === 0) {
@@ -344,7 +348,8 @@ export default function Dashboard() {
       query = query.in('user_id', debouncedSelectedUser);
     }
 
-    // Filtrar por data de criação (created_at)
+    // Filtrar por data (created_at ou data_evento conforme selecionado)
+    const dateColumn = debouncedDateFilterType === 'jogo' ? 'data_evento' : 'created_at';
     // Regra: Se ambas as datas estiverem preenchidas, filtrar período
     // Se apenas data fim preenchida, filtrar apenas aquele dia único
     if (debouncedStartDate && debouncedEndDate) {
@@ -353,13 +358,13 @@ export default function Dashboard() {
       const [endYear, endMonth, endDay] = debouncedEndDate.split('-').map(Number);
       const startOfDay = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
       const endOfDay = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
-      query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
+      query = query.gte(dateColumn, startOfDay.toISOString()).lte(dateColumn, endOfDay.toISOString());
     } else if (!debouncedStartDate && debouncedEndDate) {
       // Apenas data fim: filtrar apenas aquele dia
       const [year, month, day] = debouncedEndDate.split('-').map(Number);
       const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
       const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
-      query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
+      query = query.gte(dateColumn, startOfDay.toISOString()).lte(dateColumn, endOfDay.toISOString());
     }
     // Se apenas data início preenchida, não filtrar
 
@@ -368,7 +373,7 @@ export default function Dashboard() {
     if (data) {
       setOpenBets(data);
     }
-  }, [isAdmin, user?.id, debouncedSelectedUser, debouncedStartDate, debouncedEndDate]);
+  }, [isAdmin, user?.id, debouncedSelectedUser, debouncedStartDate, debouncedEndDate, debouncedDateFilterType]);
 
   const loadCosts = useCallback(async () => {
     let query = supabase
@@ -508,6 +513,29 @@ export default function Dashboard() {
           </div>
           
           <div className="flex items-end gap-2 flex-wrap">
+            {/* Toggle Adicionado/Jogo */}
+            <div>
+              <Label className="text-xs mb-1 block">Filtrar por</Label>
+              <div className="flex rounded-lg border overflow-hidden">
+                <Button
+                  variant={dateFilterType === 'adicionado' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setDateFilterType('adicionado')}
+                  className="h-10 px-3 rounded-none"
+                >
+                  Adicionado
+                </Button>
+                <Button
+                  variant={dateFilterType === 'jogo' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setDateFilterType('jogo')}
+                  className="h-10 px-3 rounded-none"
+                >
+                  Jogo
+                </Button>
+              </div>
+            </div>
+            
             {/* Filtros Rápidos de Período */}
             <div>
               <Label className="text-xs mb-1 block">Período Rápido</Label>
@@ -568,14 +596,14 @@ export default function Dashboard() {
                     <DialogHeader>
                       <DialogTitle>Selecionar Período</DialogTitle>
                       <DialogDescription>
-                        Selecione a data inicial e final para filtrar as arbitragens adicionadas nesse período.
+                        Selecione a data inicial e final para filtrar as arbitragens {dateFilterType === 'jogo' ? 'com jogos' : 'adicionadas'} nesse período.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                       <div className="space-y-2">
                         <Label htmlFor="start-date">
                           Data Início
-                          <span className="text-muted-foreground ml-1">(Adicionado em)</span>
+                          <span className="text-muted-foreground ml-1">({dateFilterType === 'jogo' ? 'Data do Jogo' : 'Adicionado em'})</span>
                         </Label>
                         <Input
                           id="start-date"
@@ -591,7 +619,7 @@ export default function Dashboard() {
                       <div className="space-y-2">
                         <Label htmlFor="end-date">
                           Data Fim
-                          <span className="text-muted-foreground ml-1">(Adicionado em)</span>
+                          <span className="text-muted-foreground ml-1">({dateFilterType === 'jogo' ? 'Data do Jogo' : 'Adicionado em'})</span>
                         </Label>
                         <Input
                           id="end-date"
