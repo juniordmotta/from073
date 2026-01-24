@@ -695,7 +695,7 @@ export default function MinhasArbitragens() {
   // Aplicar filtros quando arbitragens ou filtros mudarem
   useEffect(() => {
     applyFilters();
-  }, [arbitragens, debouncedSearchText, debouncedFilterStartDate, debouncedFilterEndDate, debouncedFilterStatus, debouncedFilterUser, debouncedFilterPartnership]);
+  }, [arbitragens, debouncedSearchText, debouncedFilterStartDate, debouncedFilterEndDate, debouncedFilterStatus, debouncedFilterUser, debouncedFilterPartnership, dateFilterType, sortOrder]);
 
   // Salvar filtros no sessionStorage sempre que mudarem
   useEffect(() => {
