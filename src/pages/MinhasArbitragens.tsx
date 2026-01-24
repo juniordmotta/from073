@@ -1738,7 +1738,7 @@ export default function MinhasArbitragens() {
         {/* Card de Totais */}
         {filteredArbitragens.length > 0 && (
           <div className="grid gap-3 grid-cols-1 md:grid-cols-3">
-            <div className="rounded-lg border bg-card p-3">
+            <div className="rounded-lg border bg-card p-3 animate-fade-in" style={{ animationDelay: '0ms' }}>
               <div className="text-xs text-muted-foreground mb-1">Total Investido</div>
               <div className="text-2xl font-bold">R$ {formatCurrency(totais.totalInvestido)}</div>
               {isOnlyAguardando && totalBanca > 0 ? (
@@ -1758,7 +1758,7 @@ export default function MinhasArbitragens() {
                 </>
               ) : null}
             </div>
-            <div className="rounded-lg border bg-card p-3 space-y-2">
+            <div className="rounded-lg border bg-card p-3 space-y-2 animate-fade-in" style={{ animationDelay: '50ms', animationFillMode: 'backwards' }}>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">Total de Arbitragens</span>
                 <span className="text-lg font-bold">{filteredArbitragens.length}</span>
@@ -1777,12 +1777,14 @@ export default function MinhasArbitragens() {
               </div>
             </div>
             {user?.id && (
-              <MonthlyGoalCard
-                userId={user.id}
-                selectedUserIds={isAdmin && filterUser.length > 0 ? filterUser : undefined}
-                currentProfit={goalProfit}
-                compact
-              />
+              <div className="animate-fade-in" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
+                <MonthlyGoalCard
+                  userId={user.id}
+                  selectedUserIds={isAdmin && filterUser.length > 0 ? filterUser : undefined}
+                  currentProfit={goalProfit}
+                  compact
+                />
+              </div>
             )}
           </div>
         )}
