@@ -110,3 +110,20 @@ All colors MUST be HSL.
     @apply font-semibold;
   }
 }
+
+@layer utilities {
+  /* Transições suaves para elementos interativos */
+  .transition-smooth {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  /* Efeito hover suave para cards */
+  .hover-lift {
+    @apply transition-transform duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md;
+  }
+
+  /* Transição para dados que mudam */
+  .data-transition {
+    @apply transition-opacity duration-200 ease-out;
+  }
+}

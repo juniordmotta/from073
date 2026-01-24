@@ -828,7 +828,7 @@ export default function Dashboard() {
         </div>
 
         <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="p-3">
+          <Card className="p-3 animate-fade-in" style={{ animationDelay: '0ms' }}>
             <div className="flex items-center gap-2 mb-1">
               <DollarSign className="h-3 w-3 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">Total Investido</span>
@@ -854,7 +854,7 @@ export default function Dashboard() {
             )}
           </Card>
 
-          <Card className="p-3 space-y-2">
+          <Card className="p-3 space-y-2 animate-fade-in" style={{ animationDelay: '50ms', animationFillMode: 'backwards' }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Target className="h-3 w-3 text-muted-foreground" />
@@ -890,7 +890,7 @@ export default function Dashboard() {
             </div>
           </Card>
 
-          <Card className="p-3">
+          <Card className="p-3 animate-fade-in" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
             <div className="flex items-center gap-2 mb-1">
               <DollarSign className="h-3 w-3 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">Custos</span>
@@ -901,17 +901,19 @@ export default function Dashboard() {
 
 
           {user?.id && (
-            <MonthlyGoalCard
-              userId={user.id}
-              selectedUserIds={isAdmin && selectedUser.length > 0 ? selectedUser : undefined}
-              currentProfit={goalStats.totalLucro}
-              compact
-            />
+            <div className="animate-fade-in" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
+              <MonthlyGoalCard
+                userId={user.id}
+                selectedUserIds={isAdmin && selectedUser.length > 0 ? selectedUser : undefined}
+                currentProfit={goalStats.totalLucro}
+                compact
+              />
+            </div>
           )}
         </div>
 
         {openBets.length > 0 && (
-          <Card>
+          <Card className="animate-slide-in-bottom" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
             <CardHeader>
               <CardTitle>Apostas em Aberto ({openBets.length})</CardTitle>
             </CardHeader>
