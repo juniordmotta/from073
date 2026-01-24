@@ -590,6 +590,9 @@ export default function Dashboard() {
                         ) : (
                           'Selecionar Data'
                         )}
+                        <Badge variant="secondary" className="ml-2 text-xs">
+                          {dateFilterType === 'jogo' ? 'Jogo' : 'Add'}
+                        </Badge>
                       </Button>
                     </DialogTrigger>
                   <DialogContent className="sm:max-w-md">
