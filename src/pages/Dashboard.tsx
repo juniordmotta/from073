@@ -4,36 +4,26 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useCountUp } from '@/hooks/useCountUp';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TrendingUp, TrendingDown, DollarSign, Target } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Target, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatCurrency, formatUserName } from '@/lib/utils';
 import { MonthlyGoalCard } from '@/components/MonthlyGoalCard';
 
-interface Stats {
-  totalArbitragens: number;
+interface MonthStats {
+  totalLucro: number;
   totalInvestido: number;
-  totalLucro: number;
-  taxaSucesso: number;
-}
-
-interface GoalStats {
-  totalLucro: number;
+  diasComApostas: number;
 }
 
 export default function Dashboard() {
   const { userRole, user } = useAuth();
-  const [stats, setStats] = useState<Stats>({
-    totalArbitragens: 0,
-    totalInvestido: 0,
+  const [monthStats, setMonthStats] = useState<MonthStats>({
     totalLucro: 0,
-    taxaSucesso: 0,
+    totalInvestido: 0,
+    diasComApostas: 0,
   });
   const [openBets, setOpenBets] = useState<any[]>([]);
-  const [totalCosts, setTotalCosts] = useState(0);
-  const [goalStats, setGoalStats] = useState<GoalStats>({ totalLucro: 0 });
-  const [totalBanca, setTotalBanca] = useState(0);
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
@@ -43,66 +33,47 @@ export default function Dashboard() {
   const endDate = format(today, 'yyyy-MM-dd');
 
   useEffect(() => {
-    loadStats();
+    loadMonthStats();
     loadOpenBets();
-    loadCosts();
-    loadBancaTotal();
-    loadGoalStats();
   }, [user?.id, isAdmin]);
 
-  const loadStats = useCallback(async () => {
-    // Filtrar apenas aguardando, mês atual, usuário logado
-    const [startYear, startMonth, startDay] = startDate.split('-').map(Number);
-    const [endYear, endMonth, endDay] = endDate.split('-').map(Number);
-    const startOfDay = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
-    const endOfDay = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
+  const loadMonthStats = useCallback(async () => {
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    let query = supabase.from('arbitrages').select('status, lucro_projetado, lucro_real, casa_01_valor, casa_02_valor, casa_03_valor');
+    let query = supabase.from('arbitrages').select('status, lucro_projetado, lucro_real, casa_01_valor, casa_02_valor, casa_03_valor, created_at');
     
-    if (!isAdmin) {
-      query = query.eq('user_id', user?.id);
-    } else {
-      // Admin vê apenas próprios dados no dashboard
-      query = query.eq('user_id', user?.id);
-    }
-
-    query = query.eq('status', 'aguardando');
-    query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
+    query = query.eq('user_id', user?.id);
+    query = query.gte('created_at', firstDayOfMonth.toISOString()).lte('created_at', lastDayOfMonth.toISOString());
 
     const { data } = await query;
 
     if (data) {
-      const totalArbitragens = data.length;
-      const totalInvestido = data.reduce(
-        (sum, arb) => sum + Number(arb.casa_01_valor) + Number(arb.casa_02_valor) + Number(arb.casa_03_valor || 0),
-        0
-      );
-      
       const totalLucro = data.reduce((sum, arb) => {
         const lucro = arb.status === 'aguardando' ? Number(arb.lucro_projetado) : Number(arb.lucro_real);
         return sum + lucro;
       }, 0);
-      
-      const greenCount = data.filter(
-        (arb) => arb.status === 'green' || arb.status === 'parcial_green'
-      ).length;
-      const taxaSucesso = totalArbitragens > 0 ? (greenCount / totalArbitragens) * 100 : 0;
 
-      setStats({
-        totalArbitragens,
-        totalInvestido,
+      const totalInvestido = data.reduce(
+        (sum, arb) => sum + Number(arb.casa_01_valor) + Number(arb.casa_02_valor) + Number(arb.casa_03_valor || 0),
+        0
+      );
+
+      // Contar dias únicos com apostas
+      const uniqueDays = new Set(
+        data.map(arb => format(new Date(arb.created_at), 'yyyy-MM-dd'))
+      );
+      
+      setMonthStats({
         totalLucro,
-        taxaSucesso,
+        totalInvestido,
+        diasComApostas: uniqueDays.size,
       });
     }
-  }, [isAdmin, user?.id, startDate, endDate]);
+  }, [user?.id]);
 
   const loadOpenBets = useCallback(async () => {
-    const [startYear, startMonth, startDay] = startDate.split('-').map(Number);
-    const [endYear, endMonth, endDay] = endDate.split('-').map(Number);
-    const startOfDay = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
-    const endOfDay = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
-
     let query = supabase
       .from('arbitrages')
       .select(`
@@ -122,202 +93,92 @@ export default function Dashboard() {
         profiles:user_id (name)
       `)
       .eq('status', 'aguardando')
+      .eq('user_id', user?.id)
       .order('data_evento', { ascending: true })
       .limit(50);
-    
-    if (!isAdmin) {
-      query = query.eq('user_id', user?.id);
-    } else {
-      query = query.eq('user_id', user?.id);
-    }
-
-    query = query.gte('created_at', startOfDay.toISOString()).lte('created_at', endOfDay.toISOString());
 
     const { data } = await query;
 
     if (data) {
       setOpenBets(data);
     }
-  }, [isAdmin, user?.id, startDate, endDate]);
+  }, [user?.id]);
 
-  const loadCosts = useCallback(async () => {
-    let query = supabase
-      .from('operational_costs')
-      .select('valor');
-    
-    if (!isAdmin) {
-      query = query.eq('user_id', user?.id);
-    } else {
-      query = query.eq('user_id', user?.id);
-    }
+  // Média por dia (apenas dias com apostas)
+  const mediaPorDia = useMemo(() => {
+    if (monthStats.diasComApostas === 0) return 0;
+    return monthStats.totalLucro / monthStats.diasComApostas;
+  }, [monthStats.totalLucro, monthStats.diasComApostas]);
 
-    query = query.gte('data', startDate).lte('data', endDate);
-
-    const { data } = await query;
-
-    if (data) {
-      const total = data.reduce((sum, cost) => sum + Number(cost.valor), 0);
-      setTotalCosts(total);
-    }
-  }, [isAdmin, user?.id, startDate, endDate]);
-
-  const loadGoalStats = useCallback(async () => {
-    const now = new Date();
-    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-
-    let query = supabase.from('arbitrages').select('status, lucro_projetado, lucro_real');
-    
-    if (!isAdmin) {
-      query = query.eq('user_id', user?.id);
-    } else {
-      query = query.eq('user_id', user?.id);
-    }
-
-    query = query.gte('created_at', firstDayOfMonth.toISOString()).lte('created_at', lastDayOfMonth.toISOString());
-
-    const { data } = await query;
-
-    if (data) {
-      const totalLucro = data.reduce((sum, arb) => {
-        const lucro = arb.status === 'aguardando' ? Number(arb.lucro_projetado) : Number(arb.lucro_real);
-        return sum + lucro;
-      }, 0);
-      
-      setGoalStats({ totalLucro });
-    }
-  }, [isAdmin, user?.id]);
-
-  const loadBancaTotal = useCallback(async () => {
-    let query = supabase
-      .from('partnerships')
-      .select('valor_banca')
-      .eq('status', 'ativo');
-    
-    if (!isAdmin) {
-      query = query.eq('user_id', user?.id);
-    } else {
-      query = query.eq('user_id', user?.id);
-    }
-
-    const { data } = await query;
-
-    if (data) {
-      const total = data.reduce((sum, p) => sum + Number(p.valor_banca || 0), 0);
-      setTotalBanca(total);
-    }
-  }, [isAdmin, user?.id]);
-
-  // Calcular porcentagem de investimento em relação à banca
-  const bancaPercentage = useMemo(() => {
-    if (totalBanca === 0) return 0;
-    return (stats.totalInvestido / totalBanca) * 100;
-  }, [stats.totalInvestido, totalBanca]);
-
-  // Animated values for cards
-  const animatedTotalInvestido = useCountUp(stats.totalInvestido);
-  const animatedTotalLucro = useCountUp(stats.totalLucro);
-  const animatedTotalArbitragens = useCountUp(stats.totalArbitragens, { decimals: 0 });
-  const animatedTotalCosts = useCountUp(totalCosts);
-  const animatedBancaPercentage = useCountUp(bancaPercentage);
-  const animatedRoi = useCountUp(stats.totalInvestido > 0 ? (stats.totalLucro / stats.totalInvestido) * 100 : 0);
+  // Animated values
+  const animatedTotalLucro = useCountUp(monthStats.totalLucro);
+  const animatedTotalInvestido = useCountUp(monthStats.totalInvestido);
+  const animatedMediaPorDia = useCountUp(mediaPorDia);
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-        </div>
+      <div className="space-y-4">
+        <h1 className="text-2xl font-bold">Dashboard</h1>
 
-        <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="p-3 animate-fade-in" style={{ animationDelay: '0ms' }}>
-            <div className="flex items-center gap-2 mb-1">
+        {/* Cards compactos */}
+        <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
+          {/* Lucro Total do Mês */}
+          <Card className="p-2 animate-fade-in">
+            <div className="flex items-center gap-1 mb-0.5">
+              {monthStats.totalLucro >= 0 ? (
+                <TrendingUp className="h-3 w-3 text-success" />
+              ) : (
+                <TrendingDown className="h-3 w-3 text-destructive" />
+              )}
+              <span className="text-[10px] text-muted-foreground">Lucro do Mês</span>
+            </div>
+            <div className={`text-lg font-bold ${monthStats.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
+              R$ {formatCurrency(animatedTotalLucro)}
+            </div>
+          </Card>
+
+          {/* Total Investido do Mês */}
+          <Card className="p-2 animate-fade-in" style={{ animationDelay: '50ms', animationFillMode: 'backwards' }}>
+            <div className="flex items-center gap-1 mb-0.5">
               <DollarSign className="h-3 w-3 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">Total Investido</span>
+              <span className="text-[10px] text-muted-foreground">Investido no Mês</span>
             </div>
-            <div className="text-2xl font-bold">R$ {formatCurrency(animatedTotalInvestido)}</div>
-            {totalBanca > 0 ? (
-              <>
-                <p className="text-xs text-muted-foreground mt-1">
-                  de R$ {formatCurrency(totalBanca)} da banca
-                </p>
-                <div className="mt-2">
-                  <Progress 
-                    value={Math.min(animatedBancaPercentage, 100)} 
-                    className="h-2"
-                  />
-                  <p className="text-xs text-muted-foreground font-medium mt-1">
-                    {formatCurrency(animatedBancaPercentage)}% utilizado
-                  </p>
-                </div>
-              </>
-            ) : (
-              <p className="text-xs text-muted-foreground">em todas as casas</p>
-            )}
-          </Card>
-
-          <Card className="p-3 space-y-2 animate-fade-in" style={{ animationDelay: '50ms', animationFillMode: 'backwards' }}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Target className="h-3 w-3 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Total Arbitragens</span>
-              </div>
-              <span className="text-lg font-bold">{animatedTotalArbitragens}</span>
-            </div>
-            <div className="border-t pt-2 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {stats.totalLucro >= 0 ? (
-                  <TrendingUp className="h-3 w-3 text-success" />
-                ) : (
-                  <TrendingDown className="h-3 w-3 text-destructive" />
-                )}
-                <span className="text-xs text-muted-foreground">Lucro Total</span>
-              </div>
-              <span className={`text-lg font-bold ${stats.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
-                R$ {formatCurrency(animatedTotalLucro)}
-              </span>
-            </div>
-            <div className="border-t pt-2 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {stats.totalInvestido > 0 && (stats.totalLucro / stats.totalInvestido) >= 0 ? (
-                  <TrendingUp className="h-3 w-3 text-success" />
-                ) : (
-                  <TrendingDown className="h-3 w-3 text-destructive" />
-                )}
-                <span className="text-xs text-muted-foreground">ROI</span>
-              </div>
-              <span className={`text-lg font-bold ${stats.totalInvestido > 0 && (stats.totalLucro / stats.totalInvestido) >= 0 ? 'text-success' : 'text-destructive'}`}>
-                {formatCurrency(animatedRoi)}%
-              </span>
+            <div className="text-lg font-bold">
+              R$ {formatCurrency(animatedTotalInvestido)}
             </div>
           </Card>
 
-          <Card className="p-3 animate-fade-in" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
-            <div className="flex items-center gap-2 mb-1">
-              <DollarSign className="h-3 w-3 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">Custos</span>
+          {/* Média por Dia */}
+          <Card className="p-2 animate-fade-in" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
+            <div className="flex items-center gap-1 mb-0.5">
+              <Calendar className="h-3 w-3 text-muted-foreground" />
+              <span className="text-[10px] text-muted-foreground">Média/Dia</span>
             </div>
-            <div className="text-xl font-bold text-destructive">R$ {formatCurrency(animatedTotalCosts)}</div>
-            <p className="text-[10px] text-muted-foreground">mês atual</p>
+            <div className={`text-lg font-bold ${mediaPorDia >= 0 ? 'text-success' : 'text-destructive'}`}>
+              R$ {formatCurrency(animatedMediaPorDia)}
+            </div>
+            <p className="text-[9px] text-muted-foreground">{monthStats.diasComApostas} dias com apostas</p>
           </Card>
 
+          {/* Meta Mensal */}
           {user?.id && (
             <div className="animate-fade-in" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
               <MonthlyGoalCard
                 userId={user.id}
-                currentProfit={goalStats.totalLucro}
+                currentProfit={monthStats.totalLucro}
                 compact
               />
             </div>
           )}
         </div>
 
+        {/* Apostas em Aberto */}
         {openBets.length > 0 && (
           <Card className="animate-slide-in-bottom" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
-            <CardHeader>
-              <CardTitle>Apostas em Aberto ({openBets.length})</CardTitle>
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-base">Apostas em Aberto ({openBets.length})</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-4 pb-4">
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
