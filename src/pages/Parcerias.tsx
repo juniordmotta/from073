@@ -858,15 +858,37 @@ const Parcerias = () => {
     setPartnershipDetails(null);
   };
 
+  // Função para ordenar casas por status
+  const sortCasasByStatus = (casas: any[]) => {
+    const statusOrder: Record<string, number> = {
+      'aguardando_verificacao': 0,
+      'aguardando_pagamento': 1,
+      'sacar': 2,
+      'ativa': 3,
+      'bloqueada': 4,
+    };
+    
+    return [...casas].sort((a, b) => {
+      const orderA = statusOrder[a.status] ?? 5;
+      const orderB = statusOrder[b.status] ?? 5;
+      return orderA - orderB;
+    });
+  };
+
   const updateHouseStatus = async (partnershipId: string, houseName: string, newStatus: string) => {
-    // Atualização otimística - atualizar estado local imediatamente
+    // Atualização otimística - atualizar estado local imediatamente e reordenar
     if (partnershipDetails) {
       const originalCasas = [...partnershipDetails.casas];
+      
+      // Atualizar status e reordenar
+      const updatedCasas = partnershipDetails.casas.map((casa: any) => 
+        casa.nome === houseName ? { ...casa, status: newStatus } : casa
+      );
+      const sortedCasas = sortCasasByStatus(updatedCasas);
+      
       setPartnershipDetails((prev: any) => ({
         ...prev,
-        casas: prev.casas.map((casa: any) => 
-          casa.nome === houseName ? { ...casa, status: newStatus } : casa
-        ),
+        casas: sortedCasas,
       }));
 
       try {
