@@ -81,26 +81,39 @@ export default function CustosOperacionais() {
 
   // Carregar meses disponíveis (que têm custos)
   const loadAvailableMonths = async () => {
-    let query = supabase
-      .from('operational_costs')
-      .select('data');
-
-    if (!isAdmin) {
-      query = query.eq('user_id', user?.id);
-    }
-
-    const { data } = await query;
+    if (!user?.id) return;
     
-    if (data) {
-      const months = new Set<string>();
-      months.add(currentMonth); // Sempre incluir mês atual
-      data.forEach((cost) => {
-        const month = format(new Date(cost.data), 'yyyy-MM');
-        months.add(month);
-      });
-      // Ordenar do mais recente ao mais antigo
-      const sortedMonths = Array.from(months).sort((a, b) => b.localeCompare(a));
-      setAvailableMonths(sortedMonths);
+    try {
+      let query = supabase
+        .from('operational_costs')
+        .select('data');
+
+      if (!isAdmin) {
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data, error } = await query;
+      
+      if (error) {
+        console.warn('Erro ao carregar meses disponíveis:', error.message);
+        setAvailableMonths([currentMonth]);
+        return;
+      }
+      
+      if (data) {
+        const months = new Set<string>();
+        months.add(currentMonth); // Sempre incluir mês atual
+        data.forEach((cost) => {
+          const month = format(new Date(cost.data), 'yyyy-MM');
+          months.add(month);
+        });
+        // Ordenar do mais recente ao mais antigo
+        const sortedMonths = Array.from(months).sort((a, b) => b.localeCompare(a));
+        setAvailableMonths(sortedMonths);
+      }
+    } catch (error) {
+      console.error('Erro inesperado ao carregar meses:', error);
+      setAvailableMonths([currentMonth]);
     }
   };
 
@@ -155,50 +168,64 @@ export default function CustosOperacionais() {
   };
 
   const loadProfiles = async () => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, name');
-    
-    if (data) {
-      const profilesMap = data.reduce((acc, profile) => {
-        acc[profile.id] = profile;
-        return acc;
-      }, {} as Record<string, Profile>);
-      setProfiles(profilesMap);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name');
+      
+      if (error) {
+        // Operadores não têm permissão - comportamento esperado
+        console.warn('Erro ao carregar profiles (RLS):', error.message);
+        return;
+      }
+      
+      if (data) {
+        const profilesMap = data.reduce((acc, profile) => {
+          acc[profile.id] = profile;
+          return acc;
+        }, {} as Record<string, Profile>);
+        setProfiles(profilesMap);
+      }
+    } catch (error) {
+      console.error('Erro inesperado ao carregar profiles:', error);
     }
   };
 
   const loadCosts = async () => {
-    let query = supabase
-      .from('operational_costs')
-      .select('*')
-      .order('data', { ascending: false });
+    if (!user?.id) return;
+    
+    try {
+      let query = supabase
+        .from('operational_costs')
+        .select('*')
+        .order('data', { ascending: false });
 
-    if (!isAdmin) {
-      query = query.eq('user_id', user?.id);
-    }
+      if (!isAdmin) {
+        query = query.eq('user_id', user.id);
+      }
 
-    if (startDate) {
-      query = query.gte('data', startDate);
-    }
+      if (startDate) {
+        query = query.gte('data', startDate);
+      }
 
-    if (endDate) {
-      query = query.lte('data', endDate);
-    }
+      if (endDate) {
+        query = query.lte('data', endDate);
+      }
 
-    const { data, error } = await query;
+      const { data, error } = await query;
 
-    if (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao carregar custos',
-        description: error.message,
-      });
-      return;
-    }
+      if (error) {
+        console.warn('Erro ao carregar custos:', error.message);
+        setCosts([]);
+        return;
+      }
 
-    if (data) {
-      setCosts(data);
+      if (data) {
+        setCosts(data);
+      }
+    } catch (error) {
+      console.error('Erro inesperado ao carregar custos:', error);
+      setCosts([]);
     }
   };
 
