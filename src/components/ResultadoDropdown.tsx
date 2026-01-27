@@ -121,34 +121,55 @@ export function ResultadoDropdown({
             <DialogTitle>Valor do Cashout</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="cashout-value">Valor recebido no cashout (R$)</Label>
-              <Input
-                id="cashout-value"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                value={cashoutValue}
-                onChange={(e) => setCashoutValue(e.target.value)}
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleCashoutConfirm();
-                  }
-                }}
-              />
-              <p className="text-xs text-muted-foreground">
-                Valor apostado: R$ {formatCurrency(valorApostado)}
-              </p>
-              {cashoutValue && !isNaN(parseFloat(cashoutValue)) && (
-                <p className={`text-sm font-medium ${
-                  parseFloat(cashoutValue) - valorApostado >= 0 ? 'text-success' : 'text-destructive'
-                }`}>
-                  Resultado: {parseFloat(cashoutValue) - valorApostado >= 0 ? '+' : ''}R$ {formatCurrency(parseFloat(cashoutValue) - valorApostado)}
-                </p>
-              )}
+            {/* Valor Original Apostado */}
+            <div className="p-3 rounded-lg bg-muted/50 border">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Valor Apostado</span>
+                <span className="text-base font-semibold">R$ {formatCurrency(valorApostado)}</span>
+              </div>
             </div>
+
+            {/* Input do Valor Recebido */}
+            <div className="space-y-2">
+              <Label htmlFor="cashout-value">Valor recebido no cashout</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
+                <Input
+                  id="cashout-value"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  value={cashoutValue}
+                  onChange={(e) => setCashoutValue(e.target.value)}
+                  autoFocus
+                  className="pl-9"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleCashoutConfirm();
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Resultado do Cashout */}
+            {cashoutValue && !isNaN(parseFloat(cashoutValue)) && (
+              <div className={`p-3 rounded-lg border ${
+                parseFloat(cashoutValue) - valorApostado >= 0 
+                  ? 'bg-success/10 border-success/30' 
+                  : 'bg-destructive/10 border-destructive/30'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Resultado</span>
+                  <span className={`text-base font-bold ${
+                    parseFloat(cashoutValue) - valorApostado >= 0 ? 'text-success' : 'text-destructive'
+                  }`}>
+                    {parseFloat(cashoutValue) - valorApostado >= 0 ? '+' : ''}R$ {formatCurrency(parseFloat(cashoutValue) - valorApostado)}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCashoutDialogOpen(false)}>
