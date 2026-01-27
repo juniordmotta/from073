@@ -17,7 +17,6 @@ import {
   Search, 
   Plus, 
   Building2, 
-  ChevronRight, 
   ExternalLink,
   Home,
   Edit3,
@@ -25,7 +24,8 @@ import {
   X,
   Trash2,
   Eye,
-  EyeOff
+  EyeOff,
+  PlusCircle
 } from 'lucide-react';
 import { bettingHouseGroups, BettingHouse, BettingHouseGroup } from '@/data/bettingHousesData';
 import { highlightText } from '@/lib/utils/highlightText';
@@ -43,6 +43,14 @@ interface HiddenHouse {
   group_id: string;
 }
 
+interface CustomHouse {
+  id: string;
+  original_house_id: string | null;
+  group_id: string;
+  name: string;
+  url: string | null;
+}
+
 const CasasDeApostas = () => {
   const { user, userRole } = useAuth();
   const { toast } = useToast();
@@ -58,18 +66,28 @@ const CasasDeApostas = () => {
   const [isLoadingPartnerships, setIsLoadingPartnerships] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   
-  // Estados para edição de nome
-  const [editingHouseId, setEditingHouseId] = useState<string | null>(null);
+  // Estados para edição de casa
+  const [editingHouse, setEditingHouse] = useState<{ house: BettingHouse; groupId: string } | null>(null);
   const [editedName, setEditedName] = useState('');
+  const [editedUrl, setEditedUrl] = useState('');
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
   
-  // Estados para casas ocultas
+  // Estados para adicionar nova casa
+  const [isAddHouseDialogOpen, setIsAddHouseDialogOpen] = useState(false);
+  const [addHouseGroupId, setAddHouseGroupId] = useState<string>('');
+  const [newHouseName, setNewHouseName] = useState('');
+  const [newHouseUrl, setNewHouseUrl] = useState('');
+  const [isAddingHouse, setIsAddingHouse] = useState(false);
+  
+  // Estados para casas ocultas e customizadas
   const [hiddenHouses, setHiddenHouses] = useState<HiddenHouse[]>([]);
+  const [customHouses, setCustomHouses] = useState<CustomHouse[]>([]);
   const [showHidden, setShowHidden] = useState(false);
   const [houseToDelete, setHouseToDelete] = useState<{ house: BettingHouse; groupId: string } | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
-  // Carregar casas ocultas ao montar
+  // Carregar dados ao montar
   useEffect(() => {
+    loadCustomHouses();
     if (isAdmin) {
       loadHiddenHouses();
     }
@@ -88,15 +106,77 @@ const CasasDeApostas = () => {
     }
   };
 
+  const loadCustomHouses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('custom_betting_houses')
+        .select('id, original_house_id, group_id, name, url');
+      
+      if (error) throw error;
+      setCustomHouses(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar casas customizadas:', error);
+    }
+  };
+
   const hiddenHouseIds = useMemo(() => {
     return new Set(hiddenHouses.map(h => h.house_id));
   }, [hiddenHouses]);
 
-  // Filtrar grupos e casas baseado na busca e casas ocultas
+  // Mapa de edições (original_house_id -> customização)
+  const editedHousesMap = useMemo(() => {
+    const map = new Map<string, CustomHouse>();
+    customHouses.filter(h => h.original_house_id).forEach(h => {
+      map.set(h.original_house_id!, h);
+    });
+    return map;
+  }, [customHouses]);
+
+  // Casas novas por grupo
+  const newHousesByGroup = useMemo(() => {
+    const map = new Map<string, CustomHouse[]>();
+    customHouses.filter(h => !h.original_house_id).forEach(h => {
+      const existing = map.get(h.group_id) || [];
+      existing.push(h);
+      map.set(h.group_id, existing);
+    });
+    return map;
+  }, [customHouses]);
+
+  // Aplicar edições às casas
+  const getDisplayHouse = (house: BettingHouse): BettingHouse => {
+    const edited = editedHousesMap.get(house.id);
+    if (edited) {
+      return {
+        ...house,
+        name: edited.name,
+        url: edited.url || house.url,
+      };
+    }
+    return house;
+  };
+
+  // Filtrar grupos e casas
   const filteredGroups = useMemo(() => {
-    let groups = bettingHouseGroups;
+    // Começar com grupos originais
+    let groups: BettingHouseGroup[] = bettingHouseGroups.map(group => {
+      // Aplicar edições às casas existentes
+      let houses = group.houses.map(getDisplayHouse);
+      
+      // Adicionar casas novas do grupo
+      const newHouses = newHousesByGroup.get(group.id) || [];
+      const newBettingHouses: BettingHouse[] = newHouses.map(h => ({
+        id: h.id,
+        name: h.name,
+        url: h.url || undefined,
+      }));
+      
+      houses = [...houses, ...newBettingHouses];
+      
+      return { ...group, houses };
+    });
     
-    // Filtrar casas ocultas (a menos que showHidden esteja ativo)
+    // Filtrar casas ocultas
     if (!showHidden && hiddenHouseIds.size > 0) {
       groups = groups.map(group => ({
         ...group,
@@ -125,9 +205,9 @@ const CasasDeApostas = () => {
         return null;
       })
       .filter((group): group is BettingHouseGroup => group !== null);
-  }, [searchTerm, hiddenHouseIds, showHidden]);
+  }, [searchTerm, hiddenHouseIds, showHidden, editedHousesMap, newHousesByGroup]);
 
-  // Carregar parcerias do usuário
+  // Carregar parcerias
   const loadPartnerships = async () => {
     if (!user?.id) return;
     
@@ -153,7 +233,6 @@ const CasasDeApostas = () => {
     }
   };
 
-  // Abrir dialog para adicionar casa à parceria
   const handleOpenAddDialog = (house: BettingHouse) => {
     setSelectedHouse(house);
     setSelectedPartnershipId('');
@@ -161,7 +240,6 @@ const CasasDeApostas = () => {
     loadPartnerships();
   };
 
-  // Adicionar casa à parceria
   const handleAddToPartnership = async () => {
     if (!selectedHouse || !selectedPartnershipId) {
       toast({
@@ -174,7 +252,6 @@ const CasasDeApostas = () => {
 
     setIsAdding(true);
     try {
-      // Verificar se a casa já existe na parceria
       const { data: existingHouse, error: checkError } = await supabase
         .from('partnership_houses')
         .select('id')
@@ -193,7 +270,6 @@ const CasasDeApostas = () => {
         return;
       }
 
-      // Adicionar casa com status "aguardando_verificacao"
       const { error: insertError } = await supabase
         .from('partnership_houses')
         .insert({
@@ -208,7 +284,7 @@ const CasasDeApostas = () => {
       
       toast({
         title: 'Casa adicionada!',
-        description: `${selectedHouse.name} foi adicionada à parceria "${partnershipName}" com status "Aguardando Verificação".`,
+        description: `${selectedHouse.name} foi adicionada à parceria "${partnershipName}".`,
       });
 
       setIsAddDialogOpen(false);
@@ -226,43 +302,124 @@ const CasasDeApostas = () => {
     }
   };
 
-  // Iniciar edição de nome
-  const handleStartEdit = (house: BettingHouse) => {
-    setEditingHouseId(house.id);
+  // Abrir dialog de edição
+  const handleStartEdit = (house: BettingHouse, groupId: string) => {
+    setEditingHouse({ house, groupId });
     setEditedName(house.name);
+    setEditedUrl(house.url || '');
   };
 
-  // Cancelar edição
-  const handleCancelEdit = () => {
-    setEditingHouseId(null);
-    setEditedName('');
+  // Salvar edição
+  const handleSaveEdit = async () => {
+    if (!editingHouse || !user?.id || !editedName.trim()) return;
+    
+    setIsSavingEdit(true);
+    try {
+      // Verificar se já existe edição para esta casa
+      const existingEdit = editedHousesMap.get(editingHouse.house.id);
+      
+      if (existingEdit) {
+        // Atualizar edição existente
+        const { error } = await supabase
+          .from('custom_betting_houses')
+          .update({
+            name: editedName.trim(),
+            url: editedUrl.trim() || null,
+          })
+          .eq('id', existingEdit.id);
+        
+        if (error) throw error;
+        
+        setCustomHouses(prev => prev.map(h => 
+          h.id === existingEdit.id 
+            ? { ...h, name: editedName.trim(), url: editedUrl.trim() || null }
+            : h
+        ));
+      } else {
+        // Criar nova edição
+        const { data, error } = await supabase
+          .from('custom_betting_houses')
+          .insert({
+            original_house_id: editingHouse.house.id,
+            group_id: editingHouse.groupId,
+            name: editedName.trim(),
+            url: editedUrl.trim() || null,
+            created_by: user.id,
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        
+        setCustomHouses(prev => [...prev, data]);
+      }
+      
+      toast({
+        title: 'Casa atualizada!',
+        description: `Os dados de ${editedName} foram salvos.`,
+      });
+      
+      setEditingHouse(null);
+      setEditedName('');
+      setEditedUrl('');
+    } catch (error: any) {
+      console.error('Erro ao salvar edição:', error);
+      toast({
+        title: 'Erro',
+        description: error.message || 'Não foi possível salvar as alterações.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingEdit(false);
+    }
   };
 
-  // Salvar edição (apenas visual, não persiste)
-  const handleSaveEdit = () => {
-    // Como os dados são estáticos, apenas mostramos uma mensagem
-    toast({
-      title: 'Funcionalidade em desenvolvimento',
-      description: 'A edição de nomes será salva no banco de dados em uma versão futura.',
-    });
-    setEditingHouseId(null);
-    setEditedName('');
+  // Adicionar nova casa ao grupo
+  const handleAddNewHouse = async () => {
+    if (!user?.id || !newHouseName.trim() || !addHouseGroupId) return;
+    
+    setIsAddingHouse(true);
+    try {
+      const { data, error } = await supabase
+        .from('custom_betting_houses')
+        .insert({
+          group_id: addHouseGroupId,
+          name: newHouseName.trim(),
+          url: newHouseUrl.trim() || null,
+          created_by: user.id,
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      setCustomHouses(prev => [...prev, data]);
+      
+      toast({
+        title: 'Casa adicionada!',
+        description: `${newHouseName} foi adicionada ao catálogo.`,
+      });
+      
+      setIsAddHouseDialogOpen(false);
+      setNewHouseName('');
+      setNewHouseUrl('');
+      setAddHouseGroupId('');
+    } catch (error: any) {
+      console.error('Erro ao adicionar casa:', error);
+      toast({
+        title: 'Erro',
+        description: error.message || 'Não foi possível adicionar a casa.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsAddingHouse(false);
+    }
   };
 
-  // Contar total de casas (visíveis)
-  const totalHouses = useMemo(() => {
-    return bettingHouseGroups.reduce((acc, group) => acc + group.houses.length, 0);
-  }, []);
-
-  const visibleHouses = useMemo(() => {
-    return totalHouses - hiddenHouses.length;
-  }, [totalHouses, hiddenHouses.length]);
-
-  // Ocultar casa do catálogo
+  // Ocultar casa
   const handleHideHouse = async () => {
     if (!houseToDelete || !user?.id) return;
     
-    setIsDeleting(true);
     try {
       const { error } = await supabase
         .from('hidden_betting_houses')
@@ -295,12 +452,10 @@ const CasasDeApostas = () => {
         description: error.message || 'Não foi possível remover a casa.',
         variant: 'destructive',
       });
-    } finally {
-      setIsDeleting(false);
     }
   };
 
-  // Restaurar casa ao catálogo
+  // Restaurar casa
   const handleRestoreHouse = async (house: BettingHouse) => {
     if (!user?.id) return;
     
@@ -328,6 +483,16 @@ const CasasDeApostas = () => {
     }
   };
 
+  const totalHouses = useMemo(() => {
+    const baseCount = bettingHouseGroups.reduce((acc, group) => acc + group.houses.length, 0);
+    const customCount = customHouses.filter(h => !h.original_house_id).length;
+    return baseCount + customCount;
+  }, [customHouses]);
+
+  const visibleHouses = useMemo(() => {
+    return totalHouses - hiddenHouses.length;
+  }, [totalHouses, hiddenHouses.length]);
+
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
@@ -343,7 +508,7 @@ const CasasDeApostas = () => {
             </p>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {isAdmin && hiddenHouses.length > 0 && (
               <Button
                 variant={showHidden ? "default" : "outline"}
@@ -407,11 +572,11 @@ const CasasDeApostas = () => {
                     className="border rounded-lg px-4 data-[state=open]:bg-muted/30"
                   >
                     <AccordionTrigger className="hover:no-underline py-4">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-1">
                         <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                           <Home className="h-5 w-5 text-primary" />
                         </div>
-                        <div className="text-left">
+                        <div className="text-left flex-1">
                           <div className="font-medium">
                             {searchTerm ? highlightText(group.name, searchTerm) : group.name}
                           </div>
@@ -425,115 +590,112 @@ const CasasDeApostas = () => {
                       <div className="space-y-2 mt-2">
                         {group.houses.map((house) => {
                           const isHidden = hiddenHouseIds.has(house.id);
+                          const isCustom = customHouses.some(h => h.id === house.id);
+                          const isEdited = editedHousesMap.has(house.id);
+                          
                           return (
-                          <div
-                            key={house.id}
-                            className={`flex items-center justify-between p-3 rounded-lg bg-background border hover:border-primary/50 transition-colors group ${isHidden ? 'opacity-50 border-destructive/50' : ''}`}
-                          >
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                              <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
-                                <Building2 className="h-4 w-4 text-muted-foreground" />
-                              </div>
-                              
-                              {editingHouseId === house.id ? (
-                                <div className="flex items-center gap-2 flex-1">
-                                  <Input
-                                    value={editedName}
-                                    onChange={(e) => setEditedName(e.target.value)}
-                                    className="h-8"
-                                    autoFocus
-                                  />
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 shrink-0"
-                                    onClick={handleSaveEdit}
-                                  >
-                                    <Check className="h-4 w-4 text-green-500" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 shrink-0"
-                                    onClick={handleCancelEdit}
-                                  >
-                                    <X className="h-4 w-4 text-red-500" />
-                                  </Button>
+                            <div
+                              key={house.id}
+                              className={`flex items-center justify-between p-3 rounded-lg bg-background border hover:border-primary/50 transition-colors group ${isHidden ? 'opacity-50 border-destructive/50' : ''}`}
+                            >
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
+                                  <Building2 className="h-4 w-4 text-muted-foreground" />
                                 </div>
-                              ) : (
-                                <>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-medium truncate flex items-center gap-2">
-                                      {searchTerm ? highlightText(house.name, searchTerm) : house.name}
-                                      {isHidden && (
-                                        <Badge variant="destructive" className="text-xs">Oculta</Badge>
-                                      )}
-                                    </div>
-                                    {house.url && (
-                                      <a
-                                        href={`https://${house.url}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
-                                      >
-                                        {house.url}
-                                        <ExternalLink className="h-3 w-3" />
-                                      </a>
+                                
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium truncate flex items-center gap-2">
+                                    {searchTerm ? highlightText(house.name, searchTerm) : house.name}
+                                    {isHidden && (
+                                      <Badge variant="destructive" className="text-xs">Oculta</Badge>
+                                    )}
+                                    {isCustom && (
+                                      <Badge variant="secondary" className="text-xs">Nova</Badge>
+                                    )}
+                                    {isEdited && !isCustom && (
+                                      <Badge variant="outline" className="text-xs">Editada</Badge>
                                     )}
                                   </div>
-                                  
-                                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    {isAdmin && isHidden ? (
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-8 gap-1 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                        onClick={() => handleRestoreHouse(house)}
-                                        title="Restaurar casa"
-                                      >
-                                        <Eye className="h-4 w-4" />
-                                        Restaurar
-                                      </Button>
-                                    ) : (
-                                      <>
+                                  {house.url && (
+                                    <a
+                                      href={`https://${house.url}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
+                                    >
+                                      {house.url}
+                                      <ExternalLink className="h-3 w-3" />
+                                    </a>
+                                  )}
+                                </div>
+                                
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  {isAdmin && isHidden ? (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-8 gap-1 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                      onClick={() => handleRestoreHouse(house)}
+                                      title="Restaurar casa"
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                      Restaurar
+                                    </Button>
+                                  ) : (
+                                    <>
+                                      {isAdmin && (
                                         <Button
                                           variant="ghost"
                                           size="icon"
                                           className="h-8 w-8"
-                                          onClick={() => handleStartEdit(house)}
-                                          title="Editar nome"
+                                          onClick={() => handleStartEdit(house, group.id)}
+                                          title="Editar casa"
                                         >
                                           <Edit3 className="h-4 w-4" />
                                         </Button>
+                                      )}
+                                      <Button
+                                        variant="default"
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        onClick={() => handleOpenAddDialog(house)}
+                                        title="Adicionar à parceria"
+                                      >
+                                        <Plus className="h-4 w-4" />
+                                      </Button>
+                                      {isAdmin && (
                                         <Button
-                                          variant="default"
+                                          variant="ghost"
                                           size="icon"
-                                          className="h-8 w-8"
-                                          onClick={() => handleOpenAddDialog(house)}
-                                          title="Adicionar à parceria"
+                                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                          onClick={() => setHouseToDelete({ house, groupId: group.id })}
+                                          title="Remover do catálogo"
                                         >
-                                          <Plus className="h-4 w-4" />
+                                          <Trash2 className="h-4 w-4" />
                                         </Button>
-                                        {isAdmin && (
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                            onClick={() => setHouseToDelete({ house, groupId: group.id })}
-                                            title="Remover do catálogo"
-                                          >
-                                            <Trash2 className="h-4 w-4" />
-                                          </Button>
-                                        )}
-                                      </>
-                                    )}
-                                  </div>
-                                </>
-                              )}
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                          </div>
                           );
                         })}
+                        
+                        {/* Botão para adicionar nova casa ao grupo */}
+                        {isAdmin && (
+                          <Button
+                            variant="outline"
+                            className="w-full mt-3 gap-2 border-dashed"
+                            onClick={() => {
+                              setAddHouseGroupId(group.id);
+                              setIsAddHouseDialogOpen(true);
+                            }}
+                          >
+                            <PlusCircle className="h-4 w-4" />
+                            Adicionar Casa ao Grupo
+                          </Button>
+                        )}
                       </div>
                     </AccordionContent>
                   </AccordionItem>
@@ -612,6 +774,122 @@ const CasasDeApostas = () => {
                 disabled={!selectedPartnershipId || isAdding}
               >
                 {isAdding ? 'Adicionando...' : 'Adicionar'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog para editar casa */}
+        <Dialog open={!!editingHouse} onOpenChange={(open) => !open && setEditingHouse(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Editar Casa de Apostas</DialogTitle>
+              <DialogDescription>
+                Altere os dados da casa de apostas
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="editName">Nome da Casa</Label>
+                <Input
+                  id="editName"
+                  value={editedName}
+                  onChange={(e) => setEditedName(e.target.value)}
+                  placeholder="Nome da casa de apostas"
+                  autoFocus
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="editUrl">URL (opcional)</Label>
+                <Input
+                  id="editUrl"
+                  value={editedUrl}
+                  onChange={(e) => setEditedUrl(e.target.value)}
+                  placeholder="exemplo.bet.br"
+                />
+              </div>
+            </div>
+            
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                onClick={() => setEditingHouse(null)}
+                disabled={isSavingEdit}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleSaveEdit}
+                disabled={!editedName.trim() || isSavingEdit}
+              >
+                {isSavingEdit ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog para adicionar nova casa */}
+        <Dialog open={isAddHouseDialogOpen} onOpenChange={setIsAddHouseDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Adicionar Nova Casa</DialogTitle>
+              <DialogDescription>
+                Adicione uma nova casa de apostas ao grupo "{bettingHouseGroups.find(g => g.id === addHouseGroupId)?.name}"
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="newName">Nome da Casa *</Label>
+                <Input
+                  id="newName"
+                  value={newHouseName}
+                  onChange={(e) => setNewHouseName(e.target.value)}
+                  placeholder="Nome da casa de apostas"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newHouseName.trim()) {
+                      handleAddNewHouse();
+                    }
+                  }}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="newUrl">URL (opcional)</Label>
+                <Input
+                  id="newUrl"
+                  value={newHouseUrl}
+                  onChange={(e) => setNewHouseUrl(e.target.value)}
+                  placeholder="exemplo.bet.br"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newHouseName.trim()) {
+                      handleAddNewHouse();
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsAddHouseDialogOpen(false);
+                  setNewHouseName('');
+                  setNewHouseUrl('');
+                }}
+                disabled={isAddingHouse}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleAddNewHouse}
+                disabled={!newHouseName.trim() || isAddingHouse}
+              >
+                {isAddingHouse ? 'Adicionando...' : 'Adicionar'}
               </Button>
             </DialogFooter>
           </DialogContent>
