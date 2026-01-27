@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useGameNotifications } from '@/hooks/useGameNotifications';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useCountUp } from '@/hooks/useCountUp';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -1933,30 +1934,47 @@ export default function MinhasArbitragens() {
               </div>
             </div>
 
-            {/* Lucro do Mês + Média/Dia (sempre do usuário logado) */}
-            <div className="rounded-lg border bg-card p-2 animate-fade-in" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
-              <div className="flex items-center gap-1 mb-0.5">
-                {userMonthStats.totalLucro >= 0 ? (
-                  <TrendingUp className="h-3 w-3 text-success" />
-                ) : (
-                  <TrendingDown className="h-3 w-3 text-destructive" />
-                )}
-                <span className="text-[10px] text-muted-foreground">Lucro do Mês</span>
-              </div>
-              <div className={`text-lg font-bold ${userMonthStats.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
-                R$ {formatCurrency(userMonthStats.totalLucro)}
-              </div>
-              <div className="border-t pt-1 mt-1 flex items-center justify-between">
-                <span className="text-[9px] text-muted-foreground">Investido</span>
-                <span className="text-xs font-medium">R$ {formatCurrency(userMonthStats.totalInvestido)}</span>
-              </div>
-              <div className="border-t pt-1 mt-1 flex items-center justify-between">
-                <span className="text-[9px] text-muted-foreground">Média/Dia ({userMonthStats.diasComApostas} dias)</span>
-                <span className={`text-xs font-medium ${userMonthStats.diasComApostas > 0 && (userMonthStats.totalLucro / userMonthStats.diasComApostas) >= 0 ? 'text-success' : 'text-destructive'}`}>
-                  R$ {userMonthStats.diasComApostas > 0 ? formatCurrency(userMonthStats.totalLucro / userMonthStats.diasComApostas) : '0.00'}
-                </span>
-              </div>
-            </div>
+            {/* Lucro do Mês + Média/Dia + ROI (sempre do usuário logado) */}
+            {(() => {
+              const animatedMonthLucro = useCountUp(userMonthStats.totalLucro);
+              const animatedMonthInvestido = useCountUp(userMonthStats.totalInvestido);
+              const mediaDia = userMonthStats.diasComApostas > 0 ? userMonthStats.totalLucro / userMonthStats.diasComApostas : 0;
+              const animatedMediaDia = useCountUp(mediaDia);
+              const roiMensal = userMonthStats.totalInvestido > 0 ? (userMonthStats.totalLucro / userMonthStats.totalInvestido) * 100 : 0;
+              const animatedRoiMensal = useCountUp(roiMensal);
+              
+              return (
+                <div className="rounded-lg border bg-card p-2 animate-fade-in" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
+                  <div className="flex items-center gap-1 mb-0.5">
+                    {userMonthStats.totalLucro >= 0 ? (
+                      <TrendingUp className="h-3 w-3 text-success" />
+                    ) : (
+                      <TrendingDown className="h-3 w-3 text-destructive" />
+                    )}
+                    <span className="text-[10px] text-muted-foreground">Lucro do Mês</span>
+                  </div>
+                  <div className={`text-lg font-bold ${userMonthStats.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    R$ {formatCurrency(animatedMonthLucro)}
+                  </div>
+                  <div className="border-t pt-1 mt-1 flex items-center justify-between">
+                    <span className="text-[9px] text-muted-foreground">Investido</span>
+                    <span className="text-xs font-medium">R$ {formatCurrency(animatedMonthInvestido)}</span>
+                  </div>
+                  <div className="border-t pt-1 mt-1 flex items-center justify-between">
+                    <span className="text-[9px] text-muted-foreground">Média/Dia ({userMonthStats.diasComApostas} dias)</span>
+                    <span className={`text-xs font-medium ${mediaDia >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      R$ {formatCurrency(animatedMediaDia)}
+                    </span>
+                  </div>
+                  <div className="border-t pt-1 mt-1 flex items-center justify-between">
+                    <span className="text-[9px] text-muted-foreground">ROI Mensal</span>
+                    <span className={`text-xs font-medium ${roiMensal >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      {formatCurrency(animatedRoiMensal)}%
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Meta Mensal */}
             {user?.id && (
