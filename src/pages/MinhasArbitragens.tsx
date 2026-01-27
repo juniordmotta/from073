@@ -97,15 +97,7 @@ interface Partnership {
   data_inicio: string;
 }
 
-// Mapa para resultado individual de cada casa (usado no dropdown de seleção)
-const resultadoMap: Record<string, { label: string; variant: 'secondary' | 'default' | 'destructive' }> = {
-  aguardando: { label: 'Aguardando', variant: 'secondary' },
-  green: { label: 'Green', variant: 'default' },
-  parcial_green: { label: 'Meio Green', variant: 'default' },
-  red: { label: 'Red', variant: 'destructive' },
-  parcial_red: { label: 'Meio Red', variant: 'destructive' },
-  devolvido: { label: 'Devolvido', variant: 'secondary' },
-};
+import { ResultadoDropdown, resultadoMap, resultOptions } from '@/components/ResultadoDropdown';
 
 // Função para obter status consolidado baseado no lucro real (para status geral da arbitragem)
 const getConsolidatedStatus = (status: string, lucroReal: number) => {
@@ -124,16 +116,6 @@ const getConsolidatedStatus = (status: string, lucroReal: number) => {
     return { label: 'Devolvido', variant: 'secondary' as const };
   }
 };
-
-// Opções de resultado individual para cada casa (com parciais)
-const resultOptions = [
-  { value: 'aguardando', label: 'Aguardando' },
-  { value: 'green', label: 'Green' },
-  { value: 'parcial_green', label: 'Meio Green' },
-  { value: 'red', label: 'Red' },
-  { value: 'parcial_red', label: 'Meio Red' },
-  { value: 'devolvido', label: 'Devolvido' },
-];
 
 export default function MinhasArbitragens() {
   const { user, userRole } = useAuth();
@@ -1118,7 +1100,8 @@ export default function MinhasArbitragens() {
   const handleUpdateResult = async (
     arbitrageId: string,
     casa: 'casa_01' | 'casa_02' | 'casa_03',
-    resultado: string
+    resultado: string,
+    cashoutValue?: number
   ) => {
     const arb = arbitragens.find((a) => a.id === arbitrageId);
     if (!arb) return;
@@ -1138,6 +1121,9 @@ export default function MinhasArbitragens() {
       valorResultado = valorApostado / 2;
     } else if (resultado === 'devolvido') {
       valorResultado = valorApostado;
+    } else if (resultado === 'cashout') {
+      // Cashout: valor_resultado é o valor do cashout (já recebido)
+      valorResultado = cashoutValue ?? 0;
     } else if (resultado === 'aguardando') {
       valorResultado = 0;
     }
@@ -1362,7 +1348,8 @@ export default function MinhasArbitragens() {
   const calcularGanhoPorCasa = (
     aposta: number,
     odd: number,
-    resultado: string
+    resultado: string,
+    valorResultado?: number | null
   ): number => {
     if (resultado === 'green') {
       // Ganho = (aposta × odd - aposta)
@@ -1373,6 +1360,15 @@ export default function MinhasArbitragens() {
     } else if (resultado === 'devolvido') {
       // Devolvido: lucro 0
       return 0;
+    } else if (resultado === 'cashout') {
+      // Cashout: valor_resultado - aposta
+      return (valorResultado ?? 0) - aposta;
+    } else if (resultado === 'parcial_green') {
+      // Meio Green: metade devolvida + metade ganhou
+      return (aposta / 2) * odd - aposta / 2;
+    } else if (resultado === 'parcial_red') {
+      // Meio Red: perdeu metade
+      return -aposta / 2;
     } else {
       // Aguardando
       return 0;
@@ -2252,24 +2248,14 @@ export default function MinhasArbitragens() {
                             {Number(arb.casa_01_odd).toFixed(3)}x • R$ {formatCurrency(arb.casa_01_valor)}
                           </div>
                         </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
-                              {resultadoMap[arb.casa_01_resultado]?.label || 'Definir'}
-                              <ChevronDown className="h-3 w-3" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            {resultOptions.map((option) => (
-                              <DropdownMenuItem
-                                key={option.value}
-                                onClick={() => handleUpdateResult(arb.id, 'casa_01', option.value)}
-                              >
-                                {option.label}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <ResultadoDropdown
+                          currentResult={arb.casa_01_resultado}
+                          currentCashoutValue={arb.casa_01_valor_resultado}
+                          valorApostado={arb.casa_01_valor}
+                          onResultChange={(resultado, cashoutValue) => 
+                            handleUpdateResult(arb.id, 'casa_01', resultado, cashoutValue)
+                          }
+                        />
                       </div>
                     </div>
 
@@ -2290,24 +2276,14 @@ export default function MinhasArbitragens() {
                             {Number(arb.casa_02_odd).toFixed(3)}x • R$ {formatCurrency(arb.casa_02_valor)}
                           </div>
                         </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
-                              {resultadoMap[arb.casa_02_resultado]?.label || 'Definir'}
-                              <ChevronDown className="h-3 w-3" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            {resultOptions.map((option) => (
-                              <DropdownMenuItem
-                                key={option.value}
-                                onClick={() => handleUpdateResult(arb.id, 'casa_02', option.value)}
-                              >
-                                {option.label}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <ResultadoDropdown
+                          currentResult={arb.casa_02_resultado}
+                          currentCashoutValue={arb.casa_02_valor_resultado}
+                          valorApostado={arb.casa_02_valor}
+                          onResultChange={(resultado, cashoutValue) => 
+                            handleUpdateResult(arb.id, 'casa_02', resultado, cashoutValue)
+                          }
+                        />
                       </div>
                     </div>
 
@@ -2329,24 +2305,14 @@ export default function MinhasArbitragens() {
                               {Number(arb.casa_03_odd).toFixed(3)}x • R$ {formatCurrency(arb.casa_03_valor)}
                             </div>
                           </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
-                                {resultadoMap[arb.casa_03_resultado || '']?.label || 'Definir'}
-                                <ChevronDown className="h-3 w-3" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              {resultOptions.map((option) => (
-                                <DropdownMenuItem
-                                  key={option.value}
-                                  onClick={() => handleUpdateResult(arb.id, 'casa_03', option.value)}
-                                >
-                                  {option.label}
-                                </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <ResultadoDropdown
+                            currentResult={arb.casa_03_resultado || 'aguardando'}
+                            currentCashoutValue={arb.casa_03_valor_resultado}
+                            valorApostado={arb.casa_03_valor || 0}
+                            onResultChange={(resultado, cashoutValue) => 
+                              handleUpdateResult(arb.id, 'casa_03', resultado, cashoutValue)
+                            }
+                          />
                         </div>
                       </div>
                     )}
@@ -2489,30 +2455,14 @@ export default function MinhasArbitragens() {
                             {Number(arb.casa_01_odd).toFixed(3)}x • R$ {formatCurrency(arb.casa_01_valor)}
                           </div>
                         </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 text-xs gap-1"
-                            >
-                              {resultadoMap[arb.casa_01_resultado]?.label || 'Definir'}
-                              <ChevronDown className="h-3 w-3" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            {resultOptions.map((option) => (
-                              <DropdownMenuItem
-                                key={option.value}
-                                onClick={() =>
-                                  handleUpdateResult(arb.id, 'casa_01', option.value)
-                                }
-                              >
-                                {option.label}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <ResultadoDropdown
+                          currentResult={arb.casa_01_resultado}
+                          currentCashoutValue={arb.casa_01_valor_resultado}
+                          valorApostado={arb.casa_01_valor}
+                          onResultChange={(resultado, cashoutValue) => 
+                            handleUpdateResult(arb.id, 'casa_01', resultado, cashoutValue)
+                          }
+                        />
                       </div>
                     </TableCell>
                     <TableCell className="text-xs">
@@ -2531,30 +2481,14 @@ export default function MinhasArbitragens() {
                             {Number(arb.casa_02_odd).toFixed(3)}x • R$ {formatCurrency(arb.casa_02_valor)}
                           </div>
                         </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 text-xs gap-1"
-                            >
-                              {resultadoMap[arb.casa_02_resultado]?.label || 'Definir'}
-                              <ChevronDown className="h-3 w-3" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            {resultOptions.map((option) => (
-                              <DropdownMenuItem
-                                key={option.value}
-                                onClick={() =>
-                                  handleUpdateResult(arb.id, 'casa_02', option.value)
-                                }
-                              >
-                                {option.label}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <ResultadoDropdown
+                          currentResult={arb.casa_02_resultado}
+                          currentCashoutValue={arb.casa_02_valor_resultado}
+                          valorApostado={arb.casa_02_valor}
+                          onResultChange={(resultado, cashoutValue) => 
+                            handleUpdateResult(arb.id, 'casa_02', resultado, cashoutValue)
+                          }
+                        />
                       </div>
                     </TableCell>
                     <TableCell className="text-xs">
@@ -2574,30 +2508,14 @@ export default function MinhasArbitragens() {
                               {Number(arb.casa_03_odd).toFixed(3)}x • R$ {formatCurrency(arb.casa_03_valor)}
                             </div>
                           </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-7 text-xs gap-1"
-                              >
-                                {resultadoMap[arb.casa_03_resultado || '']?.label || 'Definir'}
-                                <ChevronDown className="h-3 w-3" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              {resultOptions.map((option) => (
-                                <DropdownMenuItem
-                                  key={option.value}
-                                  onClick={() =>
-                                    handleUpdateResult(arb.id, 'casa_03', option.value)
-                                  }
-                                >
-                                  {option.label}
-                                </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <ResultadoDropdown
+                            currentResult={arb.casa_03_resultado || 'aguardando'}
+                            currentCashoutValue={arb.casa_03_valor_resultado}
+                            valorApostado={arb.casa_03_valor || 0}
+                            onResultChange={(resultado, cashoutValue) => 
+                              handleUpdateResult(arb.id, 'casa_03', resultado, cashoutValue)
+                            }
+                          />
                         </div>
                       ) : (
                         <span className="text-muted-foreground">-</span>
@@ -2901,13 +2819,15 @@ export default function MinhasArbitragens() {
                     calcularGanhoPorCasa(
                       viewGanhosArbitrage.casa_01_valor,
                       viewGanhosArbitrage.casa_01_odd,
-                      viewGanhosArbitrage.casa_01_resultado
+                      viewGanhosArbitrage.casa_01_resultado,
+                      viewGanhosArbitrage.casa_01_valor_resultado
                     ) >= 0 ? 'text-success' : 'text-destructive'
                   }`}>
                     R$ {calcularGanhoPorCasa(
                       viewGanhosArbitrage.casa_01_valor,
                       viewGanhosArbitrage.casa_01_odd,
-                      viewGanhosArbitrage.casa_01_resultado
+                      viewGanhosArbitrage.casa_01_resultado,
+                      viewGanhosArbitrage.casa_01_valor_resultado
                     ).toFixed(2)}
                   </div>
                 </div>
@@ -2931,13 +2851,15 @@ export default function MinhasArbitragens() {
                     calcularGanhoPorCasa(
                       viewGanhosArbitrage.casa_02_valor,
                       viewGanhosArbitrage.casa_02_odd,
-                      viewGanhosArbitrage.casa_02_resultado
+                      viewGanhosArbitrage.casa_02_resultado,
+                      viewGanhosArbitrage.casa_02_valor_resultado
                     ) >= 0 ? 'text-success' : 'text-destructive'
                   }`}>
                     R$ {formatCurrency(calcularGanhoPorCasa(
                       viewGanhosArbitrage.casa_02_valor,
                       viewGanhosArbitrage.casa_02_odd,
-                      viewGanhosArbitrage.casa_02_resultado
+                      viewGanhosArbitrage.casa_02_resultado,
+                      viewGanhosArbitrage.casa_02_valor_resultado
                     ))}
                   </div>
                 </div>
@@ -2962,13 +2884,15 @@ export default function MinhasArbitragens() {
                       calcularGanhoPorCasa(
                         viewGanhosArbitrage.casa_03_valor || 0,
                         viewGanhosArbitrage.casa_03_odd || 0,
-                        viewGanhosArbitrage.casa_03_resultado || 'aguardando'
+                        viewGanhosArbitrage.casa_03_resultado || 'aguardando',
+                        viewGanhosArbitrage.casa_03_valor_resultado
                       ) >= 0 ? 'text-success' : 'text-destructive'
                     }`}>
                       R$ {formatCurrency(calcularGanhoPorCasa(
                         viewGanhosArbitrage.casa_03_valor || 0,
                         viewGanhosArbitrage.casa_03_odd || 0,
-                        viewGanhosArbitrage.casa_03_resultado || 'aguardando'
+                        viewGanhosArbitrage.casa_03_resultado || 'aguardando',
+                        viewGanhosArbitrage.casa_03_valor_resultado
                       ))}
                     </div>
                   </div>
@@ -2982,34 +2906,40 @@ export default function MinhasArbitragens() {
                     (calcularGanhoPorCasa(
                       viewGanhosArbitrage.casa_01_valor,
                       viewGanhosArbitrage.casa_01_odd,
-                      viewGanhosArbitrage.casa_01_resultado
+                      viewGanhosArbitrage.casa_01_resultado,
+                      viewGanhosArbitrage.casa_01_valor_resultado
                     ) +
                     calcularGanhoPorCasa(
                       viewGanhosArbitrage.casa_02_valor,
                       viewGanhosArbitrage.casa_02_odd,
-                      viewGanhosArbitrage.casa_02_resultado
+                      viewGanhosArbitrage.casa_02_resultado,
+                      viewGanhosArbitrage.casa_02_valor_resultado
                     ) +
                     calcularGanhoPorCasa(
                       viewGanhosArbitrage.casa_03_valor || 0,
                       viewGanhosArbitrage.casa_03_odd || 0,
-                      viewGanhosArbitrage.casa_03_resultado || 'aguardando'
+                      viewGanhosArbitrage.casa_03_resultado || 'aguardando',
+                      viewGanhosArbitrage.casa_03_valor_resultado
                     )) >= 0 ? 'text-success' : 'text-destructive'
                   }`}>
                     R$ {formatCurrency(
                       calcularGanhoPorCasa(
                         viewGanhosArbitrage.casa_01_valor,
                         viewGanhosArbitrage.casa_01_odd,
-                        viewGanhosArbitrage.casa_01_resultado
+                        viewGanhosArbitrage.casa_01_resultado,
+                        viewGanhosArbitrage.casa_01_valor_resultado
                       ) +
                       calcularGanhoPorCasa(
                         viewGanhosArbitrage.casa_02_valor,
                         viewGanhosArbitrage.casa_02_odd,
-                        viewGanhosArbitrage.casa_02_resultado
+                        viewGanhosArbitrage.casa_02_resultado,
+                        viewGanhosArbitrage.casa_02_valor_resultado
                       ) +
                       calcularGanhoPorCasa(
                         viewGanhosArbitrage.casa_03_valor || 0,
                         viewGanhosArbitrage.casa_03_odd || 0,
-                        viewGanhosArbitrage.casa_03_resultado || 'aguardando'
+                        viewGanhosArbitrage.casa_03_resultado || 'aguardando',
+                        viewGanhosArbitrage.casa_03_valor_resultado
                       )
                     )}
                   </div>

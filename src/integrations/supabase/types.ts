@@ -591,6 +591,7 @@ export type Database = {
         | "parcial_red"
         | "perda_total"
         | "devolvido"
+        | "cashout"
       user_role: "admin_master" | "admin" | "operador"
     }
     CompositeTypes: {
@@ -727,6 +728,7 @@ export const Constants = {
         "parcial_red",
         "perda_total",
         "devolvido",
+        "cashout",
       ],
       user_role: ["admin_master", "admin", "operador"],
     },
