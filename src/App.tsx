@@ -9,7 +9,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import MinhasArbitragens from "./pages/MinhasArbitragens";
 import CustosOperacionais from "./pages/CustosOperacionais";
-
+import CasasDeApostas from "./pages/CasasDeApostas";
 import Parcerias from "./pages/Parcerias";
 import Usuarios from "./pages/Usuarios";
 import DeleteAllUsers from "./pages/DeleteAllUsers";
@@ -56,6 +56,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Parcerias />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/casas-de-apostas"
+              element={
+                <ProtectedRoute>
+                  <CasasDeApostas />
                 </ProtectedRoute>
               }
             />
