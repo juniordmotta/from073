@@ -393,23 +393,40 @@ const Parcerias = () => {
       };
 
       if (editingPartnership) {
+        // Atualização otimística - atualizar estado local imediatamente
+        const updatedPartnership = { ...editingPartnership, ...partnershipData };
+        setPartnerships(prev => prev.map(p => 
+          p.id === editingPartnership.id ? updatedPartnership as Partnership : p
+        ));
+
         const { error } = await supabase
           .from('partnerships')
           .update(partnershipData)
           .eq('id', editingPartnership.id);
 
-        if (error) throw error;
+        if (error) {
+          // Reverter em caso de erro
+          fetchPartnerships();
+          throw error;
+        }
 
         toast({
           title: 'Sucesso',
           description: 'Parceria atualizada com sucesso',
         });
       } else {
-        const { error } = await supabase
+        const { data: insertedData, error } = await supabase
           .from('partnerships')
-          .insert([partnershipData]);
+          .insert([partnershipData])
+          .select()
+          .single();
 
         if (error) throw error;
+
+        // Atualização otimística - adicionar ao estado local
+        if (insertedData) {
+          setPartnerships(prev => [insertedData as Partnership, ...prev]);
+        }
 
         toast({
           title: 'Sucesso',
@@ -419,7 +436,6 @@ const Parcerias = () => {
 
       setIsDialogOpen(false);
       resetForm();
-      fetchPartnerships();
     } catch (error) {
       console.error('Erro ao salvar parceria:', error);
       toast({
@@ -433,11 +449,16 @@ const Parcerias = () => {
   const handleDelete = async () => {
     if (!deletePartnershipTarget) return;
 
+    // Atualização otimística - remover do estado local imediatamente
+    const deletedPartnership = deletePartnershipTarget;
+    setPartnerships(prev => prev.filter(p => p.id !== deletedPartnership.id));
+    setDeletePartnershipTarget(null);
+
     try {
       const { error } = await supabase
         .from('partnerships')
         .delete()
-        .eq('id', deletePartnershipTarget.id);
+        .eq('id', deletedPartnership.id);
 
       if (error) throw error;
 
@@ -445,10 +466,9 @@ const Parcerias = () => {
         title: 'Sucesso',
         description: 'Parceria excluída com sucesso',
       });
-
-      setDeletePartnershipTarget(null);
-      fetchPartnerships();
     } catch (error) {
+      // Reverter em caso de erro
+      setPartnerships(prev => [...prev, deletedPartnership]);
       console.error('Erro ao excluir parceria:', error);
       toast({
         title: 'Erro',
@@ -839,78 +859,103 @@ const Parcerias = () => {
   };
 
   const updateHouseStatus = async (partnershipId: string, houseName: string, newStatus: string) => {
-    try {
-      // Verificar se já existe um registro para esta casa
-      const { data: existing, error: fetchError } = await supabase
-        .from('partnership_houses')
-        .select('id')
-        .eq('partnership_id', partnershipId)
-        .eq('house_name', houseName)
-        .maybeSingle();
+    // Atualização otimística - atualizar estado local imediatamente
+    if (partnershipDetails) {
+      const originalCasas = [...partnershipDetails.casas];
+      setPartnershipDetails((prev: any) => ({
+        ...prev,
+        casas: prev.casas.map((casa: any) => 
+          casa.nome === houseName ? { ...casa, status: newStatus } : casa
+        ),
+      }));
 
-      if (fetchError) throw fetchError;
-
-      if (existing) {
-        // Atualizar registro existente
-        const { error: updateError } = await supabase
+      try {
+        // Verificar se já existe um registro para esta casa
+        const { data: existing, error: fetchError } = await supabase
           .from('partnership_houses')
-          .update({ status: newStatus })
-          .eq('id', existing.id);
+          .select('id')
+          .eq('partnership_id', partnershipId)
+          .eq('house_name', houseName)
+          .maybeSingle();
 
-        if (updateError) throw updateError;
-      } else {
-        // Criar novo registro
-        const { error: insertError } = await supabase
-          .from('partnership_houses')
-          .insert({
-            partnership_id: partnershipId,
-            house_name: houseName,
-            status: newStatus,
-          });
+        if (fetchError) throw fetchError;
 
-        if (insertError) throw insertError;
+        if (existing) {
+          const { error: updateError } = await supabase
+            .from('partnership_houses')
+            .update({ status: newStatus })
+            .eq('id', existing.id);
+
+          if (updateError) throw updateError;
+        } else {
+          const { error: insertError } = await supabase
+            .from('partnership_houses')
+            .insert({
+              partnership_id: partnershipId,
+              house_name: houseName,
+              status: newStatus,
+            });
+
+          if (insertError) throw insertError;
+        }
+
+        toast({
+          title: 'Sucesso',
+          description: `Status da casa ${houseName} atualizado`,
+        });
+      } catch (error) {
+        // Reverter em caso de erro
+        setPartnershipDetails((prev: any) => ({
+          ...prev,
+          casas: originalCasas,
+        }));
+        console.error('Erro ao atualizar status da casa:', error);
+        toast({
+          title: 'Erro',
+          description: 'Não foi possível atualizar o status da casa',
+          variant: 'destructive',
+        });
       }
-
-      toast({
-        title: 'Sucesso',
-        description: `Status da casa ${houseName} atualizado para ${newStatus}`,
-      });
-
-      // Recarregar detalhes da parceria
-      loadPartnershipDetails(partnershipId);
-    } catch (error) {
-      console.error('Erro ao atualizar status da casa:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível atualizar o status da casa',
-        variant: 'destructive',
-      });
     }
   };
 
   const deleteManualHouse = async (partnershipId: string, houseName: string) => {
-    try {
-      const { error } = await supabase
-        .from('partnership_houses')
-        .delete()
-        .eq('partnership_id', partnershipId)
-        .eq('house_name', houseName);
+    // Atualização otimística - remover do estado local imediatamente
+    if (partnershipDetails) {
+      const deletedHouse = partnershipDetails.casas.find((c: any) => c.nome === houseName);
+      setPartnershipDetails((prev: any) => ({
+        ...prev,
+        casas: prev.casas.filter((casa: any) => casa.nome !== houseName),
+      }));
 
-      if (error) throw error;
+      try {
+        const { error } = await supabase
+          .from('partnership_houses')
+          .delete()
+          .eq('partnership_id', partnershipId)
+          .eq('house_name', houseName);
 
-      toast({
-        title: 'Sucesso',
-        description: `Casa "${houseName}" removida com sucesso`,
-      });
+        if (error) throw error;
 
-      loadPartnershipDetails(partnershipId);
-    } catch (error) {
-      console.error('Erro ao deletar casa:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível remover a casa',
-        variant: 'destructive',
-      });
+        toast({
+          title: 'Sucesso',
+          description: `Casa "${houseName}" removida com sucesso`,
+        });
+      } catch (error) {
+        // Reverter em caso de erro
+        if (deletedHouse) {
+          setPartnershipDetails((prev: any) => ({
+            ...prev,
+            casas: [...prev.casas, deletedHouse],
+          }));
+        }
+        console.error('Erro ao deletar casa:', error);
+        toast({
+          title: 'Erro',
+          description: 'Não foi possível remover a casa',
+          variant: 'destructive',
+        });
+      }
     }
   };
 
