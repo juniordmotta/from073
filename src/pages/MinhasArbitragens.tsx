@@ -1835,49 +1835,73 @@ export default function MinhasArbitragens() {
           </div>
         </div>
 
-        {/* Card de Totais */}
+        {/* Cards de resumo - Layout igual ao Dashboard */}
         {filteredArbitragens.length > 0 && (
-          <div className="grid gap-3 grid-cols-1 md:grid-cols-3">
-            <div className="rounded-lg border bg-card p-3 animate-fade-in" style={{ animationDelay: '0ms' }}>
-              <div className="text-xs text-muted-foreground mb-1">Total Investido</div>
-              <div className="text-2xl font-bold">R$ {formatCurrency(totais.totalInvestido)}</div>
-              {isOnlyAguardando && totalBanca > 0 ? (
-                <>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    de R$ {formatCurrency(totalBanca)} da banca
-                  </p>
-                  <div className="mt-2">
-                    <Progress 
-                      value={Math.min(bancaPercentage, 100)} 
-                      className="h-2"
-                    />
-                    <p className="text-xs text-muted-foreground font-medium mt-1">
-                      {formatCurrency(bancaPercentage)}% utilizado
-                    </p>
-                  </div>
-                </>
-              ) : null}
-            </div>
-            <div className="rounded-lg border bg-card p-3 space-y-2 animate-fade-in" style={{ animationDelay: '50ms', animationFillMode: 'backwards' }}>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Total de Arbitragens</span>
-                <span className="text-lg font-bold">{filteredArbitragens.length}</span>
+          <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
+            {/* Total Investido */}
+            <div className="rounded-lg border bg-card p-2 animate-fade-in">
+              <div className="flex items-center gap-1 mb-0.5">
+                <span className="text-[10px] text-muted-foreground">Total Investido</span>
               </div>
-              <div className="border-t pt-2 flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Lucro Total</span>
-                <span className={`text-lg font-bold ${totais.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
+              <div className="text-lg font-bold">R$ {formatCurrency(totais.totalInvestido)}</div>
+              {isOnlyAguardando && totalBanca > 0 && (
+                <>
+                  <Progress 
+                    value={Math.min(bancaPercentage, 100)} 
+                    className="h-1.5 mt-1"
+                  />
+                  <p className="text-[9px] text-muted-foreground">
+                    {formatCurrency(bancaPercentage)}% da banca
+                  </p>
+                </>
+              )}
+            </div>
+
+            {/* Quantidade + Lucro + ROI */}
+            <div className="rounded-lg border bg-card p-2 animate-fade-in" style={{ animationDelay: '50ms', animationFillMode: 'backwards' }}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] text-muted-foreground">Total</span>
+                <span className="text-sm font-bold">{filteredArbitragens.length}</span>
+              </div>
+              <div className="border-t pt-1 flex items-center justify-between">
+                <span className="text-[10px] text-muted-foreground">Lucro</span>
+                <span className={`text-sm font-bold ${totais.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
                   R$ {formatCurrency(totais.totalLucro)}
                 </span>
               </div>
-              <div className="border-t pt-2 flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">ROI</span>
-                <span className={`text-lg font-bold ${totais.totalInvestido > 0 && (totais.totalLucro / totais.totalInvestido) >= 0 ? 'text-success' : 'text-destructive'}`}>
+              <div className="border-t pt-1 flex items-center justify-between">
+                <span className="text-[10px] text-muted-foreground">ROI</span>
+                <span className={`text-sm font-bold ${totais.totalInvestido > 0 && (totais.totalLucro / totais.totalInvestido) >= 0 ? 'text-success' : 'text-destructive'}`}>
                   {totais.totalInvestido > 0 ? formatCurrency((totais.totalLucro / totais.totalInvestido) * 100) : '0'}%
                 </span>
               </div>
             </div>
+
+            {/* Período e Filtros */}
+            <div className="rounded-lg border bg-card p-2 animate-fade-in" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
+              <div className="flex items-center gap-1 mb-0.5">
+                <span className="text-[10px] text-muted-foreground">Período</span>
+              </div>
+              <div className="text-sm font-medium">
+                {filterStartDate && filterEndDate ? (
+                  <>
+                    {format(new Date(filterStartDate + 'T00:00:00'), 'dd/MM')} - {format(new Date(filterEndDate + 'T00:00:00'), 'dd/MM')}
+                  </>
+                ) : (
+                  'Mês Atual'
+                )}
+              </div>
+              <div className="border-t pt-1 mt-1 flex items-center justify-between">
+                <span className="text-[9px] text-muted-foreground">Filtro</span>
+                <span className="text-xs font-medium capitalize">
+                  {filterStatus.includes('all') ? 'Todos' : filterStatus.join(', ')}
+                </span>
+              </div>
+            </div>
+
+            {/* Meta Mensal */}
             {user?.id && (
-              <div className="animate-fade-in" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
+              <div className="animate-fade-in" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
                 <MonthlyGoalCard
                   userId={user.id}
                   selectedUserIds={isAdmin && filterUser.length > 0 ? filterUser : undefined}
