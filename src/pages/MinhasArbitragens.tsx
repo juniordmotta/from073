@@ -930,10 +930,52 @@ export default function MinhasArbitragens() {
         arbitrageData.casa_03_parceria_id = selectedPartnership03;
       }
 
-      const { error: insertError } = await supabase.from('arbitrages').insert(arbitrageData);
+      const { data: insertedData, error: insertError } = await supabase
+        .from('arbitrages')
+        .insert(arbitrageData)
+        .select(`
+          id,
+          descricao,
+          data_evento,
+          created_at,
+          esporte_liga,
+          casa_01_nome,
+          casa_01_odd,
+          casa_01_valor,
+          casa_01_resultado,
+          casa_01_mercado,
+          casa_01_valor_resultado,
+          casa_01_parceria_id,
+          casa_02_nome,
+          casa_02_odd,
+          casa_02_valor,
+          casa_02_resultado,
+          casa_02_mercado,
+          casa_02_valor_resultado,
+          casa_02_parceria_id,
+          casa_03_nome,
+          casa_03_odd,
+          casa_03_valor,
+          casa_03_resultado,
+          casa_03_mercado,
+          casa_03_valor_resultado,
+          casa_03_parceria_id,
+          porcentagem,
+          retorno_previsto,
+          lucro_projetado,
+          lucro_real,
+          status,
+          user_id
+        `)
+        .single();
 
       if (insertError) {
         throw insertError;
+      }
+
+      // Atualização otimística - adicionar ao estado local imediatamente
+      if (insertedData) {
+        setArbitragens(prev => [...prev, insertedData as unknown as Arbitrage]);
       }
 
       toast({
@@ -962,7 +1004,6 @@ export default function MinhasArbitragens() {
         retorno_previsto: '',
         lucro_projetado: '',
       });
-      loadArbitragens();
     } catch (error: any) {
       console.error('Erro ao criar arbitragem:', error);
       toast({
@@ -1015,29 +1056,22 @@ export default function MinhasArbitragens() {
 
     // Cálculo dos resultados
     if (resultado === 'green') {
-      // Ganhou: valor apostado * odd
       valorResultado = valorApostado * odd;
     } else if (resultado === 'red') {
-      // Perdeu: 0
       valorResultado = 0;
     } else if (resultado === 'parcial_green') {
-      // Meio Green: (stake/2) + (stake/2 * odd)
       valorResultado = (valorApostado / 2) + (valorApostado / 2 * odd);
     } else if (resultado === 'parcial_red') {
-      // Meio Red: (stake/2)
       valorResultado = valorApostado / 2;
     } else if (resultado === 'devolvido') {
-      // Devolvido: aposta devolvida
       valorResultado = valorApostado;
     } else if (resultado === 'aguardando') {
-      // Aguardando: ainda sem resultado
       valorResultado = 0;
     }
 
     const updateField = casa === 'casa_01' ? 'casa_01_resultado' : casa === 'casa_02' ? 'casa_02_resultado' : 'casa_03_resultado';
     const valorField = casa === 'casa_01' ? 'casa_01_valor_resultado' : casa === 'casa_02' ? 'casa_02_valor_resultado' : 'casa_03_valor_resultado';
     
-    // Atualizar o resultado individual da casa
     const updateData: any = {
       [updateField]: resultado,
       [valorField]: valorResultado,
@@ -1065,13 +1099,23 @@ export default function MinhasArbitragens() {
       const totalInvestido = Number(arb.casa_01_valor) + Number(arb.casa_02_valor) + Number(arb.casa_03_valor || 0);
       const totalRetorno = Number(casa01ValorResultado) + Number(casa02ValorResultado) + Number(casa03ValorResultado);
       lucroReal = totalRetorno - totalInvestido;
-
-      // Status: green se lucro >= 0 (positivo ou zerado), red se lucro < 0 (negativo)
       statusGeral = lucroReal >= 0 ? 'green' : 'red';
     }
 
     updateData.status = statusGeral;
     updateData.lucro_real = lucroReal;
+
+    // Atualização otimística - atualizar estado local imediatamente
+    setArbitragens(prev => prev.map(a => {
+      if (a.id !== arbitrageId) return a;
+      return {
+        ...a,
+        [updateField]: resultado,
+        [valorField]: valorResultado,
+        status: statusGeral,
+        lucro_real: lucroReal,
+      };
+    }));
 
     const { error } = await supabase
       .from('arbitrages')
@@ -1079,6 +1123,8 @@ export default function MinhasArbitragens() {
       .eq('id', arbitrageId);
 
     if (error) {
+      // Reverter em caso de erro - recarregar dados
+      loadArbitragens();
       toast({
         variant: 'destructive',
         title: 'Erro ao atualizar resultado',
@@ -1089,12 +1135,15 @@ export default function MinhasArbitragens() {
         title: 'Resultado atualizado!',
         description: 'O resultado foi registrado com sucesso.',
       });
-      loadArbitragens();
     }
   };
 
   const handleDelete = async () => {
     if (!deleteId) return;
+
+    // Atualização otimística - remover do estado local imediatamente
+    const deletedArb = arbitragens.find(a => a.id === deleteId);
+    setArbitragens(prev => prev.filter(a => a.id !== deleteId));
 
     const { error } = await supabase
       .from('arbitrages')
@@ -1102,6 +1151,10 @@ export default function MinhasArbitragens() {
       .eq('id', deleteId);
 
     if (error) {
+      // Reverter em caso de erro - restaurar item deletado
+      if (deletedArb) {
+        setArbitragens(prev => [...prev, deletedArb]);
+      }
       toast({
         variant: 'destructive',
         title: 'Erro ao excluir arbitragem',
@@ -1112,7 +1165,6 @@ export default function MinhasArbitragens() {
         title: 'Arbitragem excluída!',
         description: 'A arbitragem foi removida com sucesso.',
       });
-      loadArbitragens();
     }
 
     setDeleteId(null);
@@ -1162,12 +1214,28 @@ export default function MinhasArbitragens() {
       updateData.casa_03_valor = editArbitrage.casa_03_valor;
     }
 
+    // Atualização otimística - atualizar estado local imediatamente
+    const originalArb = arbitragens.find(a => a.id === editArbitrage.id);
+    setArbitragens(prev => prev.map(a => {
+      if (a.id !== editArbitrage.id) return a;
+      return {
+        ...a,
+        ...updateData,
+      };
+    }));
+    
+    setEditArbitrage(null);
+
     const { error } = await supabase
       .from('arbitrages')
       .update(updateData)
       .eq('id', editArbitrage.id);
 
     if (error) {
+      // Reverter em caso de erro - restaurar dados originais
+      if (originalArb) {
+        setArbitragens(prev => prev.map(a => a.id === originalArb.id ? originalArb : a));
+      }
       toast({
         variant: 'destructive',
         title: 'Erro ao atualizar arbitragem',
@@ -1180,9 +1248,6 @@ export default function MinhasArbitragens() {
       title: 'Arbitragem atualizada!',
       description: 'As alterações foram salvas com sucesso.',
     });
-    
-    setEditArbitrage(null);
-    await loadArbitragens();
   };
 
   const handleDuplicate = (arb: Arbitrage) => {
