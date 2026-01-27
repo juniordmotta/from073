@@ -1033,6 +1033,9 @@ export default function MinhasArbitragens() {
         setArbitragens(prev => [...prev, insertedData as unknown as Arbitrage]);
       }
 
+      // Recarregar stats do mês para atualizar o card de lucro
+      loadUserMonthStats();
+      
       toast({
         title: 'Arbitragem criada!',
         description: 'A arbitragem foi cadastrada com sucesso.',
@@ -1222,6 +1225,8 @@ export default function MinhasArbitragens() {
         description: error.message,
       });
     } else {
+      // Recarregar stats do mês para atualizar o card de lucro
+      loadUserMonthStats();
       toast({
         title: 'Arbitragem excluída!',
         description: 'A arbitragem foi removida com sucesso.',
@@ -1304,6 +1309,9 @@ export default function MinhasArbitragens() {
       });
       return;
     }
+
+    // Recarregar stats do mês para atualizar o card de lucro
+    loadUserMonthStats();
 
     toast({
       title: 'Arbitragem atualizada!',
