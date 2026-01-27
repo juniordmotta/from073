@@ -63,10 +63,14 @@ export default function RelatorioCasas() {
         .select('id, name')
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        // Operadores não têm permissão para listar todos os profiles - comportamento esperado
+        console.warn('Erro ao carregar usuários (RLS):', error.message);
+        return;
+      }
       setUsuarios(data || []);
     } catch (error) {
-      console.error('Erro ao carregar usuários:', error);
+      console.error('Erro inesperado ao carregar usuários:', error);
     }
   };
 
@@ -118,7 +122,11 @@ export default function RelatorioCasas() {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.warn('Erro ao carregar dados (RLS):', error.message);
+        setCasasStats([]);
+        return;
+      }
 
       // Processar dados por casa de aposta
       const casasMap = new Map<string, CasaStats>();
@@ -140,7 +148,8 @@ export default function RelatorioCasas() {
       const casasArray = Array.from(casasMap.values()).sort((a, b) => b.lucroReal - a.lucroReal);
       setCasasStats(casasArray);
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
+      console.error('Erro inesperado ao carregar dados:', error);
+      setCasasStats([]);
     } finally {
       setLoading(false);
     }

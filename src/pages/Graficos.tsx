@@ -50,102 +50,125 @@ export default function Graficos() {
   }, [debouncedSelectedUser, debouncedSelectedStatus, debouncedStartDate, debouncedEndDate, groupBy, isAdmin, debouncedDateFilterType]);
 
   const loadUsers = async () => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, name')
-      .order('name');
-    
-    if (data) {
-      setUsers(data);
-      if (selectedUser.length === 0 && isAdmin) {
-        setSelectedUser(data.map(u => u.id));
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .order('name');
+      
+      if (error) {
+        // Operadores não têm permissão para listar todos os profiles - comportamento esperado
+        console.warn('Erro ao carregar usuários:', error.message);
+        return;
       }
+      
+      if (data) {
+        setUsers(data);
+        if (selectedUser.length === 0 && isAdmin) {
+          setSelectedUser(data.map(u => u.id));
+        }
+      }
+    } catch (error) {
+      console.error('Erro inesperado ao carregar usuários:', error);
     }
   };
 
   const loadChartData = useCallback(async () => {
-    let query = supabase
-      .from('arbitrages')
-      .select('created_at, data_evento, lucro_projetado, lucro_real, casa_01_valor, casa_02_valor, casa_03_valor, status');
+    if (!user?.id) return;
     
-    if (!isAdmin) {
-      query = query.eq('user_id', user?.id);
-    } else if (debouncedSelectedUser.length > 0) {
-      query = query.in('user_id', debouncedSelectedUser);
-    }
-
-    if (!debouncedSelectedStatus.includes('all')) {
-      const conditions: string[] = [];
+    try {
+      let query = supabase
+        .from('arbitrages')
+        .select('created_at, data_evento, lucro_projetado, lucro_real, casa_01_valor, casa_02_valor, casa_03_valor, status');
       
-      if (debouncedSelectedStatus.includes('green')) {
-        conditions.push('status.eq.green', 'status.eq.parcial_green', 'status.eq.devolvido');
+      if (!isAdmin) {
+        query = query.eq('user_id', user.id);
+      } else if (debouncedSelectedUser.length > 0) {
+        query = query.in('user_id', debouncedSelectedUser);
       }
-      if (debouncedSelectedStatus.includes('red')) {
-        conditions.push('status.eq.red', 'status.eq.parcial_red', 'status.eq.perda_total');
-      }
-      if (debouncedSelectedStatus.includes('aguardando')) {
-        conditions.push('status.eq.aguardando');
-      }
-      
-      if (conditions.length > 0) {
-        query = query.or(conditions.join(','));
-      }
-    }
 
-    const dateColumn = debouncedDateFilterType === 'jogo' ? 'data_evento' : 'created_at';
-    if (debouncedStartDate) {
-      query = query.gte(dateColumn, new Date(debouncedStartDate).toISOString());
-    }
-
-    if (debouncedEndDate) {
-      const endOfDay = new Date(debouncedEndDate);
-      endOfDay.setHours(23, 59, 59, 999);
-      query = query.lte(dateColumn, endOfDay.toISOString());
-    }
-
-    query = query.order('created_at', { ascending: true });
-
-    const { data } = await query;
-
-    if (data) {
-      // Agrupar dados por período
-      const groupedData = new Map<string, { lucro: number; investido: number }>();
-
-      data.forEach((arb) => {
-        const date = new Date(arb.created_at);
-        let key: string;
-
-        if (groupBy === 'day') {
-          key = format(date, 'dd/MM/yyyy', { locale: ptBR });
-        } else if (groupBy === 'week') {
-          const weekStart = new Date(date);
-          weekStart.setDate(date.getDate() - date.getDay());
-          key = format(weekStart, 'dd/MM/yyyy', { locale: ptBR });
-        } else {
-          key = format(date, 'MM/yyyy', { locale: ptBR });
+      if (!debouncedSelectedStatus.includes('all')) {
+        const conditions: string[] = [];
+        
+        if (debouncedSelectedStatus.includes('green')) {
+          conditions.push('status.eq.green', 'status.eq.parcial_green', 'status.eq.devolvido');
         }
-
-        const lucro = arb.status === 'aguardando' ? Number(arb.lucro_projetado) : Number(arb.lucro_real);
-        const investido = Number(arb.casa_01_valor) + Number(arb.casa_02_valor) + Number(arb.casa_03_valor || 0);
-
-        if (!groupedData.has(key)) {
-          groupedData.set(key, { lucro: 0, investido: 0 });
+        if (debouncedSelectedStatus.includes('red')) {
+          conditions.push('status.eq.red', 'status.eq.parcial_red', 'status.eq.perda_total');
         }
+        if (debouncedSelectedStatus.includes('aguardando')) {
+          conditions.push('status.eq.aguardando');
+        }
+        
+        if (conditions.length > 0) {
+          query = query.or(conditions.join(','));
+        }
+      }
 
-        const current = groupedData.get(key)!;
-        current.lucro += lucro;
-        current.investido += investido;
-      });
+      const dateColumn = debouncedDateFilterType === 'jogo' ? 'data_evento' : 'created_at';
+      if (debouncedStartDate) {
+        query = query.gte(dateColumn, new Date(debouncedStartDate).toISOString());
+      }
 
-      // Converter para array e calcular ROI
-      const chartArray: ChartData[] = Array.from(groupedData.entries()).map(([date, values]) => ({
-        date,
-        lucro: values.lucro,
-        investido: values.investido,
-        roi: values.investido > 0 ? (values.lucro / values.investido) * 100 : 0,
-      }));
+      if (debouncedEndDate) {
+        const endOfDay = new Date(debouncedEndDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        query = query.lte(dateColumn, endOfDay.toISOString());
+      }
 
-      setChartData(chartArray);
+      query = query.order('created_at', { ascending: true });
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.warn('Erro ao carregar dados do gráfico:', error.message);
+        setChartData([]);
+        return;
+      }
+
+      if (data) {
+        // Agrupar dados por período
+        const groupedData = new Map<string, { lucro: number; investido: number }>();
+
+        data.forEach((arb) => {
+          const date = new Date(arb.created_at);
+          let key: string;
+
+          if (groupBy === 'day') {
+            key = format(date, 'dd/MM/yyyy', { locale: ptBR });
+          } else if (groupBy === 'week') {
+            const weekStart = new Date(date);
+            weekStart.setDate(date.getDate() - date.getDay());
+            key = format(weekStart, 'dd/MM/yyyy', { locale: ptBR });
+          } else {
+            key = format(date, 'MM/yyyy', { locale: ptBR });
+          }
+
+          const lucro = arb.status === 'aguardando' ? Number(arb.lucro_projetado) : Number(arb.lucro_real);
+          const investido = Number(arb.casa_01_valor) + Number(arb.casa_02_valor) + Number(arb.casa_03_valor || 0);
+
+          if (!groupedData.has(key)) {
+            groupedData.set(key, { lucro: 0, investido: 0 });
+          }
+
+          const current = groupedData.get(key)!;
+          current.lucro += lucro;
+          current.investido += investido;
+        });
+
+        // Converter para array e calcular ROI
+        const chartArray: ChartData[] = Array.from(groupedData.entries()).map(([date, values]) => ({
+          date,
+          lucro: values.lucro,
+          investido: values.investido,
+          roi: values.investido > 0 ? (values.lucro / values.investido) * 100 : 0,
+        }));
+
+        setChartData(chartArray);
+      }
+    } catch (error) {
+      console.error('Erro inesperado ao carregar dados do gráfico:', error);
+      setChartData([]);
     }
   }, [isAdmin, user?.id, debouncedSelectedUser, debouncedSelectedStatus, debouncedStartDate, debouncedEndDate, groupBy, debouncedDateFilterType]);
 
