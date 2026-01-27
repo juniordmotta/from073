@@ -205,6 +205,7 @@ const Parcerias = () => {
   const [deletePartnershipTarget, setDeletePartnershipTarget] = useState<Partnership | null>(null);
   const [houseStatusFilter, setHouseStatusFilter] = useState<string[]>([]);
   const [houseSearchTerm, setHouseSearchTerm] = useState('');
+  const [recentlyUpdatedHouse, setRecentlyUpdatedHouse] = useState<string | null>(null);
   const debouncedSearch = useDebounce(searchTerm, 300);
   const debouncedHouseSearch = useDebounce(houseSearchTerm, 300);
 
@@ -880,6 +881,9 @@ const Parcerias = () => {
     if (partnershipDetails) {
       const originalCasas = [...partnershipDetails.casas];
       
+      // Marcar casa como recém-atualizada para animação
+      setRecentlyUpdatedHouse(houseName);
+      
       // Atualizar status e reordenar
       const updatedCasas = partnershipDetails.casas.map((casa: any) => 
         casa.nome === houseName ? { ...casa, status: newStatus } : casa
@@ -890,6 +894,9 @@ const Parcerias = () => {
         ...prev,
         casas: sortedCasas,
       }));
+      
+      // Remover highlight após animação
+      setTimeout(() => setRecentlyUpdatedHouse(null), 1500);
 
       try {
         // Verificar se já existe um registro para esta casa
@@ -2027,7 +2034,14 @@ const Parcerias = () => {
                                     c.lucroLiquido.toString().includes(searchLower);
                                   return statusMatch && searchMatch;
                                 }).map((casa: any, index: number) => (
-                                <TableRow key={index}>
+                                <TableRow 
+                                  key={casa.nome}
+                                  className={`transition-all duration-500 ease-out ${
+                                    recentlyUpdatedHouse === casa.nome 
+                                      ? 'animate-fade-in bg-primary/10 ring-2 ring-primary/30' 
+                                      : ''
+                                  }`}
+                                >
                                   <TableCell>
                                     <Select
                                       value={casa.status}
