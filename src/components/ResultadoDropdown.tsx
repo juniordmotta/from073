@@ -4,6 +4,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -107,15 +108,18 @@ export function ResultadoDropdown({
         <DropdownMenuContent className="bg-background z-50">
           {/* Se já é cashout, mostrar opção de editar primeiro */}
           {currentResult === 'cashout' && (
-            <DropdownMenuItem
-              onClick={() => {
-                setCashoutValue(currentCashoutValue ? String(currentCashoutValue) : '');
-                setCashoutDialogOpen(true);
-              }}
-              className="font-medium"
-            >
-              ✏️ Editar Cashout
-            </DropdownMenuItem>
+            <>
+              <DropdownMenuItem
+                onClick={() => {
+                  setCashoutValue(currentCashoutValue ? String(currentCashoutValue) : '');
+                  setCashoutDialogOpen(true);
+                }}
+                className="font-medium"
+              >
+                ✏️ Editar Cashout
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
           )}
           {resultOptions.map((option) => (
             <DropdownMenuItem
