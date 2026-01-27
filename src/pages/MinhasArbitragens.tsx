@@ -240,6 +240,7 @@ export default function MinhasArbitragens() {
   const [userMonthStats, setUserMonthStats] = useState({
     totalLucro: 0,
     totalInvestido: 0,
+    diasComApostas: 0,
   });
   
   // Forçar visualização em cards no mobile
@@ -726,7 +727,7 @@ export default function MinhasArbitragens() {
 
       const { data, error } = await supabase
         .from('arbitrages')
-        .select('status, lucro_projetado, lucro_real, casa_01_valor, casa_02_valor, casa_03_valor')
+        .select('status, lucro_projetado, lucro_real, casa_01_valor, casa_02_valor, casa_03_valor, created_at')
         .eq('user_id', user.id)
         .gte('created_at', firstDayOfMonth.toISOString())
         .lte('created_at', lastDayOfMonth.toISOString());
@@ -747,9 +748,15 @@ export default function MinhasArbitragens() {
           0
         );
 
+        // Contar dias únicos com apostas
+        const uniqueDays = new Set(
+          data.map(arb => format(new Date(arb.created_at), 'yyyy-MM-dd'))
+        );
+
         setUserMonthStats({
           totalLucro,
           totalInvestido,
+          diasComApostas: uniqueDays.size,
         });
       }
     } catch (error) {
@@ -1926,7 +1933,7 @@ export default function MinhasArbitragens() {
               </div>
             </div>
 
-            {/* Lucro do Mês (sempre do usuário logado) */}
+            {/* Lucro do Mês + Média/Dia (sempre do usuário logado) */}
             <div className="rounded-lg border bg-card p-2 animate-fade-in" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
               <div className="flex items-center gap-1 mb-0.5">
                 {userMonthStats.totalLucro >= 0 ? (
@@ -1942,6 +1949,12 @@ export default function MinhasArbitragens() {
               <div className="border-t pt-1 mt-1 flex items-center justify-between">
                 <span className="text-[9px] text-muted-foreground">Investido</span>
                 <span className="text-xs font-medium">R$ {formatCurrency(userMonthStats.totalInvestido)}</span>
+              </div>
+              <div className="border-t pt-1 mt-1 flex items-center justify-between">
+                <span className="text-[9px] text-muted-foreground">Média/Dia ({userMonthStats.diasComApostas} dias)</span>
+                <span className={`text-xs font-medium ${userMonthStats.diasComApostas > 0 && (userMonthStats.totalLucro / userMonthStats.diasComApostas) >= 0 ? 'text-success' : 'text-destructive'}`}>
+                  R$ {userMonthStats.diasComApostas > 0 ? formatCurrency(userMonthStats.totalLucro / userMonthStats.diasComApostas) : '0.00'}
+                </span>
               </div>
             </div>
 
