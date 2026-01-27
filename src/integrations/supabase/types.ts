@@ -247,6 +247,33 @@ export type Database = {
         }
         Relationships: []
       }
+      hidden_betting_houses: {
+        Row: {
+          created_at: string
+          group_id: string
+          hidden_by: string
+          house_id: string
+          house_name: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          hidden_by: string
+          house_id: string
+          house_name: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          hidden_by?: string
+          house_id?: string
+          house_name?: string
+          id?: string
+        }
+        Relationships: []
+      }
       monthly_goals: {
         Row: {
           created_at: string

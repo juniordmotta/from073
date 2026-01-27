@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { 
   Search, 
   Plus, 
@@ -21,7 +22,10 @@ import {
   Home,
   Edit3,
   Check,
-  X
+  X,
+  Trash2,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { bettingHouseGroups, BettingHouse, BettingHouseGroup } from '@/data/bettingHousesData';
 import { highlightText } from '@/lib/utils/highlightText';
@@ -32,10 +36,19 @@ interface Partnership {
   status: string;
 }
 
+interface HiddenHouse {
+  id: string;
+  house_id: string;
+  house_name: string;
+  group_id: string;
+}
+
 const CasasDeApostas = () => {
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedHouse, setSelectedHouse] = useState<BettingHouse | null>(null);
@@ -48,27 +61,62 @@ const CasasDeApostas = () => {
   // Estados para edição de nome
   const [editingHouseId, setEditingHouseId] = useState<string | null>(null);
   const [editedName, setEditedName] = useState('');
+  
+  // Estados para casas ocultas
+  const [hiddenHouses, setHiddenHouses] = useState<HiddenHouse[]>([]);
+  const [showHidden, setShowHidden] = useState(false);
+  const [houseToDelete, setHouseToDelete] = useState<{ house: BettingHouse; groupId: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  // Filtrar grupos e casas baseado na busca
+  // Carregar casas ocultas ao montar
+  useEffect(() => {
+    if (isAdmin) {
+      loadHiddenHouses();
+    }
+  }, [isAdmin]);
+
+  const loadHiddenHouses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('hidden_betting_houses')
+        .select('id, house_id, house_name, group_id');
+      
+      if (error) throw error;
+      setHiddenHouses(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar casas ocultas:', error);
+    }
+  };
+
+  const hiddenHouseIds = useMemo(() => {
+    return new Set(hiddenHouses.map(h => h.house_id));
+  }, [hiddenHouses]);
+
+  // Filtrar grupos e casas baseado na busca e casas ocultas
   const filteredGroups = useMemo(() => {
+    let groups = bettingHouseGroups;
+    
+    // Filtrar casas ocultas (a menos que showHidden esteja ativo)
+    if (!showHidden && hiddenHouseIds.size > 0) {
+      groups = groups.map(group => ({
+        ...group,
+        houses: group.houses.filter(house => !hiddenHouseIds.has(house.id))
+      })).filter(group => group.houses.length > 0);
+    }
+    
     if (!searchTerm.trim()) {
-      return bettingHouseGroups;
+      return groups;
     }
     
     const normalizedSearch = searchTerm.toLowerCase().trim();
     
-    return bettingHouseGroups
+    return groups
       .map(group => {
-        // Verificar se o nome do grupo corresponde
         const groupMatches = group.name.toLowerCase().includes(normalizedSearch);
-        
-        // Filtrar casas que correspondem
         const matchingHouses = group.houses.filter(house => 
           house.name.toLowerCase().includes(normalizedSearch)
         );
         
-        // Se o grupo corresponde, mostrar todas as casas
-        // Se não, mostrar apenas as casas que correspondem
         if (groupMatches) {
           return group;
         } else if (matchingHouses.length > 0) {
@@ -77,7 +125,7 @@ const CasasDeApostas = () => {
         return null;
       })
       .filter((group): group is BettingHouseGroup => group !== null);
-  }, [searchTerm]);
+  }, [searchTerm, hiddenHouseIds, showHidden]);
 
   // Carregar parcerias do usuário
   const loadPartnerships = async () => {
@@ -201,10 +249,84 @@ const CasasDeApostas = () => {
     setEditedName('');
   };
 
-  // Contar total de casas
+  // Contar total de casas (visíveis)
   const totalHouses = useMemo(() => {
     return bettingHouseGroups.reduce((acc, group) => acc + group.houses.length, 0);
   }, []);
+
+  const visibleHouses = useMemo(() => {
+    return totalHouses - hiddenHouses.length;
+  }, [totalHouses, hiddenHouses.length]);
+
+  // Ocultar casa do catálogo
+  const handleHideHouse = async () => {
+    if (!houseToDelete || !user?.id) return;
+    
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('hidden_betting_houses')
+        .insert({
+          house_id: houseToDelete.house.id,
+          house_name: houseToDelete.house.name,
+          group_id: houseToDelete.groupId,
+          hidden_by: user.id,
+        });
+
+      if (error) throw error;
+
+      setHiddenHouses(prev => [...prev, {
+        id: crypto.randomUUID(),
+        house_id: houseToDelete.house.id,
+        house_name: houseToDelete.house.name,
+        group_id: houseToDelete.groupId,
+      }]);
+
+      toast({
+        title: 'Casa removida!',
+        description: `${houseToDelete.house.name} foi removida do catálogo.`,
+      });
+
+      setHouseToDelete(null);
+    } catch (error: any) {
+      console.error('Erro ao ocultar casa:', error);
+      toast({
+        title: 'Erro',
+        description: error.message || 'Não foi possível remover a casa.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Restaurar casa ao catálogo
+  const handleRestoreHouse = async (house: BettingHouse) => {
+    if (!user?.id) return;
+    
+    try {
+      const { error } = await supabase
+        .from('hidden_betting_houses')
+        .delete()
+        .eq('house_id', house.id);
+
+      if (error) throw error;
+
+      setHiddenHouses(prev => prev.filter(h => h.house_id !== house.id));
+
+      toast({
+        title: 'Casa restaurada!',
+        description: `${house.name} foi restaurada ao catálogo.`,
+      });
+    } catch (error: any) {
+      console.error('Erro ao restaurar casa:', error);
+      toast({
+        title: 'Erro',
+        description: error.message || 'Não foi possível restaurar a casa.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   return (
     <Layout>
@@ -222,12 +344,28 @@ const CasasDeApostas = () => {
           </div>
           
           <div className="flex items-center gap-2">
+            {isAdmin && hiddenHouses.length > 0 && (
+              <Button
+                variant={showHidden ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowHidden(!showHidden)}
+                className="gap-2"
+              >
+                {showHidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                {showHidden ? 'Mostrando ocultas' : `${hiddenHouses.length} ocultas`}
+              </Button>
+            )}
             <Badge variant="secondary" className="text-sm">
               {bettingHouseGroups.length} grupos
             </Badge>
             <Badge variant="outline" className="text-sm">
-              {totalHouses} casas
+              {visibleHouses} casas
             </Badge>
+            {hiddenHouses.length > 0 && (
+              <Badge variant="destructive" className="text-sm">
+                {hiddenHouses.length} ocultas
+              </Badge>
+            )}
           </div>
         </div>
 
@@ -285,10 +423,12 @@ const CasasDeApostas = () => {
                     </AccordionTrigger>
                     <AccordionContent className="pb-4">
                       <div className="space-y-2 mt-2">
-                        {group.houses.map((house) => (
+                        {group.houses.map((house) => {
+                          const isHidden = hiddenHouseIds.has(house.id);
+                          return (
                           <div
                             key={house.id}
-                            className="flex items-center justify-between p-3 rounded-lg bg-background border hover:border-primary/50 transition-colors group"
+                            className={`flex items-center justify-between p-3 rounded-lg bg-background border hover:border-primary/50 transition-colors group ${isHidden ? 'opacity-50 border-destructive/50' : ''}`}
                           >
                             <div className="flex items-center gap-3 flex-1 min-w-0">
                               <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
@@ -323,8 +463,11 @@ const CasasDeApostas = () => {
                               ) : (
                                 <>
                                   <div className="flex-1 min-w-0">
-                                    <div className="font-medium truncate">
+                                    <div className="font-medium truncate flex items-center gap-2">
                                       {searchTerm ? highlightText(house.name, searchTerm) : house.name}
+                                      {isHidden && (
+                                        <Badge variant="destructive" className="text-xs">Oculta</Badge>
+                                      )}
                                     </div>
                                     {house.url && (
                                       <a
@@ -340,30 +483,57 @@ const CasasDeApostas = () => {
                                   </div>
                                   
                                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8"
-                                      onClick={() => handleStartEdit(house)}
-                                      title="Editar nome"
-                                    >
-                                      <Edit3 className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      variant="default"
-                                      size="icon"
-                                      className="h-8 w-8"
-                                      onClick={() => handleOpenAddDialog(house)}
-                                      title="Adicionar à parceria"
-                                    >
-                                      <Plus className="h-4 w-4" />
-                                    </Button>
+                                    {isAdmin && isHidden ? (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 gap-1 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                        onClick={() => handleRestoreHouse(house)}
+                                        title="Restaurar casa"
+                                      >
+                                        <Eye className="h-4 w-4" />
+                                        Restaurar
+                                      </Button>
+                                    ) : (
+                                      <>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-8 w-8"
+                                          onClick={() => handleStartEdit(house)}
+                                          title="Editar nome"
+                                        >
+                                          <Edit3 className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                          variant="default"
+                                          size="icon"
+                                          className="h-8 w-8"
+                                          onClick={() => handleOpenAddDialog(house)}
+                                          title="Adicionar à parceria"
+                                        >
+                                          <Plus className="h-4 w-4" />
+                                        </Button>
+                                        {isAdmin && (
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                            onClick={() => setHouseToDelete({ house, groupId: group.id })}
+                                            title="Remover do catálogo"
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                        )}
+                                      </>
+                                    )}
                                   </div>
                                 </>
                               )}
                             </div>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </AccordionContent>
                   </AccordionItem>
@@ -446,6 +616,15 @@ const CasasDeApostas = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Dialog de confirmação para remover casa */}
+        <ConfirmDeleteDialog
+          open={!!houseToDelete}
+          onOpenChange={(open) => !open && setHouseToDelete(null)}
+          onConfirm={handleHideHouse}
+          title="Remover Casa do Catálogo"
+          description={`Tem certeza que deseja remover "${houseToDelete?.house.name}" do catálogo? A casa ficará oculta para todos os usuários. Esta ação pode ser revertida pelos administradores.`}
+        />
       </div>
     </Layout>
   );
