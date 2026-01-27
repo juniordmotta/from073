@@ -11,6 +11,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -119,6 +120,9 @@ export function ResultadoDropdown({
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle>Valor do Cashout</DialogTitle>
+            <DialogDescription>
+              Informe o valor recebido no cashout para calcular o resultado.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             {/* Valor Original Apostado */}
