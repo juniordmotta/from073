@@ -52,11 +52,16 @@ export const useGameNotifications = ({ userId, enabled = true }: UseGameNotifica
         .from('arbitrages')
         .select('id, descricao, data_evento, casa_01_nome, casa_02_nome, casa_03_nome, status')
         .eq('user_id', userId)
+        .eq('status', 'aguardando')
         .gte('data_evento', now.toISOString())
         .lte('data_evento', fiveMinutesFromNow.toISOString())
-        .in('status', ['aguardando', 'green', 'red', 'parcial_green', 'parcial_red']);
+        .limit(10);
 
-      if (error) throw error;
+      if (error) {
+        // Silently fail for operators without access
+        console.warn('Erro ao verificar jogos próximos:', error.message);
+        return;
+      }
 
       data?.forEach((arb: Arbitrage) => {
         const dataEvento = new Date(arb.data_evento);
@@ -78,7 +83,7 @@ export const useGameNotifications = ({ userId, enabled = true }: UseGameNotifica
         }
       });
     } catch (error) {
-      console.error('Erro ao verificar jogos próximos:', error);
+      // Don't log errors that might flood the console
     }
   };
 

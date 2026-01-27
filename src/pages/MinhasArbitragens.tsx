@@ -497,77 +497,108 @@ export default function MinhasArbitragens() {
   }, [arbitragens, debouncedSearchText, debouncedFilterStartDate, debouncedFilterEndDate, debouncedFilterStatus, debouncedFilterUser, debouncedFilterPartnership, sortOrder, dateFilterType]);
 
   const loadArbitragens = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setIsLoading(false);
+      return;
+    }
     
-    let query = supabase.from('arbitrages').select(`
-      id,
-      descricao,
-      data_evento,
-      created_at,
-      esporte_liga,
-      casa_01_nome,
-      casa_01_odd,
-      casa_01_valor,
-      casa_01_resultado,
-      casa_01_mercado,
-      casa_01_valor_resultado,
-      casa_01_parceria_id,
-      casa_02_nome,
-      casa_02_odd,
-      casa_02_valor,
-      casa_02_resultado,
-      casa_02_mercado,
-      casa_02_valor_resultado,
-      casa_02_parceria_id,
-      casa_03_nome,
-      casa_03_odd,
-      casa_03_valor,
-      casa_03_resultado,
-      casa_03_mercado,
-      casa_03_valor_resultado,
-      casa_03_parceria_id,
-      porcentagem,
-      retorno_previsto,
-      lucro_projetado,
-      lucro_real,
-      status,
-      user_id,
-      profiles!arbitrages_user_id_fkey (name),
-      partnerships_casa_01:partnerships!arbitrages_casa_01_parceria_id_fkey (nome_completo),
-      partnerships_casa_02:partnerships!arbitrages_casa_02_parceria_id_fkey (nome_completo),
-      partnerships_casa_03:partnerships!arbitrages_casa_03_parceria_id_fkey (nome_completo)
-    `).order('data_evento', { ascending: true });
+    try {
+      let query = supabase.from('arbitrages').select(`
+        id,
+        descricao,
+        data_evento,
+        created_at,
+        esporte_liga,
+        casa_01_nome,
+        casa_01_odd,
+        casa_01_valor,
+        casa_01_resultado,
+        casa_01_mercado,
+        casa_01_valor_resultado,
+        casa_01_parceria_id,
+        casa_02_nome,
+        casa_02_odd,
+        casa_02_valor,
+        casa_02_resultado,
+        casa_02_mercado,
+        casa_02_valor_resultado,
+        casa_02_parceria_id,
+        casa_03_nome,
+        casa_03_odd,
+        casa_03_valor,
+        casa_03_resultado,
+        casa_03_mercado,
+        casa_03_valor_resultado,
+        casa_03_parceria_id,
+        porcentagem,
+        retorno_previsto,
+        lucro_projetado,
+        lucro_real,
+        status,
+        user_id,
+        profiles!arbitrages_user_id_fkey (name),
+        partnerships_casa_01:partnerships!arbitrages_casa_01_parceria_id_fkey (nome_completo),
+        partnerships_casa_02:partnerships!arbitrages_casa_02_parceria_id_fkey (nome_completo),
+        partnerships_casa_03:partnerships!arbitrages_casa_03_parceria_id_fkey (nome_completo)
+      `).order('data_evento', { ascending: true });
 
-    if (!isAdmin) {
-      query = query.eq('user_id', user.id);
+      if (!isAdmin) {
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.warn('Erro ao carregar arbitragens:', error.message);
+        // Só mostrar toast se for erro inesperado
+        if (!error.message.includes('permission') && !error.message.includes('RLS')) {
+          toast({
+            variant: 'destructive',
+            title: 'Erro ao carregar arbitragens',
+            description: error.message,
+          });
+        }
+      } else if (data) {
+        setArbitragens(data);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar arbitragens:', error);
+    } finally {
+      setIsLoading(false);
     }
-
-    const { data, error } = await query;
-
-    if (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao carregar arbitragens',
-        description: error.message,
-      });
-    } else if (data) {
-      setArbitragens(data);
-    }
-
-    setIsLoading(false);
   }, [user?.id, isAdmin, toast]);
 
   const loadUsers = async () => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, name')
-      .order('name');
-    
-    if (data) {
-      setUsers(data);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .order('name');
       
-      // Por padrão, selecionar o usuário logado
-      if (filterUser.length === 0 && user?.id) {
+      if (error) {
+        // Operadores não têm permissão para ver todos os perfis
+        console.warn('Erro ao carregar usuários:', error.message);
+        // Usar apenas o próprio usuário
+        if (user?.id) {
+          setUsers([{ id: user.id, name: 'Meu usuário' }]);
+          setFilterUser([user.id]);
+        }
+        return;
+      }
+      
+      if (data) {
+        setUsers(data);
+        
+        // Por padrão, selecionar o usuário logado
+        if (filterUser.length === 0 && user?.id) {
+          setFilterUser([user.id]);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar usuários:', error);
+      // Fallback para o próprio usuário
+      if (user?.id) {
+        setUsers([{ id: user.id, name: 'Meu usuário' }]);
         setFilterUser([user.id]);
       }
     }
@@ -576,15 +607,16 @@ export default function MinhasArbitragens() {
   const loadPartnerships = useCallback(async (userIds?: string[]) => {
     if (!user?.id) return;
     
-    // Buscar parceria padrão do usuário
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('default_partnership_id')
-      .eq('id', user.id)
-      .maybeSingle();
-    
-    // Armazenar parceria padrão no estado
-    setDefaultPartnershipId(profileData?.default_partnership_id || null);
+    try {
+      // Buscar parceria padrão do usuário
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('default_partnership_id')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      // Armazenar parceria padrão no estado
+      setDefaultPartnershipId(profileData?.default_partnership_id || null);
     
     // TODOS os usuários (incluindo admins) só podem ver suas próprias parcerias ao adicionar apostas
     const query = supabase
@@ -648,6 +680,9 @@ export default function MinhasArbitragens() {
         setSelectedPartnership02(parceiraDefault);
         setSelectedPartnership03(parceiraDefault);
       }
+    }
+    } catch (error) {
+      console.error('Erro ao carregar parcerias:', error);
     }
   }, [user?.id]);
 
