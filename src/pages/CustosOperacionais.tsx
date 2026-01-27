@@ -253,14 +253,29 @@ export default function CustosOperacionais() {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.from('operational_costs').insert({
-        user_id: user.id,
-        descricao: formData.descricao.trim(),
-        valor: parseFloat(formData.valor),
-        data: formData.data,
-      });
+      const { data: insertedData, error } = await supabase
+        .from('operational_costs')
+        .insert({
+          user_id: user.id,
+          descricao: formData.descricao.trim(),
+          valor: parseFloat(formData.valor),
+          data: formData.data,
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Atualização otimística - adicionar ao estado local imediatamente
+      if (insertedData) {
+        setCosts(prev => [insertedData, ...prev]);
+        
+        // Atualizar meses disponíveis se necessário
+        const newMonth = format(new Date(insertedData.data), 'yyyy-MM');
+        if (!availableMonths.includes(newMonth)) {
+          setAvailableMonths(prev => [...prev, newMonth].sort((a, b) => b.localeCompare(a)));
+        }
+      }
 
       toast({
         title: 'Custo adicionado!',
@@ -274,8 +289,6 @@ export default function CustosOperacionais() {
         data: format(new Date(), 'yyyy-MM-dd'),
       });
       setTouched({ descricao: false, valor: false, data: false });
-      loadCosts();
-      loadAvailableMonths();
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -290,11 +303,16 @@ export default function CustosOperacionais() {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     
+    // Atualização otimística - remover do estado local imediatamente
+    const deletedCost = deleteTarget;
+    setCosts(prev => prev.filter(c => c.id !== deletedCost.id));
+    setDeleteTarget(null);
+    
     try {
       const { error } = await supabase
         .from('operational_costs')
         .delete()
-        .eq('id', deleteTarget.id);
+        .eq('id', deletedCost.id);
 
       if (error) throw error;
 
@@ -303,10 +321,13 @@ export default function CustosOperacionais() {
         description: 'O custo operacional foi removido com sucesso.',
       });
 
-      setDeleteTarget(null);
-      loadCosts();
+      // Atualizar meses disponíveis
       loadAvailableMonths();
     } catch (error: any) {
+      // Reverter em caso de erro
+      setCosts(prev => [...prev, deletedCost].sort((a, b) => 
+        new Date(b.data).getTime() - new Date(a.data).getTime()
+      ));
       toast({
         variant: 'destructive',
         title: 'Erro ao remover custo',
