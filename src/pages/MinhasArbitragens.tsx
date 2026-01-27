@@ -1190,6 +1190,8 @@ export default function MinhasArbitragens() {
         description: error.message,
       });
     } else {
+      // Recarregar stats do mês para atualizar o card de lucro
+      loadUserMonthStats();
       toast({
         title: 'Resultado atualizado!',
         description: 'O resultado foi registrado com sucesso.',
