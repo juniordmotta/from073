@@ -61,10 +61,22 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
 
   const fetchGoal = async () => {
     try {
+      // Se tiver selectedUserIds vazio, não faz query
+      if (selectedUserIds && selectedUserIds.length === 0) {
+        setGoalValue(0);
+        return;
+      }
+      
       // Se tiver selectedUserIds, buscar metas de todos os usuários selecionados
       const userIdsToFetch = selectedUserIds && selectedUserIds.length > 0 
         ? selectedUserIds 
         : [userId];
+
+      // Verificar se todos os IDs são válidos
+      if (userIdsToFetch.some(id => !id)) {
+        setGoalValue(0);
+        return;
+      }
 
       let query = supabase
         .from('monthly_goals')
@@ -81,7 +93,11 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.warn('Erro ao buscar meta:', error.message);
+        setGoalValue(0);
+        return;
+      }
       
       if (data && data.length > 0) {
         // Somar todas as metas dos usuários selecionados
@@ -92,6 +108,7 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
       }
     } catch (error) {
       console.error('Erro ao buscar meta:', error);
+      setGoalValue(0);
     }
   };
 

@@ -271,18 +271,16 @@ const Parcerias = () => {
         .order('name');
 
       if (error) {
-        console.error('Erro ao buscar usuários:', error);
-        throw error;
+        // Operadores não têm permissão para ver todos os perfis - isso é esperado
+        console.warn('Erro ao buscar usuários (esperado para operadores):', error.message);
+        // Não mostrar toast para este erro pois é comportamento esperado
+        return;
       }
       console.log('Usuários encontrados:', data);
       setUsers(data || []);
     } catch (error) {
       console.error('Erro ao buscar usuários:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível carregar a lista de usuários',
-        variant: 'destructive',
-      });
+      // Não mostrar toast para operadores
     }
   };
 

@@ -40,120 +40,163 @@ export default function Dashboard() {
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
-  useEffect(() => {
-    loadOpenBetsStats();
-    loadMonthStats();
-    loadOpenBets();
-    loadBancaTotal();
-  }, [user?.id]);
+  
 
   const loadOpenBetsStats = useCallback(async () => {
-    let query = supabase.from('arbitrages').select('lucro_projetado, casa_01_valor, casa_02_valor, casa_03_valor');
+    if (!user?.id) return;
     
-    query = query.eq('user_id', user?.id);
-    query = query.eq('status', 'aguardando');
+    try {
+      const { data, error } = await supabase
+        .from('arbitrages')
+        .select('lucro_projetado, casa_01_valor, casa_02_valor, casa_03_valor')
+        .eq('user_id', user.id)
+        .eq('status', 'aguardando');
 
-    const { data } = await query;
+      if (error) {
+        console.warn('Erro ao carregar stats:', error.message);
+        return;
+      }
 
-    if (data) {
-      const totalArbitragens = data.length;
-      const totalInvestido = data.reduce(
-        (sum, arb) => sum + Number(arb.casa_01_valor) + Number(arb.casa_02_valor) + Number(arb.casa_03_valor || 0),
-        0
-      );
-      const totalLucroProjetado = data.reduce((sum, arb) => sum + Number(arb.lucro_projetado), 0);
+      if (data) {
+        const totalArbitragens = data.length;
+        const totalInvestido = data.reduce(
+          (sum, arb) => sum + Number(arb.casa_01_valor) + Number(arb.casa_02_valor) + Number(arb.casa_03_valor || 0),
+          0
+        );
+        const totalLucroProjetado = data.reduce((sum, arb) => sum + Number(arb.lucro_projetado), 0);
 
-      setOpenBetsStats({
-        totalArbitragens,
-        totalInvestido,
-        totalLucroProjetado,
-      });
+        setOpenBetsStats({
+          totalArbitragens,
+          totalInvestido,
+          totalLucroProjetado,
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao carregar stats:', error);
     }
   }, [user?.id]);
 
   const loadMonthStats = useCallback(async () => {
-    const now = new Date();
-    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-
-    let query = supabase.from('arbitrages').select('status, lucro_projetado, lucro_real, casa_01_valor, casa_02_valor, casa_03_valor, created_at');
+    if (!user?.id) return;
     
-    query = query.eq('user_id', user?.id);
-    query = query.gte('created_at', firstDayOfMonth.toISOString()).lte('created_at', lastDayOfMonth.toISOString());
+    try {
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    const { data } = await query;
+      const { data, error } = await supabase
+        .from('arbitrages')
+        .select('status, lucro_projetado, lucro_real, casa_01_valor, casa_02_valor, casa_03_valor, created_at')
+        .eq('user_id', user.id)
+        .gte('created_at', firstDayOfMonth.toISOString())
+        .lte('created_at', lastDayOfMonth.toISOString());
 
-    if (data) {
-      const totalLucro = data.reduce((sum, arb) => {
-        const lucro = arb.status === 'aguardando' ? Number(arb.lucro_projetado) : Number(arb.lucro_real);
-        return sum + lucro;
-      }, 0);
+      if (error) {
+        console.warn('Erro ao carregar stats do mês:', error.message);
+        return;
+      }
 
-      const totalInvestido = data.reduce(
-        (sum, arb) => sum + Number(arb.casa_01_valor) + Number(arb.casa_02_valor) + Number(arb.casa_03_valor || 0),
-        0
-      );
+      if (data) {
+        const totalLucro = data.reduce((sum, arb) => {
+          const lucro = arb.status === 'aguardando' ? Number(arb.lucro_projetado) : Number(arb.lucro_real);
+          return sum + lucro;
+        }, 0);
 
-      // Contar dias únicos com apostas
-      const uniqueDays = new Set(
-        data.map(arb => format(new Date(arb.created_at), 'yyyy-MM-dd'))
-      );
-      
-      setMonthStats({
-        totalLucro,
-        totalInvestido,
-        diasComApostas: uniqueDays.size,
-      });
+        const totalInvestido = data.reduce(
+          (sum, arb) => sum + Number(arb.casa_01_valor) + Number(arb.casa_02_valor) + Number(arb.casa_03_valor || 0),
+          0
+        );
+
+        // Contar dias únicos com apostas
+        const uniqueDays = new Set(
+          data.map(arb => format(new Date(arb.created_at), 'yyyy-MM-dd'))
+        );
+        
+        setMonthStats({
+          totalLucro,
+          totalInvestido,
+          diasComApostas: uniqueDays.size,
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao carregar stats do mês:', error);
     }
   }, [user?.id]);
 
   const loadOpenBets = useCallback(async () => {
-    let query = supabase
-      .from('arbitrages')
-      .select(`
-        id,
-        descricao,
-        data_evento,
-        casa_01_nome,
-        casa_01_odd,
-        casa_01_valor,
-        casa_02_nome,
-        casa_02_odd,
-        casa_02_valor,
-        casa_03_nome,
-        casa_03_odd,
-        casa_03_valor,
-        lucro_projetado,
-        profiles:user_id (name)
-      `)
-      .eq('status', 'aguardando')
-      .eq('user_id', user?.id)
-      .order('data_evento', { ascending: true })
-      .limit(50);
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('arbitrages')
+        .select(`
+          id,
+          descricao,
+          data_evento,
+          casa_01_nome,
+          casa_01_odd,
+          casa_01_valor,
+          casa_02_nome,
+          casa_02_odd,
+          casa_02_valor,
+          casa_03_nome,
+          casa_03_odd,
+          casa_03_valor,
+          lucro_projetado,
+          profiles:user_id (name)
+        `)
+        .eq('status', 'aguardando')
+        .eq('user_id', user.id)
+        .order('data_evento', { ascending: true })
+        .limit(50);
 
-    const { data } = await query;
+      if (error) {
+        console.warn('Erro ao carregar apostas abertas:', error.message);
+        return;
+      }
 
-    if (data) {
-      setOpenBets(data);
+      if (data) {
+        setOpenBets(data);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar apostas abertas:', error);
     }
   }, [user?.id]);
 
   const loadBancaTotal = useCallback(async () => {
-    let query = supabase
-      .from('partnerships')
-      .select('valor_banca')
-      .eq('status', 'ativo')
-      .eq('user_id', user?.id);
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('partnerships')
+        .select('valor_banca')
+        .eq('status', 'ativo')
+        .eq('user_id', user.id);
 
-    const { data } = await query;
+      if (error) {
+        console.warn('Erro ao carregar banca:', error.message);
+        return;
+      }
 
-    if (data) {
-      const total = data.reduce((sum, p) => sum + Number(p.valor_banca || 0), 0);
-      setTotalBanca(total);
+      if (data) {
+        const total = data.reduce((sum, p) => sum + Number(p.valor_banca || 0), 0);
+        setTotalBanca(total);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar banca:', error);
     }
   }, [user?.id]);
 
-  // Calcular porcentagem de investimento em relação à banca
+  // Load data on mount
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    loadOpenBetsStats();
+    loadMonthStats();
+    loadOpenBets();
+    loadBancaTotal();
+  }, [user?.id, loadOpenBetsStats, loadMonthStats, loadOpenBets, loadBancaTotal]);
+
   const bancaPercentage = useMemo(() => {
     if (totalBanca === 0) return 0;
     return (openBetsStats.totalInvestido / totalBanca) * 100;

@@ -25,22 +25,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+    
     // Setup auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (!isMounted) return;
+        
         console.log('Auth state change:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
         // Defer Supabase calls with setTimeout to prevent deadlock
         if (session?.user) {
+          const userId = session.user.id;
           setTimeout(() => {
+            if (!isMounted) return;
             supabase
               .from('user_roles')
               .select('role')
-              .eq('user_id', session.user.id)
+              .eq('user_id', userId)
               .maybeSingle()
               .then(({ data, error }) => {
+                if (!isMounted) return;
                 if (error) {
                   console.error('Error fetching user role:', error);
                   setUserRole(null);
@@ -51,29 +58,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                   console.log('No role found for user');
                   setUserRole(null);
                 }
+                setIsLoading(false);
               });
           }, 0);
         } else {
           setUserRole(null);
+          setIsLoading(false);
         }
-        
-        setIsLoading(false);
       }
     );
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
+        const userId = session.user.id;
         setTimeout(() => {
+          if (!isMounted) return;
           supabase
             .from('user_roles')
             .select('role')
-            .eq('user_id', session.user.id)
+            .eq('user_id', userId)
             .maybeSingle()
             .then(({ data, error }) => {
+              if (!isMounted) return;
               if (error) {
                 console.error('Error fetching user role:', error);
                 setUserRole(null);
@@ -84,14 +96,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 console.log('No role found for user');
                 setUserRole(null);
               }
+              setIsLoading(false);
             });
         }, 0);
+      } else {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
