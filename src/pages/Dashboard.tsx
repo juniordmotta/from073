@@ -186,8 +186,8 @@ export default function Dashboard() {
       <div className="space-y-4">
         <h1 className="text-2xl font-bold">Dashboard</h1>
 
-        {/* Cards compactos - Apostas Abertas */}
-        <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
+        {/* Cards compactos */}
+        <div className="grid gap-2 grid-cols-2 md:grid-cols-5">
           {/* Total Investido (Abertas) */}
           <Card className="p-2 animate-fade-in">
             <div className="flex items-center gap-1 mb-0.5">
@@ -254,18 +254,18 @@ export default function Dashboard() {
             </div>
             <p className="text-[9px] text-muted-foreground">{monthStats.diasComApostas} dias com apostas</p>
           </Card>
-        </div>
 
-        {/* Meta Mensal */}
-        {user?.id && (
-          <div className="animate-fade-in" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
-            <MonthlyGoalCard
-              userId={user.id}
-              currentProfit={monthStats.totalLucro}
-              compact
-            />
-          </div>
-        )}
+          {/* Meta Mensal */}
+          {user?.id && (
+            <div className="animate-fade-in" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
+              <MonthlyGoalCard
+                userId={user.id}
+                currentProfit={monthStats.totalLucro}
+                compact
+              />
+            </div>
+          )}
+        </div>
 
         {/* Apostas em Aberto */}
         {openBets.length > 0 && (
