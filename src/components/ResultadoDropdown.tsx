@@ -105,6 +105,18 @@ export function ResultadoDropdown({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="bg-background z-50">
+          {/* Se já é cashout, mostrar opção de editar primeiro */}
+          {currentResult === 'cashout' && (
+            <DropdownMenuItem
+              onClick={() => {
+                setCashoutValue(currentCashoutValue ? String(currentCashoutValue) : '');
+                setCashoutDialogOpen(true);
+              }}
+              className="font-medium"
+            >
+              ✏️ Editar Cashout
+            </DropdownMenuItem>
+          )}
           {resultOptions.map((option) => (
             <DropdownMenuItem
               key={option.value}
