@@ -280,6 +280,22 @@ export default function MinhasArbitragens() {
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
+  // Valores derivados para animação do card de Lucro do Mês
+  const mediaDia = useMemo(() => 
+    userMonthStats.diasComApostas > 0 ? userMonthStats.totalLucro / userMonthStats.diasComApostas : 0,
+    [userMonthStats.totalLucro, userMonthStats.diasComApostas]
+  );
+  const roiMensal = useMemo(() => 
+    userMonthStats.totalInvestido > 0 ? (userMonthStats.totalLucro / userMonthStats.totalInvestido) * 100 : 0,
+    [userMonthStats.totalLucro, userMonthStats.totalInvestido]
+  );
+
+  // Hooks de animação para o card de Lucro do Mês (devem estar no nível superior)
+  const animatedMonthLucro = useCountUp(userMonthStats.totalLucro);
+  const animatedMonthInvestido = useCountUp(userMonthStats.totalInvestido);
+  const animatedMediaDia = useCountUp(mediaDia);
+  const animatedRoiMensal = useCountUp(roiMensal);
+
   // Função para aplicar filtros rápidos de período
   const applyPeriodFilter = useCallback((period: 'hoje' | 'semana' | 'mes' | 'mes_atual' | 'custom') => {
     const today = new Date();
@@ -1935,46 +1951,35 @@ export default function MinhasArbitragens() {
             </div>
 
             {/* Lucro do Mês + Média/Dia + ROI (sempre do usuário logado) */}
-            {(() => {
-              const animatedMonthLucro = useCountUp(userMonthStats.totalLucro);
-              const animatedMonthInvestido = useCountUp(userMonthStats.totalInvestido);
-              const mediaDia = userMonthStats.diasComApostas > 0 ? userMonthStats.totalLucro / userMonthStats.diasComApostas : 0;
-              const animatedMediaDia = useCountUp(mediaDia);
-              const roiMensal = userMonthStats.totalInvestido > 0 ? (userMonthStats.totalLucro / userMonthStats.totalInvestido) * 100 : 0;
-              const animatedRoiMensal = useCountUp(roiMensal);
-              
-              return (
-                <div className="rounded-lg border bg-card p-2 animate-fade-in" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
-                  <div className="flex items-center gap-1 mb-0.5">
-                    {userMonthStats.totalLucro >= 0 ? (
-                      <TrendingUp className="h-3 w-3 text-success" />
-                    ) : (
-                      <TrendingDown className="h-3 w-3 text-destructive" />
-                    )}
-                    <span className="text-[10px] text-muted-foreground">Lucro do Mês</span>
-                  </div>
-                  <div className={`text-lg font-bold ${userMonthStats.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
-                    R$ {formatCurrency(animatedMonthLucro)}
-                  </div>
-                  <div className="border-t pt-1 mt-1 flex items-center justify-between">
-                    <span className="text-[9px] text-muted-foreground">Investido</span>
-                    <span className="text-xs font-medium">R$ {formatCurrency(animatedMonthInvestido)}</span>
-                  </div>
-                  <div className="border-t pt-1 mt-1 flex items-center justify-between">
-                    <span className="text-[9px] text-muted-foreground">Média/Dia ({userMonthStats.diasComApostas} dias)</span>
-                    <span className={`text-xs font-medium ${mediaDia >= 0 ? 'text-success' : 'text-destructive'}`}>
-                      R$ {formatCurrency(animatedMediaDia)}
-                    </span>
-                  </div>
-                  <div className="border-t pt-1 mt-1 flex items-center justify-between">
-                    <span className="text-[9px] text-muted-foreground">ROI Mensal</span>
-                    <span className={`text-xs font-medium ${roiMensal >= 0 ? 'text-success' : 'text-destructive'}`}>
-                      {formatCurrency(animatedRoiMensal)}%
-                    </span>
-                  </div>
-                </div>
-              );
-            })()}
+            <div className="rounded-lg border bg-card p-2 animate-fade-in" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
+              <div className="flex items-center gap-1 mb-0.5">
+                {userMonthStats.totalLucro >= 0 ? (
+                  <TrendingUp className="h-3 w-3 text-success" />
+                ) : (
+                  <TrendingDown className="h-3 w-3 text-destructive" />
+                )}
+                <span className="text-[10px] text-muted-foreground">Lucro do Mês</span>
+              </div>
+              <div className={`text-lg font-bold ${userMonthStats.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
+                R$ {formatCurrency(animatedMonthLucro)}
+              </div>
+              <div className="border-t pt-1 mt-1 flex items-center justify-between">
+                <span className="text-[9px] text-muted-foreground">Investido</span>
+                <span className="text-xs font-medium">R$ {formatCurrency(animatedMonthInvestido)}</span>
+              </div>
+              <div className="border-t pt-1 mt-1 flex items-center justify-between">
+                <span className="text-[9px] text-muted-foreground">Média/Dia ({userMonthStats.diasComApostas} dias)</span>
+                <span className={`text-xs font-medium ${mediaDia >= 0 ? 'text-success' : 'text-destructive'}`}>
+                  R$ {formatCurrency(animatedMediaDia)}
+                </span>
+              </div>
+              <div className="border-t pt-1 mt-1 flex items-center justify-between">
+                <span className="text-[9px] text-muted-foreground">ROI Mensal</span>
+                <span className={`text-xs font-medium ${roiMensal >= 0 ? 'text-success' : 'text-destructive'}`}>
+                  {formatCurrency(animatedRoiMensal)}%
+                </span>
+              </div>
+            </div>
 
             {/* Meta Mensal */}
             {user?.id && (
