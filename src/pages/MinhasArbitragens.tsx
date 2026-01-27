@@ -38,7 +38,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter, X, Maximize2, Minimize2, Search, LayoutGrid, Table as TableIcon, Star, Calendar, Building2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter, X, Maximize2, Minimize2, Search, LayoutGrid, Table as TableIcon, Star, Calendar, Building2, ArrowUpDown, ArrowUp, ArrowDown, TrendingUp, TrendingDown } from 'lucide-react';
 import { format, differenceInMilliseconds } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -235,6 +235,12 @@ export default function MinhasArbitragens() {
   
   // Estado para banca total
   const [totalBanca, setTotalBanca] = useState(0);
+  
+  // Estado para lucro do mês do usuário logado
+  const [userMonthStats, setUserMonthStats] = useState({
+    totalLucro: 0,
+    totalInvestido: 0,
+  });
   
   // Forçar visualização em cards no mobile
   useEffect(() => {
@@ -709,6 +715,48 @@ export default function MinhasArbitragens() {
     }
   }, [user?.id, isAdmin, debouncedFilterUser]);
 
+  // Carregar lucro do mês do usuário logado (independente de filtros)
+  const loadUserMonthStats = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+      const { data, error } = await supabase
+        .from('arbitrages')
+        .select('status, lucro_projetado, lucro_real, casa_01_valor, casa_02_valor, casa_03_valor')
+        .eq('user_id', user.id)
+        .gte('created_at', firstDayOfMonth.toISOString())
+        .lte('created_at', lastDayOfMonth.toISOString());
+
+      if (error) {
+        console.warn('Erro ao carregar stats do mês:', error.message);
+        return;
+      }
+
+      if (data) {
+        const totalLucro = data.reduce((sum, arb) => {
+          const lucro = arb.status === 'aguardando' ? Number(arb.lucro_projetado) : Number(arb.lucro_real);
+          return sum + lucro;
+        }, 0);
+
+        const totalInvestido = data.reduce(
+          (sum, arb) => sum + Number(arb.casa_01_valor) + Number(arb.casa_02_valor) + Number(arb.casa_03_valor || 0),
+          0
+        );
+
+        setUserMonthStats({
+          totalLucro,
+          totalInvestido,
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao carregar stats do mês:', error);
+    }
+  }, [user?.id]);
+
   // Carregar dados inicialmente
   useEffect(() => {
     if (!user?.id) return;
@@ -716,6 +764,7 @@ export default function MinhasArbitragens() {
     loadArbitragens();
     loadPartnerships();
     loadBancaTotal();
+    loadUserMonthStats();
     if (isAdmin) {
       loadUsers();
     }
@@ -1877,25 +1926,22 @@ export default function MinhasArbitragens() {
               </div>
             </div>
 
-            {/* Período e Filtros */}
+            {/* Lucro do Mês (sempre do usuário logado) */}
             <div className="rounded-lg border bg-card p-2 animate-fade-in" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
               <div className="flex items-center gap-1 mb-0.5">
-                <span className="text-[10px] text-muted-foreground">Período</span>
-              </div>
-              <div className="text-sm font-medium">
-                {filterStartDate && filterEndDate ? (
-                  <>
-                    {format(new Date(filterStartDate + 'T00:00:00'), 'dd/MM')} - {format(new Date(filterEndDate + 'T00:00:00'), 'dd/MM')}
-                  </>
+                {userMonthStats.totalLucro >= 0 ? (
+                  <TrendingUp className="h-3 w-3 text-success" />
                 ) : (
-                  'Mês Atual'
+                  <TrendingDown className="h-3 w-3 text-destructive" />
                 )}
+                <span className="text-[10px] text-muted-foreground">Lucro do Mês</span>
+              </div>
+              <div className={`text-lg font-bold ${userMonthStats.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
+                R$ {formatCurrency(userMonthStats.totalLucro)}
               </div>
               <div className="border-t pt-1 mt-1 flex items-center justify-between">
-                <span className="text-[9px] text-muted-foreground">Filtro</span>
-                <span className="text-xs font-medium capitalize">
-                  {filterStatus.includes('all') ? 'Todos' : filterStatus.join(', ')}
-                </span>
+                <span className="text-[9px] text-muted-foreground">Investido</span>
+                <span className="text-xs font-medium">R$ {formatCurrency(userMonthStats.totalInvestido)}</span>
               </div>
             </div>
 
