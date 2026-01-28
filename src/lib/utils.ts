@@ -6,23 +6,21 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Formata valores monetários em reais com até 3 casas decimais
- * Remove o terceiro dígito se for zero
- * Exemplos: 100.50 → "100.50", 100.123 → "100.123", 100.120 → "100.12"
+ * Formata valores monetários em reais no padrão brasileiro
+ * Exemplos: 1234.56 → "R$ 1.234,56", 100.50 → "R$ 100,50"
  */
 export function formatCurrency(value: number | string | null | undefined): string {
-  // Verifica se o valor é null ou undefined
-  if (value === null || value === undefined) return "0.00";
+  if (value === null || value === undefined) return "R$ 0,00";
   
   const num = typeof value === "string" ? parseFloat(value) : value;
-  if (isNaN(num)) return "0.00";
+  if (isNaN(num)) return "R$ 0,00";
   
-  const fixed3 = num.toFixed(3);
-  // Se o terceiro dígito for 0, retorna apenas 2 casas decimais
-  if (fixed3.endsWith("0")) {
-    return num.toFixed(2);
-  }
-  return fixed3;
+  return num.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 /**
