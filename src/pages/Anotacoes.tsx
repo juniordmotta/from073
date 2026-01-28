@@ -354,34 +354,54 @@ export default function Anotacoes() {
         </Card>
 
         {/* Notes List */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {loading ? (
-            <Card className="col-span-full">
-              <CardContent className="py-10 text-center text-muted-foreground">
+        <Card>
+          <CardContent className="p-0">
+            {loading ? (
+              <div className="py-10 text-center text-muted-foreground">
                 Carregando anotações...
-              </CardContent>
-            </Card>
-          ) : filteredNotes.length === 0 ? (
-            <Card className="col-span-full">
-              <CardContent className="py-10 text-center text-muted-foreground">
+              </div>
+            ) : filteredNotes.length === 0 ? (
+              <div className="py-10 text-center text-muted-foreground">
                 <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>Nenhuma anotação encontrada</p>
                 <Button variant="link" onClick={openCreateDialog}>
                   Criar primeira anotação
                 </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            filteredNotes.map((note) => (
-              <Card key={note.id} className="group relative hover:shadow-md transition-shadow">
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-lg line-clamp-1">
-                      {debouncedSearch
-                        ? highlightText(note.titulo, debouncedSearch)
-                        : note.titulo}
-                    </CardTitle>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {filteredNotes.map((note) => (
+                  <div
+                    key={note.id}
+                    className="flex items-start gap-4 p-4 hover:bg-muted/50 transition-colors group"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold truncate">
+                          {debouncedSearch
+                            ? highlightText(note.titulo, debouncedSearch)
+                            : note.titulo}
+                        </h3>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {format(parseISO(note.data), 'dd/MM/yyyy')}
+                        </span>
+                      </div>
+                      {note.conteudo && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {debouncedSearch
+                            ? highlightText(note.conteudo, debouncedSearch)
+                            : note.conteudo}
+                        </p>
+                      )}
+                    </div>
+                    {note.valor !== null && (
+                      <div className="text-right shrink-0">
+                        <span className="font-semibold text-primary">
+                          {formatCurrency(note.valor)}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -403,28 +423,11 @@ export default function Anotacoes() {
                       </Button>
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    {format(parseISO(note.data), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  {note.conteudo && (
-                    <p className="text-sm text-muted-foreground line-clamp-3 mb-2">
-                      {debouncedSearch
-                        ? highlightText(note.conteudo, debouncedSearch)
-                        : note.conteudo}
-                    </p>
-                  )}
-                  {note.valor !== null && (
-                    <p className="text-lg font-semibold text-primary">
-                      {formatCurrency(note.valor)}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Create/Edit Dialog */}
