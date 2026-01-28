@@ -11,6 +11,7 @@ import MinhasArbitragens from "./pages/MinhasArbitragens";
 import CustosOperacionais from "./pages/CustosOperacionais";
 import CasasDeApostas from "./pages/CasasDeApostas";
 import Parcerias from "./pages/Parcerias";
+import Anotacoes from "./pages/Anotacoes";
 import Usuarios from "./pages/Usuarios";
 import DeleteAllUsers from "./pages/DeleteAllUsers";
 import NotFound from "./pages/NotFound";
@@ -64,6 +65,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <CasasDeApostas />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/anotacoes"
+              element={
+                <ProtectedRoute>
+                  <Anotacoes />
                 </ProtectedRoute>
               }
             />
