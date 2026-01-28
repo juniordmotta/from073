@@ -1,4 +1,4 @@
-import { LayoutDashboard, DollarSign, List, Users, TrendingUp, Handshake, Building2 } from 'lucide-react';
+import { LayoutDashboard, DollarSign, List, Users, TrendingUp, Handshake, Building2, StickyNote } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect } from 'react';
@@ -64,6 +64,7 @@ export function AppSidebar() {
     { title: 'Custos Operacionais', url: '/custos-operacionais', icon: DollarSign, show: true },
     { title: 'Parcerias', url: '/parcerias', icon: Handshake, show: true },
     { title: 'Casas de Apostas', url: '/casas-de-apostas', icon: Building2, show: true },
+    { title: 'Anotações', url: '/anotacoes', icon: StickyNote, show: true },
     { title: 'Gerenciar Usuários', url: '/usuarios', icon: Users, show: isAdmin },
   ];
 

@@ -345,6 +345,39 @@ export type Database = {
           },
         ]
       }
+      notes: {
+        Row: {
+          conteudo: string | null
+          created_at: string
+          data: string
+          id: string
+          titulo: string
+          updated_at: string
+          user_id: string
+          valor: number | null
+        }
+        Insert: {
+          conteudo?: string | null
+          created_at?: string
+          data?: string
+          id?: string
+          titulo: string
+          updated_at?: string
+          user_id: string
+          valor?: number | null
+        }
+        Update: {
+          conteudo?: string | null
+          created_at?: string
+          data?: string
+          id?: string
+          titulo?: string
+          updated_at?: string
+          user_id?: string
+          valor?: number | null
+        }
+        Relationships: []
+      }
       operational_costs: {
         Row: {
           created_at: string
