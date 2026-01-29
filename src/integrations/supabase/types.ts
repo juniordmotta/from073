@@ -345,8 +345,36 @@ export type Database = {
           },
         ]
       }
+      note_categories: {
+        Row: {
+          cor: string | null
+          created_at: string
+          id: string
+          nome: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cor?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cor?: string | null
+          created_at?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notes: {
         Row: {
+          category_id: string | null
           conteudo: string | null
           created_at: string
           data: string
@@ -357,6 +385,7 @@ export type Database = {
           valor: number | null
         }
         Insert: {
+          category_id?: string | null
           conteudo?: string | null
           created_at?: string
           data?: string
@@ -367,6 +396,7 @@ export type Database = {
           valor?: number | null
         }
         Update: {
+          category_id?: string | null
           conteudo?: string | null
           created_at?: string
           data?: string
@@ -376,7 +406,15 @@ export type Database = {
           user_id?: string
           valor?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notes_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "note_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       operational_costs: {
         Row: {

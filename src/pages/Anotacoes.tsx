@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Layout } from '@/components/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,15 +8,26 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useDebounce } from '@/hooks/useDebounce';
 import { highlightText } from '@/lib/utils/highlightText';
 import { cn, formatCurrency } from '@/lib/utils';
-import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
+import { format, startOfMonth, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Plus, Search, CalendarIcon, X, Pencil, Trash2, FileText, StickyNote } from 'lucide-react';
+import { Plus, Search, CalendarIcon, X, Pencil, Trash2, FileText, StickyNote, Tag, Check } from 'lucide-react';
+
+interface NoteCategory {
+  id: string;
+  user_id: string;
+  nome: string;
+  cor: string;
+  created_at: string;
+  updated_at: string;
+}
 
 interface Note {
   id: string;
@@ -25,9 +36,30 @@ interface Note {
   conteudo: string | null;
   valor: number | null;
   data: string;
+  category_id: string | null;
   created_at: string;
   updated_at: string;
+  note_categories?: NoteCategory | null;
 }
+
+const CATEGORY_COLORS = [
+  '#6366f1', // Indigo
+  '#8b5cf6', // Violet
+  '#a855f7', // Purple
+  '#d946ef', // Fuchsia
+  '#ec4899', // Pink
+  '#f43f5e', // Rose
+  '#ef4444', // Red
+  '#f97316', // Orange
+  '#f59e0b', // Amber
+  '#eab308', // Yellow
+  '#84cc16', // Lime
+  '#22c55e', // Green
+  '#14b8a6', // Teal
+  '#06b6d4', // Cyan
+  '#0ea5e9', // Sky
+  '#3b82f6', // Blue
+];
 
 export default function Anotacoes() {
   const { user } = useAuth();
@@ -35,6 +67,7 @@ export default function Anotacoes() {
 
   // State
   const [notes, setNotes] = useState<Note[]>([]);
+  const [categories, setCategories] = useState<NoteCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearch = useDebounce(searchTerm, 300);
@@ -46,6 +79,9 @@ export default function Anotacoes() {
   const [tempStartDate, setTempStartDate] = useState<Date | undefined>(startDate);
   const [tempEndDate, setTempEndDate] = useState<Date | undefined>(endDate);
 
+  // Category filter state
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+
   // Form dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
@@ -54,11 +90,44 @@ export default function Anotacoes() {
     conteudo: '',
     valor: '',
     data: format(new Date(), 'yyyy-MM-dd'),
+    category_id: '',
   });
+
+  // New category dialog state
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryColor, setNewCategoryColor] = useState(CATEGORY_COLORS[0]);
 
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
+
+  // Manage categories dialog
+  const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<NoteCategory | null>(null);
+  const [editCategoryName, setEditCategoryName] = useState('');
+  const [editCategoryColor, setEditCategoryColor] = useState('');
+
+  // Fetch categories
+  const fetchCategories = async () => {
+    if (!user?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('note_categories')
+        .select('*')
+        .order('nome');
+
+      if (error) {
+        console.error('Error fetching categories:', error);
+        return;
+      }
+
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
 
   // Fetch notes
   const fetchNotes = async () => {
@@ -68,7 +137,7 @@ export default function Anotacoes() {
     try {
       let query = supabase
         .from('notes')
-        .select('*')
+        .select('*, note_categories(*)')
         .order('data', { ascending: false });
 
       if (startDate) {
@@ -92,20 +161,38 @@ export default function Anotacoes() {
   };
 
   useEffect(() => {
+    fetchCategories();
+  }, [user?.id]);
+
+  useEffect(() => {
     fetchNotes();
   }, [user?.id, startDate, endDate]);
 
   // Filtered notes
   const filteredNotes = useMemo(() => {
-    if (!debouncedSearch.trim()) return notes;
+    let result = notes;
 
-    const term = debouncedSearch.toLowerCase();
-    return notes.filter(
-      (note) =>
-        note.titulo.toLowerCase().includes(term) ||
-        (note.conteudo && note.conteudo.toLowerCase().includes(term))
-    );
-  }, [notes, debouncedSearch]);
+    // Filter by search term
+    if (debouncedSearch.trim()) {
+      const term = debouncedSearch.toLowerCase();
+      result = result.filter(
+        (note) =>
+          note.titulo.toLowerCase().includes(term) ||
+          (note.conteudo && note.conteudo.toLowerCase().includes(term))
+      );
+    }
+
+    // Filter by category
+    if (categoryFilter !== 'all') {
+      if (categoryFilter === 'none') {
+        result = result.filter((note) => !note.category_id);
+      } else {
+        result = result.filter((note) => note.category_id === categoryFilter);
+      }
+    }
+
+    return result;
+  }, [notes, debouncedSearch, categoryFilter]);
 
   // Date filter handlers
   const handleApplyDateFilter = () => {
@@ -145,6 +232,7 @@ export default function Anotacoes() {
       conteudo: '',
       valor: '',
       data: format(new Date(), 'yyyy-MM-dd'),
+      category_id: '',
     });
     setDialogOpen(true);
   };
@@ -156,6 +244,7 @@ export default function Anotacoes() {
       conteudo: note.conteudo || '',
       valor: note.valor ? note.valor.toString() : '',
       data: note.data,
+      category_id: note.category_id || '',
     });
     setDialogOpen(true);
   };
@@ -175,6 +264,7 @@ export default function Anotacoes() {
       conteudo: formData.conteudo.trim() || null,
       valor: formData.valor ? parseFloat(formData.valor.replace(',', '.')) : null,
       data: formData.data,
+      category_id: formData.category_id || null,
       user_id: user.id,
     };
 
@@ -187,21 +277,17 @@ export default function Anotacoes() {
 
         if (error) throw error;
 
-        setNotes((prev) =>
-          prev.map((n) => (n.id === editingNote.id ? { ...n, ...noteData } : n))
-        );
-
+        // Refetch to get updated category data
+        await fetchNotes();
         toast({ title: 'Anotação atualizada!' });
       } else {
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('notes')
-          .insert(noteData)
-          .select()
-          .single();
+          .insert(noteData);
 
         if (error) throw error;
 
-        setNotes((prev) => [data, ...prev]);
+        await fetchNotes();
         toast({ title: 'Anotação criada!' });
       }
 
@@ -238,6 +324,99 @@ export default function Anotacoes() {
     }
   };
 
+  // Category handlers
+  const handleCreateCategory = async () => {
+    if (!user?.id || !newCategoryName.trim()) {
+      toast({
+        title: 'Erro',
+        description: 'O nome da categoria é obrigatório.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('note_categories')
+        .insert({
+          nome: newCategoryName.trim(),
+          cor: newCategoryColor,
+          user_id: user.id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCategories((prev) => [...prev, data].sort((a, b) => a.nome.localeCompare(b.nome)));
+      setFormData({ ...formData, category_id: data.id });
+      setCategoryDialogOpen(false);
+      setNewCategoryName('');
+      setNewCategoryColor(CATEGORY_COLORS[0]);
+      toast({ title: 'Categoria criada!' });
+    } catch (error) {
+      console.error('Error creating category:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível criar a categoria.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleUpdateCategory = async () => {
+    if (!editingCategory || !editCategoryName.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from('note_categories')
+        .update({
+          nome: editCategoryName.trim(),
+          cor: editCategoryColor,
+        })
+        .eq('id', editingCategory.id);
+
+      if (error) throw error;
+
+      setCategories((prev) =>
+        prev.map((c) =>
+          c.id === editingCategory.id
+            ? { ...c, nome: editCategoryName.trim(), cor: editCategoryColor }
+            : c
+        )
+      );
+      await fetchNotes();
+      setEditingCategory(null);
+      toast({ title: 'Categoria atualizada!' });
+    } catch (error) {
+      console.error('Error updating category:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar a categoria.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId: string) => {
+    try {
+      const { error } = await supabase.from('note_categories').delete().eq('id', categoryId);
+
+      if (error) throw error;
+
+      setCategories((prev) => prev.filter((c) => c.id !== categoryId));
+      await fetchNotes();
+      toast({ title: 'Categoria excluída!' });
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível excluir a categoria.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const formatDateDisplay = () => {
     if (!startDate && !endDate) return 'Selecionar Data';
     if (startDate && endDate) {
@@ -245,6 +424,11 @@ export default function Anotacoes() {
     }
     if (startDate) return `A partir de ${format(startDate, 'dd/MM/yy')}`;
     return `Até ${format(endDate!, 'dd/MM/yy')}`;
+  };
+
+  const getCategoryById = (id: string | null) => {
+    if (!id) return null;
+    return categories.find((c) => c.id === id);
   };
 
   return (
@@ -261,10 +445,16 @@ export default function Anotacoes() {
               Registre valores, nomes e informações importantes
             </p>
           </div>
-          <Button onClick={openCreateDialog} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Nova Anotação
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setManageCategoriesOpen(true)} className="gap-2">
+              <Tag className="h-4 w-4" />
+              Categorias
+            </Button>
+            <Button onClick={openCreateDialog} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Nova Anotação
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -281,6 +471,28 @@ export default function Anotacoes() {
                   className="pl-10"
                 />
               </div>
+
+              {/* Category Filter */}
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas categorias</SelectItem>
+                  <SelectItem value="none">Sem categoria</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full shrink-0"
+                          style={{ backgroundColor: cat.cor }}
+                        />
+                        {cat.nome}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
               {/* Date Filter */}
               <div className="flex items-center gap-2 flex-wrap">
@@ -376,12 +588,25 @@ export default function Anotacoes() {
                     className="flex items-start gap-4 p-4 hover:bg-muted/50 transition-colors group"
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <h3 className="font-semibold truncate">
                           {debouncedSearch
                             ? highlightText(note.titulo, debouncedSearch)
                             : note.titulo}
                         </h3>
+                        {note.note_categories && (
+                          <Badge
+                            variant="secondary"
+                            className="text-xs shrink-0"
+                            style={{
+                              backgroundColor: `${note.note_categories.cor}20`,
+                              color: note.note_categories.cor,
+                              borderColor: note.note_categories.cor,
+                            }}
+                          >
+                            {note.note_categories.nome}
+                          </Badge>
+                        )}
                         <span className="text-xs text-muted-foreground whitespace-nowrap">
                           {format(parseISO(note.data), 'dd/MM/yyyy')}
                         </span>
@@ -447,6 +672,44 @@ export default function Anotacoes() {
                 autoFocus
               />
             </div>
+
+            {/* Category Selection */}
+            <div>
+              <Label htmlFor="category">Categoria</Label>
+              <div className="flex gap-2">
+                <Select
+                  value={formData.category_id}
+                  onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Sem categoria</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full shrink-0"
+                            style={{ backgroundColor: cat.cor }}
+                          />
+                          {cat.nome}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setCategoryDialogOpen(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
             <div>
               <Label htmlFor="conteudo">Conteúdo</Label>
               <Textarea
@@ -486,6 +749,170 @@ export default function Anotacoes() {
               {editingNote ? 'Salvar' : 'Criar'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Category Dialog */}
+      <Dialog open={categoryDialogOpen} onOpenChange={setCategoryDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nova Categoria</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="categoryName">Nome da Categoria *</Label>
+              <Input
+                id="categoryName"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="Ex: Trabalho, Pessoal, Finanças..."
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreateCategory();
+                }}
+              />
+            </div>
+            <div>
+              <Label>Cor</Label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {CATEGORY_COLORS.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    className={cn(
+                      'w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center',
+                      newCategoryColor === color
+                        ? 'border-foreground scale-110'
+                        : 'border-transparent hover:scale-105'
+                    )}
+                    style={{ backgroundColor: color }}
+                    onClick={() => setNewCategoryColor(color)}
+                  >
+                    {newCategoryColor === color && (
+                      <Check className="h-4 w-4 text-white" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCategoryDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCreateCategory}>
+              Criar Categoria
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Categories Dialog */}
+      <Dialog open={manageCategoriesOpen} onOpenChange={setManageCategoriesOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Gerenciar Categorias</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {categories.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">
+                Nenhuma categoria criada ainda.
+              </p>
+            ) : (
+              <div className="divide-y divide-border max-h-[300px] overflow-y-auto">
+                {categories.map((category) => (
+                  <div key={category.id} className="flex items-center gap-3 py-3">
+                    {editingCategory?.id === category.id ? (
+                      <>
+                        <Input
+                          value={editCategoryName}
+                          onChange={(e) => setEditCategoryName(e.target.value)}
+                          className="flex-1"
+                          autoFocus
+                        />
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button
+                              className="w-8 h-8 rounded-full border-2 shrink-0"
+                              style={{ backgroundColor: editCategoryColor }}
+                            />
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-3">
+                            <div className="flex flex-wrap gap-2 max-w-[200px]">
+                              {CATEGORY_COLORS.map((color) => (
+                                <button
+                                  key={color}
+                                  type="button"
+                                  className={cn(
+                                    'w-6 h-6 rounded-full border-2 transition-all',
+                                    editCategoryColor === color
+                                      ? 'border-foreground'
+                                      : 'border-transparent'
+                                  )}
+                                  style={{ backgroundColor: color }}
+                                  onClick={() => setEditCategoryColor(color)}
+                                />
+                              ))}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        <Button size="sm" onClick={handleUpdateCategory}>
+                          Salvar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEditingCategory(null)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <div
+                          className="w-4 h-4 rounded-full shrink-0"
+                          style={{ backgroundColor: category.cor }}
+                        />
+                        <span className="flex-1">{category.nome}</span>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            setEditingCategory(category);
+                            setEditCategoryName(category.nome);
+                            setEditCategoryColor(category.cor);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteCategory(category.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <Button
+              variant="outline"
+              className="w-full gap-2"
+              onClick={() => {
+                setManageCategoriesOpen(false);
+                setCategoryDialogOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4" />
+              Nova Categoria
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
