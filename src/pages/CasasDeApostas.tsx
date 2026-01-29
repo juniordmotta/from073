@@ -20,12 +20,13 @@ import {
   ExternalLink,
   Home,
   Edit3,
-  Check,
-  X,
   Trash2,
   Eye,
   EyeOff,
-  PlusCircle
+  PlusCircle,
+  FolderPlus,
+  Pencil,
+  Folder
 } from 'lucide-react';
 import { bettingHouseGroups, BettingHouse, BettingHouseGroup } from '@/data/bettingHousesData';
 import { highlightText } from '@/lib/utils/highlightText';
@@ -49,6 +50,13 @@ interface CustomHouse {
   group_id: string;
   name: string;
   url: string | null;
+}
+
+interface CustomGroup {
+  id: string;
+  nome: string;
+  created_by: string;
+  created_at: string;
 }
 
 const CasasDeApostas = () => {
@@ -85,9 +93,20 @@ const CasasDeApostas = () => {
   const [showHidden, setShowHidden] = useState(false);
   const [houseToDelete, setHouseToDelete] = useState<{ house: BettingHouse; groupId: string } | null>(null);
 
+  // Estados para grupos customizados
+  const [customGroups, setCustomGroups] = useState<CustomGroup[]>([]);
+  const [isAddGroupDialogOpen, setIsAddGroupDialogOpen] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [isAddingGroup, setIsAddingGroup] = useState(false);
+  const [groupToDelete, setGroupToDelete] = useState<CustomGroup | null>(null);
+  const [editingGroup, setEditingGroup] = useState<CustomGroup | null>(null);
+  const [editedGroupName, setEditedGroupName] = useState('');
+  const [isSavingGroup, setIsSavingGroup] = useState(false);
+
   // Carregar dados ao montar
   useEffect(() => {
     loadCustomHouses();
+    loadCustomGroups();
     if (isAdmin) {
       loadHiddenHouses();
     }
@@ -116,6 +135,20 @@ const CasasDeApostas = () => {
       setCustomHouses(data || []);
     } catch (error) {
       console.error('Erro ao carregar casas customizadas:', error);
+    }
+  };
+
+  const loadCustomGroups = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('custom_betting_groups')
+        .select('*')
+        .order('nome');
+      
+      if (error) throw error;
+      setCustomGroups(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar grupos customizados:', error);
     }
   };
 
@@ -176,12 +209,28 @@ const CasasDeApostas = () => {
       return { ...group, houses };
     });
     
+    // Adicionar grupos customizados
+    customGroups.forEach(customGroup => {
+      const housesForGroup = newHousesByGroup.get(customGroup.id) || [];
+      const bettingHouses: BettingHouse[] = housesForGroup.map(h => ({
+        id: h.id,
+        name: h.name,
+        url: h.url || undefined,
+      }));
+      
+      groups.push({
+        id: customGroup.id,
+        name: customGroup.nome,
+        houses: bettingHouses,
+      });
+    });
+    
     // Filtrar casas ocultas
     if (!showHidden && hiddenHouseIds.size > 0) {
       groups = groups.map(group => ({
         ...group,
         houses: group.houses.filter(house => !hiddenHouseIds.has(house.id))
-      })).filter(group => group.houses.length > 0);
+      })).filter(group => group.houses.length > 0 || customGroups.some(g => g.id === group.id));
     }
     
     if (!searchTerm.trim()) {
@@ -205,7 +254,7 @@ const CasasDeApostas = () => {
         return null;
       })
       .filter((group): group is BettingHouseGroup => group !== null);
-  }, [searchTerm, hiddenHouseIds, showHidden, editedHousesMap, newHousesByGroup]);
+  }, [searchTerm, hiddenHouseIds, showHidden, editedHousesMap, newHousesByGroup, customGroups]);
 
   // Carregar parcerias
   const loadPartnerships = async () => {
@@ -493,6 +542,132 @@ const CasasDeApostas = () => {
     return totalHouses - hiddenHouses.length;
   }, [totalHouses, hiddenHouses.length]);
 
+  const totalGroups = useMemo(() => {
+    return bettingHouseGroups.length + customGroups.length;
+  }, [customGroups]);
+
+  // Funções para gerenciar grupos
+  const handleAddGroup = async () => {
+    if (!user?.id || !newGroupName.trim()) return;
+    
+    setIsAddingGroup(true);
+    try {
+      const { data, error } = await supabase
+        .from('custom_betting_groups')
+        .insert({
+          nome: newGroupName.trim(),
+          created_by: user.id,
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      setCustomGroups(prev => [...prev, data].sort((a, b) => a.nome.localeCompare(b.nome)));
+      
+      toast({
+        title: 'Grupo criado!',
+        description: `O grupo "${newGroupName}" foi adicionado.`,
+      });
+      
+      setIsAddGroupDialogOpen(false);
+      setNewGroupName('');
+    } catch (error: any) {
+      console.error('Erro ao criar grupo:', error);
+      toast({
+        title: 'Erro',
+        description: error.message || 'Não foi possível criar o grupo.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsAddingGroup(false);
+    }
+  };
+
+  const handleUpdateGroup = async () => {
+    if (!editingGroup || !editedGroupName.trim()) return;
+    
+    setIsSavingGroup(true);
+    try {
+      const { error } = await supabase
+        .from('custom_betting_groups')
+        .update({ nome: editedGroupName.trim() })
+        .eq('id', editingGroup.id);
+      
+      if (error) throw error;
+      
+      setCustomGroups(prev =>
+        prev.map(g =>
+          g.id === editingGroup.id ? { ...g, nome: editedGroupName.trim() } : g
+        ).sort((a, b) => a.nome.localeCompare(b.nome))
+      );
+      
+      toast({
+        title: 'Grupo atualizado!',
+        description: `O grupo foi renomeado para "${editedGroupName}".`,
+      });
+      
+      setEditingGroup(null);
+      setEditedGroupName('');
+    } catch (error: any) {
+      console.error('Erro ao atualizar grupo:', error);
+      toast({
+        title: 'Erro',
+        description: error.message || 'Não foi possível atualizar o grupo.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingGroup(false);
+    }
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!groupToDelete) return;
+    
+    try {
+      // Primeiro deletar todas as casas do grupo
+      const { error: housesError } = await supabase
+        .from('custom_betting_houses')
+        .delete()
+        .eq('group_id', groupToDelete.id);
+      
+      if (housesError) throw housesError;
+      
+      // Depois deletar o grupo
+      const { error: groupError } = await supabase
+        .from('custom_betting_groups')
+        .delete()
+        .eq('id', groupToDelete.id);
+      
+      if (groupError) throw groupError;
+      
+      setCustomGroups(prev => prev.filter(g => g.id !== groupToDelete.id));
+      setCustomHouses(prev => prev.filter(h => h.group_id !== groupToDelete.id));
+      
+      toast({
+        title: 'Grupo excluído!',
+        description: `O grupo "${groupToDelete.nome}" foi removido.`,
+      });
+      
+      setGroupToDelete(null);
+    } catch (error: any) {
+      console.error('Erro ao excluir grupo:', error);
+      toast({
+        title: 'Erro',
+        description: error.message || 'Não foi possível excluir o grupo.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const isCustomGroup = (groupId: string) => {
+    return customGroups.some(g => g.id === groupId);
+  };
+
+  const getCustomGroup = (groupId: string) => {
+    return customGroups.find(g => g.id === groupId);
+  };
+
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
@@ -509,6 +684,17 @@ const CasasDeApostas = () => {
           </div>
           
           <div className="flex items-center gap-2 flex-wrap">
+            {isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsAddGroupDialogOpen(true)}
+                className="gap-2"
+              >
+                <FolderPlus className="h-4 w-4" />
+                Novo Grupo
+              </Button>
+            )}
             {isAdmin && hiddenHouses.length > 0 && (
               <Button
                 variant={showHidden ? "default" : "outline"}
@@ -521,7 +707,7 @@ const CasasDeApostas = () => {
               </Button>
             )}
             <Badge variant="secondary" className="text-sm">
-              {bettingHouseGroups.length} grupos
+              {totalGroups} grupos
             </Badge>
             <Badge variant="outline" className="text-sm">
               {visibleHouses} casas
@@ -573,17 +759,59 @@ const CasasDeApostas = () => {
                   >
                     <AccordionTrigger className="hover:no-underline py-4">
                       <div className="flex items-center gap-3 flex-1">
-                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Home className="h-5 w-5 text-primary" />
+                        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${isCustomGroup(group.id) ? 'bg-secondary' : 'bg-primary/10'}`}>
+                          {isCustomGroup(group.id) ? (
+                            <Folder className="h-5 w-5 text-muted-foreground" />
+                          ) : (
+                            <Home className="h-5 w-5 text-primary" />
+                          )}
                         </div>
                         <div className="text-left flex-1">
-                          <div className="font-medium">
+                          <div className="font-medium flex items-center gap-2">
                             {searchTerm ? highlightText(group.name, searchTerm) : group.name}
+                            {isCustomGroup(group.id) && (
+                              <Badge variant="secondary" className="text-xs">Customizado</Badge>
+                            )}
                           </div>
                           <div className="text-sm text-muted-foreground">
                             {group.houses.length} {group.houses.length === 1 ? 'casa' : 'casas'}
                           </div>
                         </div>
+                        {isAdmin && isCustomGroup(group.id) && (
+                          <div className="flex items-center gap-1 mr-2" onClick={(e) => e.stopPropagation()}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const customGroup = getCustomGroup(group.id);
+                                if (customGroup) {
+                                  setEditingGroup(customGroup);
+                                  setEditedGroupName(customGroup.nome);
+                                }
+                              }}
+                              title="Editar grupo"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const customGroup = getCustomGroup(group.id);
+                                if (customGroup) {
+                                  setGroupToDelete(customGroup);
+                                }
+                              }}
+                              title="Excluir grupo"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="pb-4">
@@ -836,7 +1064,7 @@ const CasasDeApostas = () => {
             <DialogHeader>
               <DialogTitle>Adicionar Nova Casa</DialogTitle>
               <DialogDescription>
-                Adicione uma nova casa de apostas ao grupo "{bettingHouseGroups.find(g => g.id === addHouseGroupId)?.name}"
+                Adicione uma nova casa de apostas ao grupo "{bettingHouseGroups.find(g => g.id === addHouseGroupId)?.name || customGroups.find(g => g.id === addHouseGroupId)?.nome}"
               </DialogDescription>
             </DialogHeader>
             
@@ -895,6 +1123,101 @@ const CasasDeApostas = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Dialog para adicionar novo grupo */}
+        <Dialog open={isAddGroupDialogOpen} onOpenChange={setIsAddGroupDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Novo Grupo</DialogTitle>
+              <DialogDescription>
+                Crie um novo grupo de casas de apostas
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="groupName">Nome do Grupo *</Label>
+                <Input
+                  id="groupName"
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  placeholder="Ex: Clone Pixbet, Casas Premium..."
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newGroupName.trim()) {
+                      handleAddGroup();
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsAddGroupDialogOpen(false);
+                  setNewGroupName('');
+                }}
+                disabled={isAddingGroup}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleAddGroup}
+                disabled={!newGroupName.trim() || isAddingGroup}
+              >
+                {isAddingGroup ? 'Criando...' : 'Criar Grupo'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog para editar grupo */}
+        <Dialog open={!!editingGroup} onOpenChange={(open) => !open && setEditingGroup(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Editar Grupo</DialogTitle>
+              <DialogDescription>
+                Altere o nome do grupo
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="editGroupName">Nome do Grupo *</Label>
+                <Input
+                  id="editGroupName"
+                  value={editedGroupName}
+                  onChange={(e) => setEditedGroupName(e.target.value)}
+                  placeholder="Nome do grupo"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && editedGroupName.trim()) {
+                      handleUpdateGroup();
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                onClick={() => setEditingGroup(null)}
+                disabled={isSavingGroup}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleUpdateGroup}
+                disabled={!editedGroupName.trim() || isSavingGroup}
+              >
+                {isSavingGroup ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Dialog de confirmação para remover casa */}
         <ConfirmDeleteDialog
           open={!!houseToDelete}
@@ -902,6 +1225,15 @@ const CasasDeApostas = () => {
           onConfirm={handleHideHouse}
           title="Remover Casa do Catálogo"
           description={`Tem certeza que deseja remover "${houseToDelete?.house.name}" do catálogo? A casa ficará oculta para todos os usuários. Esta ação pode ser revertida pelos administradores.`}
+        />
+
+        {/* Dialog de confirmação para excluir grupo */}
+        <ConfirmDeleteDialog
+          open={!!groupToDelete}
+          onOpenChange={(open) => !open && setGroupToDelete(null)}
+          onConfirm={handleDeleteGroup}
+          title="Excluir Grupo"
+          description={`Tem certeza que deseja excluir o grupo "${groupToDelete?.nome}"? Todas as casas dentro deste grupo também serão removidas. Esta ação não pode ser desfeita.`}
         />
       </div>
     </Layout>

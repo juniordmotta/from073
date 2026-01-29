@@ -247,6 +247,30 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_betting_groups: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       custom_betting_houses: {
         Row: {
           created_at: string
