@@ -232,7 +232,7 @@ export default function Anotacoes() {
       conteudo: '',
       valor: '',
       data: format(new Date(), 'yyyy-MM-dd'),
-      category_id: '',
+      category_id: '__none__',
     });
     setDialogOpen(true);
   };
@@ -244,7 +244,7 @@ export default function Anotacoes() {
       conteudo: note.conteudo || '',
       valor: note.valor ? note.valor.toString() : '',
       data: note.data,
-      category_id: note.category_id || '',
+      category_id: note.category_id || '__none__',
     });
     setDialogOpen(true);
   };
@@ -259,12 +259,16 @@ export default function Anotacoes() {
       return;
     }
 
+    const categoryId = formData.category_id && formData.category_id !== '__none__' 
+      ? formData.category_id 
+      : null;
+
     const noteData = {
       titulo: formData.titulo.trim(),
       conteudo: formData.conteudo.trim() || null,
       valor: formData.valor ? parseFloat(formData.valor.replace(',', '.')) : null,
       data: formData.data,
-      category_id: formData.category_id || null,
+      category_id: categoryId,
       user_id: user.id,
     };
 
@@ -685,7 +689,7 @@ export default function Anotacoes() {
                     <SelectValue placeholder="Selecione uma categoria" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sem categoria</SelectItem>
+                    <SelectItem value="__none__">Sem categoria</SelectItem>
                     {categories.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>
                         <div className="flex items-center gap-2">
