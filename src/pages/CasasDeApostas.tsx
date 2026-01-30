@@ -26,7 +26,8 @@ import {
   PlusCircle,
   FolderPlus,
   Pencil,
-  Folder
+  Folder,
+  MoveRight
 } from 'lucide-react';
 import { bettingHouseGroups, BettingHouse, BettingHouseGroup } from '@/data/bettingHousesData';
 import { highlightText } from '@/lib/utils/highlightText';
@@ -102,6 +103,11 @@ const CasasDeApostas = () => {
   const [editingGroup, setEditingGroup] = useState<CustomGroup | null>(null);
   const [editedGroupName, setEditedGroupName] = useState('');
   const [isSavingGroup, setIsSavingGroup] = useState(false);
+
+  // Estados para mover casa
+  const [movingHouse, setMovingHouse] = useState<{ house: BettingHouse; currentGroupId: string } | null>(null);
+  const [targetGroupId, setTargetGroupId] = useState<string>('');
+  const [isMovingHouse, setIsMovingHouse] = useState(false);
 
   // Carregar dados ao montar
   useEffect(() => {
@@ -668,6 +674,93 @@ const CasasDeApostas = () => {
     return customGroups.find(g => g.id === groupId);
   };
 
+  // Mover casa para outro grupo
+  const handleMoveHouse = async () => {
+    if (!movingHouse || !targetGroupId || !user?.id) return;
+    
+    setIsMovingHouse(true);
+    try {
+      const customHouse = customHouses.find(h => h.id === movingHouse.house.id);
+      
+      if (customHouse) {
+        // Casa customizada: atualizar group_id
+        const { error } = await supabase
+          .from('custom_betting_houses')
+          .update({ group_id: targetGroupId })
+          .eq('id', customHouse.id);
+        
+        if (error) throw error;
+        
+        setCustomHouses(prev => prev.map(h => 
+          h.id === customHouse.id ? { ...h, group_id: targetGroupId } : h
+        ));
+      } else {
+        // Casa original: criar entry customizada no novo grupo e ocultar a original
+        // Primeiro, adicionar ao novo grupo como customizada
+        const { data: newHouse, error: insertError } = await supabase
+          .from('custom_betting_houses')
+          .insert({
+            group_id: targetGroupId,
+            name: movingHouse.house.name,
+            url: movingHouse.house.url || null,
+            created_by: user.id,
+          })
+          .select()
+          .single();
+        
+        if (insertError) throw insertError;
+        
+        // Ocultar a casa original
+        const { error: hideError } = await supabase
+          .from('hidden_betting_houses')
+          .insert({
+            house_id: movingHouse.house.id,
+            house_name: movingHouse.house.name,
+            group_id: movingHouse.currentGroupId,
+            hidden_by: user.id,
+          });
+        
+        if (hideError) throw hideError;
+        
+        setCustomHouses(prev => [...prev, newHouse]);
+        setHiddenHouses(prev => [...prev, {
+          id: crypto.randomUUID(),
+          house_id: movingHouse.house.id,
+          house_name: movingHouse.house.name,
+          group_id: movingHouse.currentGroupId,
+        }]);
+      }
+      
+      const targetGroupStatic = bettingHouseGroups.find(g => g.id === targetGroupId);
+      const targetGroupCustom = customGroups.find(g => g.id === targetGroupId);
+      const targetGroupName = targetGroupStatic?.name || targetGroupCustom?.nome || '';
+      
+      toast({
+        title: 'Casa movida!',
+        description: `${movingHouse.house.name} foi movida para "${targetGroupName}".`,
+      });
+      
+      setMovingHouse(null);
+      setTargetGroupId('');
+    } catch (error: any) {
+      console.error('Erro ao mover casa:', error);
+      toast({
+        title: 'Erro',
+        description: error.message || 'Não foi possível mover a casa.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsMovingHouse(false);
+    }
+  };
+
+  // Lista de todos os grupos disponíveis para mover
+  const allGroups = useMemo(() => {
+    const staticGroups = bettingHouseGroups.map(g => ({ id: g.id, name: g.name }));
+    const customGroupsList = customGroups.map(g => ({ id: g.id, name: g.nome }));
+    return [...staticGroups, ...customGroupsList];
+  }, [customGroups]);
+
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
@@ -880,6 +973,20 @@ const CasasDeApostas = () => {
                                           title="Editar casa"
                                         >
                                           <Edit3 className="h-4 w-4" />
+                                        </Button>
+                                      )}
+                                      {isAdmin && (
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-8 w-8"
+                                          onClick={() => {
+                                            setMovingHouse({ house, currentGroupId: group.id });
+                                            setTargetGroupId('');
+                                          }}
+                                          title="Mover para outro grupo"
+                                        >
+                                          <MoveRight className="h-4 w-4" />
                                         </Button>
                                       )}
                                       <Button
@@ -1235,6 +1342,68 @@ const CasasDeApostas = () => {
           title="Excluir Grupo"
           description={`Tem certeza que deseja excluir o grupo "${groupToDelete?.nome}"? Todas as casas dentro deste grupo também serão removidas. Esta ação não pode ser desfeita.`}
         />
+
+        {/* Dialog para mover casa */}
+        <Dialog 
+          open={!!movingHouse} 
+          onOpenChange={(open) => {
+            if (!open) {
+              setMovingHouse(null);
+              setTargetGroupId('');
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Mover Casa de Apostas</DialogTitle>
+              <DialogDescription>
+                Selecione o grupo de destino para "{movingHouse?.house.name}"
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Grupo de Destino</Label>
+                <Select value={targetGroupId} onValueChange={setTargetGroupId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um grupo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allGroups
+                      .filter(g => g.id !== movingHouse?.currentGroupId)
+                      .map(group => (
+                        <SelectItem key={group.id} value={group.id}>
+                          {group.name}
+                        </SelectItem>
+                      ))
+                    }
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setMovingHouse(null);
+                  setTargetGroupId('');
+                }}
+                disabled={isMovingHouse}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleMoveHouse}
+                disabled={!targetGroupId || isMovingHouse}
+                className="gap-2"
+              >
+                <MoveRight className="h-4 w-4" />
+                {isMovingHouse ? 'Movendo...' : 'Mover'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
