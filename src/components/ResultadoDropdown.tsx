@@ -81,7 +81,7 @@ export function ResultadoDropdown({
     if (currentResult === 'cashout' && currentCashoutValue !== undefined && currentCashoutValue !== null) {
       const diff = currentCashoutValue - valorApostado;
       const sign = diff >= 0 ? '+' : '';
-      return `CO: ${sign}R$${formatCurrency(diff)}`;
+      return `CO: ${sign}R$ ${formatCurrency(diff)}`;
     }
     return resultadoMap[currentResult]?.label || 'Definir';
   };

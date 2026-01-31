@@ -6,10 +6,27 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Formata valores monetários em reais no padrão brasileiro
- * Exemplos: 1234.56 → "R$ 1.234,56", 100.50 → "R$ 100,50"
+ * Formata valores monetários em reais no padrão brasileiro (sem prefixo R$)
+ * Exemplos: 1234.56 → "1.234,56", 100.50 → "100,50"
+ * Use formatCurrencyFull() se precisar do prefixo "R$"
  */
 export function formatCurrency(value: number | string | null | undefined): string {
+  if (value === null || value === undefined) return "0,00";
+  
+  const num = typeof value === "string" ? parseFloat(value) : value;
+  if (isNaN(num)) return "0,00";
+  
+  return num.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+/**
+ * Formata valores monetários com prefixo R$
+ * Exemplos: 1234.56 → "R$ 1.234,56"
+ */
+export function formatCurrencyFull(value: number | string | null | undefined): string {
   if (value === null || value === undefined) return "R$ 0,00";
   
   const num = typeof value === "string" ? parseFloat(value) : value;

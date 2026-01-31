@@ -239,6 +239,18 @@ export default function MinhasArbitragens() {
   const [useTresCasas, setUseTresCasas] = useState(false);
   const [pasteText, setPasteText] = useState('');
   const [activeTab, setActiveTab] = useState('manual');
+  
+  // Estado para prejuízo avulso
+  const [openPrejuizo, setOpenPrejuizo] = useState(false);
+  const [prejuizoData, setPrejuizoData] = useState({
+    descricao: '',
+    casa_nome: '',
+    valor_apostado: '',
+    valor_perdido: '',
+    data_evento: '',
+  });
+  const [isLoadingPrejuizo, setIsLoadingPrejuizo] = useState(false);
+  
   const [formData, setFormData] = useState({
     descricao: '',
     data_evento: '',
@@ -1071,6 +1083,128 @@ export default function MinhasArbitragens() {
       });
     } finally {
       setIsLoadingAdd(false);
+    }
+  };
+
+  // Handler para prejuízo avulso (aposta em uma única casa que foi abandonada com perda)
+  const handleSubmitPrejuizo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!user?.id) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro de autenticação',
+        description: 'Usuário não autenticado.',
+      });
+      return;
+    }
+
+    if (partnerships.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Parceria obrigatória',
+        description: 'Você precisa ter pelo menos uma parceria ativa.',
+      });
+      return;
+    }
+    
+    setIsLoadingPrejuizo(true);
+
+    try {
+      const valorApostado = parseLocalizedNumber(prejuizoData.valor_apostado);
+      const valorPerdido = parseLocalizedNumber(prejuizoData.valor_perdido);
+      const lucroReal = -Math.abs(valorPerdido); // Sempre negativo
+      
+      const dataEvento = prejuizoData.data_evento 
+        ? new Date(prejuizoData.data_evento + ':00').toISOString() 
+        : new Date().toISOString();
+
+      // Criar uma arbitragem com prejuízo já fechado
+      const arbitrageData: {
+        user_id: string;
+        descricao: string;
+        data_evento: string;
+        esporte_liga: string;
+        casa_01_nome: string;
+        casa_01_odd: number;
+        casa_01_valor: number;
+        casa_01_mercado: string;
+        casa_01_parceria_id: string;
+        casa_01_resultado: 'red';
+        casa_01_valor_resultado: number;
+        casa_02_nome: string;
+        casa_02_odd: number;
+        casa_02_valor: number;
+        casa_02_mercado: string;
+        casa_02_parceria_id: string;
+        casa_02_resultado: 'devolvido';
+        porcentagem: number;
+        retorno_previsto: number;
+        lucro_projetado: number;
+        lucro_real: number;
+        status: 'red';
+      } = {
+        user_id: user.id,
+        descricao: prejuizoData.descricao || 'Prejuízo Avulso',
+        data_evento: dataEvento,
+        esporte_liga: 'Prejuízo Avulso',
+        casa_01_nome: prejuizoData.casa_nome,
+        casa_01_odd: 1.0,
+        casa_01_valor: valorApostado,
+        casa_01_mercado: 'Aposta cancelada/desistida',
+        casa_01_parceria_id: selectedPartnership01,
+        casa_01_resultado: 'red',
+        casa_01_valor_resultado: valorApostado - valorPerdido,
+        casa_02_nome: '-',
+        casa_02_odd: 1.0,
+        casa_02_valor: 0,
+        casa_02_mercado: 'N/A',
+        casa_02_parceria_id: selectedPartnership01,
+        casa_02_resultado: 'devolvido',
+        porcentagem: 0,
+        retorno_previsto: 0,
+        lucro_projetado: lucroReal,
+        lucro_real: lucroReal,
+        status: 'red',
+      };
+
+      const { data: insertedData, error: insertError } = await supabase
+        .from('arbitrages')
+        .insert([arbitrageData])
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // Atualização otimística
+      if (insertedData) {
+        setArbitragens(prev => [...prev, insertedData as unknown as Arbitrage]);
+      }
+
+      loadUserMonthStats();
+      
+      toast({
+        title: 'Prejuízo registrado',
+        description: `Perda de R$ ${formatCurrency(valorPerdido)} registrada.`,
+      });
+      
+      setOpenPrejuizo(false);
+      setPrejuizoData({
+        descricao: '',
+        casa_nome: '',
+        valor_apostado: '',
+        valor_perdido: '',
+        data_evento: '',
+      });
+    } catch (error: any) {
+      console.error('Erro ao registrar prejuízo:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao registrar prejuízo',
+        description: error.message || 'Ocorreu um erro desconhecido',
+      });
+    } finally {
+      setIsLoadingPrejuizo(false);
     }
   };
 
@@ -2970,6 +3104,23 @@ export default function MinhasArbitragens() {
             </DialogDescription>
           </DialogHeader>
 
+          {/* Botão de Prejuízo Avulso */}
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="text-destructive border-destructive/50 hover:bg-destructive/10"
+              onClick={() => {
+                setOpenAdd(false);
+                setOpenPrejuizo(true);
+              }}
+            >
+              <TrendingDown className="h-4 w-4 mr-2" />
+              Prejuízo Avulso
+            </Button>
+          </div>
+
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="paste">
@@ -3443,6 +3594,123 @@ export default function MinhasArbitragens() {
               </form>
             </TabsContent>
           </Tabs>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Prejuízo Avulso */}
+      <Dialog open={openPrejuizo} onOpenChange={setOpenPrejuizo}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <TrendingDown className="h-5 w-5 text-destructive" />
+              Prejuízo Avulso
+            </DialogTitle>
+            <DialogDescription>
+              Registre uma perda de aposta que não foi completada nas duas casas
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleSubmitPrejuizo} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="prejuizo_data_evento">Data/Hora</Label>
+              <Input
+                id="prejuizo_data_evento"
+                type="datetime-local"
+                value={prejuizoData.data_evento}
+                onChange={(e) => setPrejuizoData({ ...prejuizoData, data_evento: e.target.value })}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="prejuizo_descricao">Descrição (opcional)</Label>
+              <Input
+                id="prejuizo_descricao"
+                placeholder="Ex: Desistência por queda de odd"
+                value={prejuizoData.descricao}
+                onChange={(e) => setPrejuizoData({ ...prejuizoData, descricao: e.target.value })}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="prejuizo_casa">Casa de Aposta</Label>
+              <Input
+                id="prejuizo_casa"
+                placeholder="Nome da casa"
+                value={prejuizoData.casa_nome}
+                onChange={(e) => setPrejuizoData({ ...prejuizoData, casa_nome: e.target.value })}
+                required
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="prejuizo_valor_apostado">Valor Apostado (R$)</Label>
+                <Input
+                  id="prejuizo_valor_apostado"
+                  placeholder="0,00"
+                  value={prejuizoData.valor_apostado}
+                  onChange={(e) => setPrejuizoData({ ...prejuizoData, valor_apostado: e.target.value })}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="prejuizo_valor_perdido">Valor Perdido (R$)</Label>
+                <Input
+                  id="prejuizo_valor_perdido"
+                  placeholder="50,00"
+                  value={prejuizoData.valor_perdido}
+                  onChange={(e) => setPrejuizoData({ ...prejuizoData, valor_perdido: e.target.value })}
+                  required
+                  className="border-destructive/50"
+                />
+              </div>
+            </div>
+            
+            {/* Preview do resultado */}
+            {prejuizoData.valor_apostado && prejuizoData.valor_perdido && (
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Valor apostado:</span>
+                  <span>R$ {formatCurrency(parseLocalizedNumber(prejuizoData.valor_apostado))}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Valor perdido:</span>
+                  <span className="text-destructive font-semibold">
+                    - R$ {formatCurrency(parseLocalizedNumber(prejuizoData.valor_perdido))}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm pt-2 border-t border-destructive/30 mt-2">
+                  <span className="text-muted-foreground">Valor recuperado:</span>
+                  <span>
+                    R$ {formatCurrency(
+                      parseLocalizedNumber(prejuizoData.valor_apostado) - 
+                      parseLocalizedNumber(prejuizoData.valor_perdido)
+                    )}
+                  </span>
+                </div>
+              </div>
+            )}
+            
+            <div className="flex gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={() => setOpenPrejuizo(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                variant="destructive"
+                className="flex-1"
+                disabled={isLoadingPrejuizo}
+              >
+                {isLoadingPrejuizo ? 'Salvando...' : 'Registrar Prejuízo'}
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </Layout>
