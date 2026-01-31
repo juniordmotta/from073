@@ -3141,6 +3141,7 @@ export default function MinhasArbitragens() {
                         value={formData.casa_01_odd}
                         onChange={(e) => setFormData({ ...formData, casa_01_odd: e.target.value })}
                         required
+                        className={parseFloat(formData.casa_01_odd) > 1 ? 'border-success' : ''}
                       />
                     </div>
                     <div className="space-y-2">
@@ -3153,6 +3154,7 @@ export default function MinhasArbitragens() {
                         value={formData.casa_01_valor}
                         onChange={(e) => setFormData({ ...formData, casa_01_valor: e.target.value })}
                         required
+                        className={parseFloat(formData.casa_01_valor) > 0 ? 'border-success' : ''}
                       />
                     </div>
                     <div className="space-y-2">
@@ -3246,6 +3248,7 @@ export default function MinhasArbitragens() {
                         value={formData.casa_02_odd}
                         onChange={(e) => setFormData({ ...formData, casa_02_odd: e.target.value })}
                         required
+                        className={parseFloat(formData.casa_02_odd) > 1 ? 'border-success' : ''}
                       />
                     </div>
                     <div className="space-y-2">
@@ -3258,6 +3261,7 @@ export default function MinhasArbitragens() {
                         value={formData.casa_02_valor}
                         onChange={(e) => setFormData({ ...formData, casa_02_valor: e.target.value })}
                         required
+                        className={parseFloat(formData.casa_02_valor) > 0 ? 'border-success' : ''}
                       />
                     </div>
                     <div className="space-y-2">
@@ -3352,6 +3356,7 @@ export default function MinhasArbitragens() {
                           value={formData.casa_03_odd}
                           onChange={(e) => setFormData({ ...formData, casa_03_odd: e.target.value })}
                           required={useTresCasas}
+                          className={parseFloat(formData.casa_03_odd) > 1 ? 'border-success' : ''}
                         />
                       </div>
                       <div className="space-y-2">
@@ -3364,6 +3369,7 @@ export default function MinhasArbitragens() {
                           value={formData.casa_03_valor}
                           onChange={(e) => setFormData({ ...formData, casa_03_valor: e.target.value })}
                           required={useTresCasas}
+                          className={parseFloat(formData.casa_03_valor) > 0 ? 'border-success' : ''}
                         />
                       </div>
                       <div className="space-y-2">
@@ -3405,29 +3411,27 @@ export default function MinhasArbitragens() {
                     <Label htmlFor="retorno_previsto_add">Retorno Previsto (R$)</Label>
                     <Input
                       id="retorno_previsto_add"
-                      type="number"
-                      step="0.01"
+                      type="text"
                       placeholder="Calculado automaticamente"
                       value={formData.retorno_previsto}
                       readOnly
-                      className="bg-muted"
+                      className={`bg-muted ${parseLocalizedNumber(formData.retorno_previsto) > 0 ? 'border-success' : ''}`}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lucro_projetado_add">Lucro Projetado (R$)</Label>
                     <Input
                       id="lucro_projetado_add"
-                      type="number"
-                      step="0.01"
+                      type="text"
                       placeholder="Calculado automaticamente"
                       value={formData.lucro_projetado}
                       readOnly
                       className={`bg-muted ${
-                        parseFloat(formData.lucro_projetado) > 0 
-                          ? 'text-success font-semibold' 
-                          : parseFloat(formData.lucro_projetado) < 0 
-                          ? 'text-destructive font-semibold' 
-                          : ''
+                        parseLocalizedNumber(formData.lucro_projetado) > 0 
+                          ? 'text-success font-semibold border-success' 
+                          : parseLocalizedNumber(formData.lucro_projetado) < 0 
+                            ? 'text-destructive border-destructive' 
+                            : ''
                       }`}
                     />
                   </div>
