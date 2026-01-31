@@ -43,7 +43,7 @@ import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter, X, Ma
 import { format, differenceInMilliseconds } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
-import { formatCurrency, formatUserName } from '@/lib/utils';
+import { formatCurrency, formatNumber, formatUserName, parseLocalizedNumber } from '@/lib/utils';
 import { parseArbitrageText } from '@/utils/arbitrageParser';
 import { MonthlyGoalCard } from '@/components/MonthlyGoalCard';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
@@ -887,7 +887,7 @@ export default function MinhasArbitragens() {
 
         setFormData(prev => ({
           ...prev,
-          porcentagem: formatCurrency(porcentagem),
+          porcentagem: formatNumber(porcentagem),
           retorno_previsto: formatCurrency(retornoPrevisto),
           lucro_projetado: formatCurrency(lucroProjetado),
         }));
@@ -903,7 +903,7 @@ export default function MinhasArbitragens() {
 
         setFormData(prev => ({
           ...prev,
-          porcentagem: formatCurrency(porcentagem),
+          porcentagem: formatNumber(porcentagem),
           retorno_previsto: formatCurrency(retornoPrevisto),
           lucro_projetado: formatCurrency(lucroProjetado),
         }));
@@ -972,9 +972,9 @@ export default function MinhasArbitragens() {
         casa_02_valor: parseFloat(formData.casa_02_valor),
         casa_02_mercado: formData.casa_02_mercado || 'Mercado não especificado',
         casa_02_parceria_id: selectedPartnership02,
-        porcentagem: parseFloat(formData.porcentagem),
-        retorno_previsto: parseFloat(formData.retorno_previsto),
-        lucro_projetado: parseFloat(formData.lucro_projetado),
+        porcentagem: parseLocalizedNumber(formData.porcentagem),
+        retorno_previsto: parseLocalizedNumber(formData.retorno_previsto),
+        lucro_projetado: parseLocalizedNumber(formData.lucro_projetado),
       };
 
       if (useTresCasas) {
@@ -3387,15 +3387,15 @@ export default function MinhasArbitragens() {
                       id="porcentagem_add"
                       type="text"
                       placeholder="Calculado automaticamente"
-                      value={parseFloat(formData.porcentagem) < 0 ? '' : formData.porcentagem}
+                      value={parseLocalizedNumber(formData.porcentagem) < 0 ? '' : formData.porcentagem}
                       readOnly
                       className={`bg-muted ${
-                        parseFloat(formData.porcentagem) > 0 
+                        parseLocalizedNumber(formData.porcentagem) > 0 
                           ? 'text-success font-semibold border-success' 
                           : ''
                       }`}
                     />
-                    {formData.porcentagem && parseFloat(formData.porcentagem) > 0 && (
+                    {formData.porcentagem && parseLocalizedNumber(formData.porcentagem) > 0 && (
                       <p className="text-xs font-medium text-success">
                         ✅ Arbitragem válida!
                       </p>
