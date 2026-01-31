@@ -249,6 +249,13 @@ const CasasDeApostas = () => {
     return map;
   }, [partnershipHouses]);
 
+  // Função para contar casas em uso por grupo
+  const getGroupUsageCount = (group: BettingHouseGroup): number => {
+    return group.houses.filter(house => 
+      housePartnershipsMap.has(house.name.toLowerCase())
+    ).length;
+  };
+
   // Aplicar edições às casas
   const getDisplayHouse = (house: BettingHouse): BettingHouse => {
     const edited = editedHousesMap.get(house.id);
@@ -933,8 +940,14 @@ const CasasDeApostas = () => {
                               <Badge variant="secondary" className="text-xs">Customizado</Badge>
                             )}
                           </div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-sm text-muted-foreground flex items-center gap-2">
                             {group.houses.length} {group.houses.length === 1 ? 'casa' : 'casas'}
+                            {getGroupUsageCount(group) > 0 && (
+                              <Badge variant="default" className="bg-success hover:bg-success/90 text-xs gap-1">
+                                <CheckCircle2 className="h-3 w-3" />
+                                {getGroupUsageCount(group)} em uso
+                              </Badge>
+                            )}
                           </div>
                         </div>
                         {isAdmin && isCustomGroup(group.id) && (
