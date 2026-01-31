@@ -27,7 +27,8 @@ import {
   FolderPlus,
   Pencil,
   Folder,
-  MoveRight
+  MoveRight,
+  CheckCircle2
 } from 'lucide-react';
 import { bettingHouseGroups, BettingHouse, BettingHouseGroup } from '@/data/bettingHousesData';
 import { highlightText } from '@/lib/utils/highlightText';
@@ -36,6 +37,12 @@ interface Partnership {
   id: string;
   nome_completo: string;
   status: string;
+}
+
+interface PartnershipHouse {
+  house_name: string;
+  partnership_id: string;
+  partnership_name: string;
 }
 
 interface HiddenHouse {
@@ -109,14 +116,18 @@ const CasasDeApostas = () => {
   const [targetGroupId, setTargetGroupId] = useState<string>('');
   const [isMovingHouse, setIsMovingHouse] = useState(false);
 
+  // Estado para casas já cadastradas em parcerias ativas
+  const [partnershipHouses, setPartnershipHouses] = useState<PartnershipHouse[]>([]);
+
   // Carregar dados ao montar
   useEffect(() => {
     loadCustomHouses();
     loadCustomGroups();
+    loadPartnershipHouses();
     if (isAdmin) {
       loadHiddenHouses();
     }
-  }, [isAdmin]);
+  }, [isAdmin, user?.id]);
 
   const loadHiddenHouses = async () => {
     try {
@@ -158,6 +169,48 @@ const CasasDeApostas = () => {
     }
   };
 
+  // Carregar casas das parcerias ativas do usuário logado
+  const loadPartnershipHouses = async () => {
+    if (!user?.id) return;
+    
+    try {
+      // Primeiro, buscar parcerias ativas do usuário
+      const { data: activePartnerships, error: pError } = await supabase
+        .from('partnerships')
+        .select('id, nome_completo')
+        .eq('user_id', user.id)
+        .eq('status', 'ativo');
+      
+      if (pError) throw pError;
+      
+      if (!activePartnerships || activePartnerships.length === 0) {
+        setPartnershipHouses([]);
+        return;
+      }
+      
+      // Buscar casas dessas parcerias
+      const partnershipIds = activePartnerships.map(p => p.id);
+      const { data: houses, error: hError } = await supabase
+        .from('partnership_houses')
+        .select('house_name, partnership_id')
+        .in('partnership_id', partnershipIds);
+      
+      if (hError) throw hError;
+      
+      // Mapear para incluir nome da parceria
+      const partnershipMap = new Map(activePartnerships.map(p => [p.id, p.nome_completo]));
+      const mappedHouses: PartnershipHouse[] = (houses || []).map(h => ({
+        house_name: h.house_name,
+        partnership_id: h.partnership_id,
+        partnership_name: partnershipMap.get(h.partnership_id) || '',
+      }));
+      
+      setPartnershipHouses(mappedHouses);
+    } catch (error) {
+      console.error('Erro ao carregar casas das parcerias:', error);
+    }
+  };
+
   const hiddenHouseIds = useMemo(() => {
     return new Set(hiddenHouses.map(h => h.house_id));
   }, [hiddenHouses]);
@@ -181,6 +234,20 @@ const CasasDeApostas = () => {
     });
     return map;
   }, [customHouses]);
+
+  // Mapa de casas por nome -> parcerias que usam
+  const housePartnershipsMap = useMemo(() => {
+    const map = new Map<string, string[]>();
+    partnershipHouses.forEach(ph => {
+      const normalizedName = ph.house_name.toLowerCase();
+      const existing = map.get(normalizedName) || [];
+      if (!existing.includes(ph.partnership_name)) {
+        existing.push(ph.partnership_name);
+      }
+      map.set(normalizedName, existing);
+    });
+    return map;
+  }, [partnershipHouses]);
 
   // Aplicar edições às casas
   const getDisplayHouse = (house: BettingHouse): BettingHouse => {
@@ -913,20 +980,35 @@ const CasasDeApostas = () => {
                           const isHidden = hiddenHouseIds.has(house.id);
                           const isCustom = customHouses.some(h => h.id === house.id);
                           const isEdited = editedHousesMap.has(house.id);
+                          const usedByPartnerships = housePartnershipsMap.get(house.name.toLowerCase()) || [];
+                          const isUsedByPartnership = usedByPartnerships.length > 0;
                           
                           return (
                             <div
                               key={house.id}
-                              className={`flex items-center justify-between p-3 rounded-lg bg-background border hover:border-primary/50 transition-colors group ${isHidden ? 'opacity-50 border-destructive/50' : ''}`}
+                              className={`flex items-center justify-between p-3 rounded-lg bg-background border hover:border-primary/50 transition-colors group ${isHidden ? 'opacity-50 border-destructive/50' : ''} ${isUsedByPartnership ? 'border-success/50 bg-success/5' : ''}`}
                             >
                               <div className="flex items-center gap-3 flex-1 min-w-0">
-                                <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
-                                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                                <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${isUsedByPartnership ? 'bg-success/20' : 'bg-secondary'}`}>
+                                  {isUsedByPartnership ? (
+                                    <CheckCircle2 className="h-4 w-4 text-success" />
+                                  ) : (
+                                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                                  )}
                                 </div>
                                 
                                 <div className="flex-1 min-w-0">
-                                  <div className="font-medium truncate flex items-center gap-2">
+                                  <div className="font-medium truncate flex items-center gap-2 flex-wrap">
                                     {searchTerm ? highlightText(house.name, searchTerm) : house.name}
+                                    {isUsedByPartnership && (
+                                      <Badge variant="default" className="text-xs bg-success hover:bg-success/90 gap-1">
+                                        <CheckCircle2 className="h-3 w-3" />
+                                        {usedByPartnerships.length === 1 
+                                          ? usedByPartnerships[0]
+                                          : `${usedByPartnerships.length} parcerias`
+                                        }
+                                      </Badge>
+                                    )}
                                     {isHidden && (
                                       <Badge variant="destructive" className="text-xs">Oculta</Badge>
                                     )}
