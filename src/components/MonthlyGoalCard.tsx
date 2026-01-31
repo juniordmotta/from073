@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,21 +39,8 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
   };
 
-  const [currentMonth, setCurrentMonth] = useState(getCurrentMonth());
-
-  // Atualizar o mês quando o componente for montado e verificar periodicamente
-  useEffect(() => {
-    const checkMonth = () => {
-      const newMonth = getCurrentMonth();
-      if (newMonth !== currentMonth) {
-        setCurrentMonth(newMonth);
-      }
-    };
-    
-    // Verificar a cada minuto se mudou o mês
-    const interval = setInterval(checkMonth, 60000);
-    return () => clearInterval(interval);
-  }, [currentMonth]);
+  // Usar useMemo em vez de estado para o mês atual
+  const currentMonth = useMemo(() => getCurrentMonth(), []);
 
   useEffect(() => {
     fetchGoal();

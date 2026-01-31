@@ -194,16 +194,27 @@ const Parcerias = () => {
     status: 'ativo',
   });
 
+  // Carregar dados iniciais apenas uma vez quando user estiver disponível
   useEffect(() => {
+    if (!user) return;
+    
     console.log('useEffect disparado - isAdmin:', isAdmin, 'user:', user?.id, 'statusFilter:', statusFilter);
+    
+    // Carregar bancos e usuários apenas uma vez
+    fetchBanks();
+    if (isAdmin) {
+      fetchUsers();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, isAdmin]);
+  
+  // Carregar parcerias quando filtros mudarem
+  useEffect(() => {
     if (user) {
       fetchPartnerships();
-      fetchBanks();
-      if (isAdmin) {
-        fetchUsers();
-      }
     }
-  }, [user, selectedUserId, isAdmin, statusFilter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, selectedUserId, statusFilter]);
 
   const fetchBanks = async () => {
     if (!user) return;
