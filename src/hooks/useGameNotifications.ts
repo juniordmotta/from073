@@ -96,14 +96,15 @@ export const useGameNotifications = ({ userId, enabled = true }: UseGameNotifica
     // Verificar imediatamente
     checkUpcomingGames();
 
-    // Verificar a cada 30 segundos
-    intervalRef.current = setInterval(checkUpcomingGames, 30000);
+    // Verificar a cada 60 segundos (reduzido de 30s para menos carga)
+    intervalRef.current = setInterval(checkUpcomingGames, 60000);
 
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, enabled]);
 
   return { requestNotificationPermission };

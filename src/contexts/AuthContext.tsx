@@ -26,6 +26,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     let isMounted = true;
+    let roleLoaded = false; // Flag para evitar chamadas duplicadas
+    
+    const loadUserRole = async (userId: string) => {
+      if (roleLoaded || !isMounted) return;
+      roleLoaded = true;
+      
+      try {
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .maybeSingle();
+        
+        if (!isMounted) return;
+        
+        if (error) {
+          console.error('Error fetching user role:', error);
+          setUserRole(null);
+        } else if (data) {
+          console.log('User role found:', data);
+          setUserRole(data);
+        } else {
+          console.log('No role found for user');
+          setUserRole(null);
+        }
+      } catch (err) {
+        console.error('Unexpected error loading role:', err);
+        if (isMounted) setUserRole(null);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
     
     // Setup auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -36,31 +68,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Defer Supabase calls with setTimeout to prevent deadlock
         if (session?.user) {
-          const userId = session.user.id;
-          setTimeout(() => {
-            if (!isMounted) return;
-            supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', userId)
-              .maybeSingle()
-              .then(({ data, error }) => {
-                if (!isMounted) return;
-                if (error) {
-                  console.error('Error fetching user role:', error);
-                  setUserRole(null);
-                } else if (data) {
-                  console.log('User role found:', data);
-                  setUserRole(data);
-                } else {
-                  console.log('No role found for user');
-                  setUserRole(null);
-                }
-                setIsLoading(false);
-              });
-          }, 0);
+          // Usar setTimeout para evitar deadlock com Supabase
+          setTimeout(() => loadUserRole(session.user.id), 0);
         } else {
           setUserRole(null);
           setIsLoading(false);
@@ -76,29 +86,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        const userId = session.user.id;
-        setTimeout(() => {
-          if (!isMounted) return;
-          supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', userId)
-            .maybeSingle()
-            .then(({ data, error }) => {
-              if (!isMounted) return;
-              if (error) {
-                console.error('Error fetching user role:', error);
-                setUserRole(null);
-              } else if (data) {
-                console.log('User role found:', data);
-                setUserRole(data);
-              } else {
-                console.log('No role found for user');
-                setUserRole(null);
-              }
-              setIsLoading(false);
-            });
-        }, 0);
+        setTimeout(() => loadUserRole(session.user.id), 0);
       } else {
         setIsLoading(false);
       }

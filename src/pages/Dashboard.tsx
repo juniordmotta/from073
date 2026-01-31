@@ -187,15 +187,21 @@ export default function Dashboard() {
     }
   }, [user?.id]);
 
-  // Load data on mount
+  // Load data on mount - consolidar em uma única chamada
   useEffect(() => {
     if (!user?.id) return;
     
-    loadOpenBetsStats();
-    loadMonthStats();
-    loadOpenBets();
-    loadBancaTotal();
-  }, [user?.id, loadOpenBetsStats, loadMonthStats, loadOpenBets, loadBancaTotal]);
+    // Carregar todos os dados em paralelo uma única vez
+    Promise.all([
+      loadOpenBetsStats(),
+      loadMonthStats(),
+      loadOpenBets(),
+      loadBancaTotal()
+    ]).catch(console.error);
+    
+    // Remover dependências de funções para evitar loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const bancaPercentage = useMemo(() => {
     if (totalBanca === 0) return 0;
