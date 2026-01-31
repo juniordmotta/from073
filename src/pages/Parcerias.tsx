@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Pencil, Trash2, History, TrendingUp, ArrowLeft, LayoutDashboard, Download, AlertTriangle, TrendingDown, DollarSign, Target, X, Building2, Search, Filter, CircleDot } from 'lucide-react';
+import { Plus, Pencil, Trash2, History, TrendingUp, ArrowLeft, LayoutDashboard, Download, AlertTriangle, TrendingDown, DollarSign, Target, X, Building2, Search, Filter, CircleDot, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrency, formatUserName } from '@/lib/utils';
@@ -32,6 +32,8 @@ import { ValidatedInput } from '@/components/ui/validated-input';
 import { houseSchema } from '@/lib/validations/forms';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { highlightText } from '@/lib/utils/highlightText';
+import { AddHouseAutocomplete } from '@/components/AddHouseAutocomplete';
+import { bettingHouseGroups } from '@/data/bettingHousesData';
 
 interface Partnership {
   id: string;
@@ -87,98 +89,7 @@ const fieldLabels: Record<string, string> = {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
-// Componente para adicionar casa de apostas manualmente
-interface AddHouseFormProps {
-  partnershipId: string;
-  onSuccess: () => void;
-}
-
-const AddHouseForm = ({ partnershipId, onSuccess }: AddHouseFormProps) => {
-  const [houseName, setHouseName] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [touched, setTouched] = useState(false);
-  const [error, setError] = useState<string | undefined>();
-  const { toast } = useToast();
-
-  // Validação em tempo real
-  useEffect(() => {
-    const result = houseSchema.safeParse({ house_name: houseName });
-    if (!result.success) {
-      const issue = result.error.issues.find(i => i.path[0] === 'house_name');
-      setError(issue?.message);
-    } else {
-      setError(undefined);
-    }
-  }, [houseName]);
-
-  const isValid = !error && houseName.trim().length >= 2;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setTouched(true);
-    
-    if (!isValid) {
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const { error } = await supabase
-        .from('partnership_houses')
-        .insert({
-          partnership_id: partnershipId,
-          house_name: houseName.trim(),
-          status: 'aguardando_verificacao' as const,
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: 'Sucesso',
-        description: `Casa "${houseName}" adicionada com status "Aguardando Verificação"`,
-      });
-      
-      setHouseName('');
-      setTouched(false);
-      onSuccess();
-    } catch (error) {
-      console.error('Erro ao adicionar casa:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível adicionar a casa de apostas',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <ValidatedInput
-        id="house_name"
-        label="Nome da Casa"
-        value={houseName}
-        onChange={(e) => setHouseName(e.target.value)}
-        onBlur={() => setTouched(true)}
-        placeholder="Ex: Bet365, Betano, Sportingbet..."
-        required
-        autoFocus
-        error={error}
-        touched={touched}
-        showSuccess
-      />
-      <p className="text-xs text-muted-foreground">
-        A casa será adicionada com status <Badge variant="outline">Aguardando Verificação</Badge>
-      </p>
-      <div className="flex justify-end gap-2">
-        <Button type="submit" disabled={isLoading || !isValid}>
-          {isLoading ? 'Adicionando...' : 'Adicionar'}
-        </Button>
-      </div>
-    </form>
-  );
-};
+// Removido AddHouseForm - substituído por AddHouseAutocomplete
 
 const Parcerias = () => {
   const { user, userRole } = useAuth();
@@ -206,10 +117,58 @@ const Parcerias = () => {
   const [houseStatusFilter, setHouseStatusFilter] = useState<string[]>([]);
   const [houseSearchTerm, setHouseSearchTerm] = useState('');
   const [recentlyUpdatedHouse, setRecentlyUpdatedHouse] = useState<string | null>(null);
+  const [customHousesUrls, setCustomHousesUrls] = useState<Map<string, string>>(new Map());
   const debouncedSearch = useDebounce(searchTerm, 300);
   const debouncedHouseSearch = useDebounce(houseSearchTerm, 300);
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
+
+  // Mapa de URLs das casas (estáticas + customizadas)
+  const houseUrlsMap = useMemo(() => {
+    const map = new Map<string, string>();
+    
+    // Casas estáticas
+    bettingHouseGroups.forEach(group => {
+      group.houses.forEach(house => {
+        if (house.url) {
+          map.set(house.name.toLowerCase(), house.url);
+        }
+      });
+    });
+    
+    // Casas customizadas (sobrescreve estáticas se existir)
+    customHousesUrls.forEach((url, name) => {
+      if (url) {
+        map.set(name.toLowerCase(), url);
+      }
+    });
+    
+    return map;
+  }, [customHousesUrls]);
+
+  // Função para obter URL da casa
+  const getHouseUrl = (houseName: string): string | undefined => {
+    return houseUrlsMap.get(houseName.toLowerCase());
+  };
+
+  // Carregar URLs das casas customizadas
+  useEffect(() => {
+    const loadCustomHousesUrls = async () => {
+      const { data } = await supabase
+        .from('custom_betting_houses')
+        .select('name, url');
+      if (data) {
+        const urlMap = new Map<string, string>();
+        data.forEach(h => {
+          if (h.url) {
+            urlMap.set(h.name.toLowerCase(), h.url);
+          }
+        });
+        setCustomHousesUrls(urlMap);
+      }
+    };
+    loadCustomHousesUrls();
+  }, []);
 
   // Verificar parâmetros da URL para navegação direta
   useEffect(() => {
@@ -1895,8 +1854,9 @@ const Parcerias = () => {
                               <DialogHeader>
                                 <DialogTitle>Adicionar Casa de Apostas</DialogTitle>
                               </DialogHeader>
-                              <AddHouseForm 
+                              <AddHouseAutocomplete 
                                 partnershipId={selectedPartnershipId!}
+                                existingHouses={partnershipDetails?.casas?.map((c: any) => c.nome) || []}
                                 onSuccess={() => loadPartnershipDetails(selectedPartnershipId!)}
                               />
                             </DialogContent>
@@ -2063,9 +2023,24 @@ const Parcerias = () => {
                                   </TableCell>
                                   <TableCell>
                                     <div className="flex items-center gap-2">
-                                      <span className="font-medium">
-                                        {highlightText(casa.nome, debouncedHouseSearch)}
-                                      </span>
+                                      {(() => {
+                                        const houseUrl = getHouseUrl(casa.nome);
+                                        return houseUrl ? (
+                                          <a
+                                            href={`https://${houseUrl}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="font-medium text-primary hover:underline flex items-center gap-1"
+                                          >
+                                            {highlightText(casa.nome, debouncedHouseSearch)}
+                                            <ExternalLink className="h-3 w-3" />
+                                          </a>
+                                        ) : (
+                                          <span className="font-medium">
+                                            {highlightText(casa.nome, debouncedHouseSearch)}
+                                          </span>
+                                        );
+                                      })()}
                                       <Badge className={`text-xs ${getStatusColor(casa.status)}`}>
                                         {highlightText(getStatusLabel(casa.status), debouncedHouseSearch)}
                                       </Badge>
