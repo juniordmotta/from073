@@ -13,7 +13,7 @@ import CasasDeApostas from "./pages/CasasDeApostas";
 import Parcerias from "./pages/Parcerias";
 import Anotacoes from "./pages/Anotacoes";
 import Usuarios from "./pages/Usuarios";
-import DeleteAllUsers from "./pages/DeleteAllUsers";
+
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -81,14 +81,6 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['admin', 'admin_master']}>
                   <Usuarios />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/delete-all-users"
-              element={
-                <ProtectedRoute allowedRoles={['admin_master']}>
-                  <DeleteAllUsers />
                 </ProtectedRoute>
               }
             />
