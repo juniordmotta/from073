@@ -2321,7 +2321,7 @@ export default function MinhasArbitragens() {
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
-                      {isAdmin && (
+                      {(isAdmin || arb.user_id === user?.id) && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -2700,7 +2700,7 @@ export default function MinhasArbitragens() {
                           >
                             <Copy className="h-4 w-4" />
                           </Button>
-                          {isAdmin && (
+                          {(isAdmin || arb.user_id === user?.id) && (
                             <Button
                               variant="ghost"
                               size="sm"
