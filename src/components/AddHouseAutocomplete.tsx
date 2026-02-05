@@ -254,7 +254,8 @@ export const AddHouseAutocomplete = ({ partnershipId, existingHouses, onSuccess 
       </div>
 
       <p className="text-xs text-muted-foreground">
-        A casa será adicionada com status <Badge variant="outline">Aguardando Verificação</Badge>
+        A casa será adicionada com status{' '}
+        <Badge variant="outline" className="inline-flex">Aguardando Verificação</Badge>
       </p>
 
       <div className="flex justify-end gap-2">
