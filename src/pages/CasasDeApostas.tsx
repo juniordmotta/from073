@@ -1034,7 +1034,7 @@ const CasasDeApostas = () => {
                                   </div>
                                   {house.url && (
                                     <a
-                                      href={`https://${house.url}`}
+                                      href={house.url.startsWith('http://') || house.url.startsWith('https://') ? house.url : `https://${house.url}`}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
