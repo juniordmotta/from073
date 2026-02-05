@@ -512,6 +512,7 @@ export type Database = {
           house_name: string
           id: string
           partnership_id: string
+          saldo: number
           status: string
           updated_at: string
         }
@@ -520,6 +521,7 @@ export type Database = {
           house_name: string
           id?: string
           partnership_id: string
+          saldo?: number
           status?: string
           updated_at?: string
         }
@@ -528,6 +530,7 @@ export type Database = {
           house_name?: string
           id?: string
           partnership_id?: string
+          saldo?: number
           status?: string
           updated_at?: string
         }

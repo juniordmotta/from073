@@ -138,6 +138,7 @@ export default function Anotacoes() {
       let query = supabase
         .from('notes')
         .select('*, note_categories(*)')
+        .eq('user_id', user.id)
         .order('data', { ascending: false });
 
       if (startDate) {

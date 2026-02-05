@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, Pencil, Trash2, History, TrendingUp, ArrowLeft, LayoutDashboard, Download, AlertTriangle, TrendingDown, DollarSign, Target, X, Building2, Search, Filter, CircleDot, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { formatCurrency, formatUserName } from '@/lib/utils';
+import { formatCurrency, formatUserName, parseLocalizedNumber } from '@/lib/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import * as XLSX from 'xlsx';
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -646,7 +646,7 @@ const Parcerias = () => {
       // Buscar status das casas
       const { data: houseStatuses, error: housesError } = await supabase
         .from('partnership_houses')
-        .select('*')
+        .select('*, saldo')
         .eq('partnership_id', partnershipId);
 
       if (housesError) throw housesError;
@@ -753,11 +753,17 @@ const Parcerias = () => {
         houseStatuses?.map(h => [h.house_name, h.status]) || []
       );
 
+      // Criar mapa de saldo das casas
+      const houseSaldoMap = new Map(
+        houseStatuses?.map(h => [h.house_name, h.saldo || 0]) || []
+      );
+
       // Calcular lucro líquido por casa e adicionar status
       const casasArray = Array.from(casasStats.values()).map(casa => ({
         ...casa,
         lucroLiquido: casa.ganhos - casa.perdas,
         status: houseStatusMap.get(casa.nome) || 'ativa',
+        saldo: houseSaldoMap.get(casa.nome) || 0,
       }));
 
       // Adicionar casas manuais que não têm apostas ainda
@@ -772,6 +778,7 @@ const Parcerias = () => {
             totalApostas: 0,
             lucroLiquido: 0,
             status: house.status,
+            saldo: house.saldo || 0,
           });
         }
       });
@@ -952,6 +959,65 @@ const Parcerias = () => {
         toast({
           title: 'Erro',
           description: 'Não foi possível remover a casa',
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+
+  // Atualizar saldo da casa
+  const updateHouseSaldo = async (partnershipId: string, houseName: string, newSaldo: number) => {
+    // Atualização otimística
+    if (partnershipDetails) {
+      const originalCasas = [...partnershipDetails.casas];
+      
+      setPartnershipDetails((prev: any) => ({
+        ...prev,
+        casas: prev.casas.map((casa: any) => 
+          casa.nome === houseName ? { ...casa, saldo: newSaldo } : casa
+        ),
+      }));
+
+      try {
+        // Verificar se já existe um registro para esta casa
+        const { data: existing, error: fetchError } = await supabase
+          .from('partnership_houses')
+          .select('id')
+          .eq('partnership_id', partnershipId)
+          .eq('house_name', houseName)
+          .maybeSingle();
+
+        if (fetchError) throw fetchError;
+
+        if (existing) {
+          const { error: updateError } = await supabase
+            .from('partnership_houses')
+            .update({ saldo: newSaldo })
+            .eq('id', existing.id);
+
+          if (updateError) throw updateError;
+        } else {
+          const { error: insertError } = await supabase
+            .from('partnership_houses')
+            .insert({
+              partnership_id: partnershipId,
+              house_name: houseName,
+              status: 'ativa',
+              saldo: newSaldo,
+            });
+
+          if (insertError) throw insertError;
+        }
+      } catch (error) {
+        // Reverter em caso de erro
+        setPartnershipDetails((prev: any) => ({
+          ...prev,
+          casas: originalCasas,
+        }));
+        console.error('Erro ao atualizar saldo da casa:', error);
+        toast({
+          title: 'Erro',
+          description: 'Não foi possível atualizar o saldo',
           variant: 'destructive',
         });
       }
@@ -1984,6 +2050,7 @@ const Parcerias = () => {
                               <TableRow>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Casa</TableHead>
+                                <TableHead className="text-right">Saldo</TableHead>
                                 <TableHead className="text-right">Total Apostas</TableHead>
                                 <TableHead className="text-right">Ganhos</TableHead>
                                 <TableHead className="text-right">Perdas</TableHead>
@@ -2038,7 +2105,7 @@ const Parcerias = () => {
                                         const houseUrl = getHouseUrl(casa.nome);
                                         return houseUrl ? (
                                           <a
-                                            href={`https://${houseUrl}`}
+                                            href={houseUrl.startsWith('http://') || houseUrl.startsWith('https://') ? houseUrl : `https://${houseUrl}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="font-medium text-primary hover:underline flex items-center gap-1"
@@ -2056,6 +2123,29 @@ const Parcerias = () => {
                                         {highlightText(getStatusLabel(casa.status), debouncedHouseSearch)}
                                       </Badge>
                                     </div>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <Input
+                                      type="text"
+                                      inputMode="decimal"
+                                      className="w-[100px] h-8 text-right text-sm ml-auto"
+                                      defaultValue={formatCurrency(casa.saldo || 0)}
+                                      onBlur={(e) => {
+                                        const numValue = parseLocalizedNumber(e.target.value);
+                                        if (numValue !== (casa.saldo || 0)) {
+                                          updateHouseSaldo(selectedPartnershipId!, casa.nome, numValue);
+                                        }
+                                        e.target.value = formatCurrency(numValue);
+                                      }}
+                                      onFocus={(e) => {
+                                        e.target.select();
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.currentTarget.blur();
+                                        }
+                                      }}
+                                    />
                                   </TableCell>
                                   <TableCell className="text-right">{casa.totalApostas}</TableCell>
                                   <TableCell className="text-right text-success">
