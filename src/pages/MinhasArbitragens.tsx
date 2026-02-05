@@ -49,6 +49,7 @@ import { MonthlyGoalCard } from '@/components/MonthlyGoalCard';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { highlightText } from '@/lib/utils/highlightText';
 import { Progress } from '@/components/ui/progress';
+import { BettingHouseInput } from '@/components/BettingHouseInput';
 
 interface Arbitrage {
   id: string;
@@ -3260,11 +3261,11 @@ export default function MinhasArbitragens() {
                     )}
                     <div className="space-y-2">
                       <Label htmlFor="casa_01_nome_add">Nome da Casa</Label>
-                      <Input
+                      <BettingHouseInput
                         id="casa_01_nome_add"
-                        placeholder="Ex: Bet365"
                         value={formData.casa_01_nome}
-                        onChange={(e) => setFormData({ ...formData, casa_01_nome: e.target.value })}
+                        onChange={(value) => setFormData({ ...formData, casa_01_nome: value })}
+                        placeholder="Ex: Bet365"
                         required
                       />
                     </div>
@@ -3367,11 +3368,11 @@ export default function MinhasArbitragens() {
                     )}
                     <div className="space-y-2">
                       <Label htmlFor="casa_02_nome_add">Nome da Casa</Label>
-                      <Input
+                      <BettingHouseInput
                         id="casa_02_nome_add"
-                        placeholder="Ex: Betano"
                         value={formData.casa_02_nome}
-                        onChange={(e) => setFormData({ ...formData, casa_02_nome: e.target.value })}
+                        onChange={(value) => setFormData({ ...formData, casa_02_nome: value })}
+                        placeholder="Ex: Betano"
                         required
                       />
                     </div>
@@ -3475,11 +3476,11 @@ export default function MinhasArbitragens() {
                       )}
                       <div className="space-y-2">
                         <Label htmlFor="casa_03_nome_add">Nome da Casa</Label>
-                        <Input
+                        <BettingHouseInput
                           id="casa_03_nome_add"
-                          placeholder="Ex: Sportingbet"
                           value={formData.casa_03_nome}
-                          onChange={(e) => setFormData({ ...formData, casa_03_nome: e.target.value })}
+                          onChange={(value) => setFormData({ ...formData, casa_03_nome: value })}
+                          placeholder="Ex: Sportingbet"
                           required={useTresCasas}
                         />
                       </div>
@@ -3632,11 +3633,11 @@ export default function MinhasArbitragens() {
                   
                   <div className="space-y-2">
                     <Label htmlFor="prejuizo_casa">Casa de Aposta</Label>
-                    <Input
+                    <BettingHouseInput
                       id="prejuizo_casa"
-                      placeholder="Nome da casa"
                       value={prejuizoData.casa_nome}
-                      onChange={(e) => setPrejuizoData({ ...prejuizoData, casa_nome: e.target.value })}
+                      onChange={(value) => setPrejuizoData({ ...prejuizoData, casa_nome: value })}
+                      placeholder="Nome da casa"
                       required
                     />
                   </div>
