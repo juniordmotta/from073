@@ -2050,7 +2050,12 @@ const Parcerias = () => {
                               <TableRow>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Casa</TableHead>
-                                <TableHead className="text-right">Saldo</TableHead>
+                                <TableHead className="text-right">
+                                  <div>Saldo</div>
+                                  <div className="text-xs font-bold text-primary">
+                                    R$ {formatCurrency(partnershipDetails.casas.reduce((sum: number, casa: any) => sum + (casa.saldo || 0), 0))}
+                                  </div>
+                                </TableHead>
                                 <TableHead className="text-right">Total Apostas</TableHead>
                                 <TableHead className="text-right">Ganhos</TableHead>
                                 <TableHead className="text-right">Perdas</TableHead>

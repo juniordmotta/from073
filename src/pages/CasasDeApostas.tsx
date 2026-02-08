@@ -362,11 +362,78 @@ const CasasDeApostas = () => {
     }
   };
 
-  const handleOpenAddDialog = (house: BettingHouse) => {
+  const handleOpenAddDialog = async (house: BettingHouse) => {
     setSelectedHouse(house);
     setSelectedPartnershipId('');
-    setIsAddDialogOpen(true);
-    loadPartnerships();
+    
+    // Carregar parcerias primeiro
+    await loadPartnerships();
+  };
+
+  // Efeito para verificar se há apenas 1 parceria após carregamento
+  useEffect(() => {
+    if (selectedHouse && partnerships.length === 1 && !isLoadingPartnerships) {
+      // Só tem 1 parceria, adicionar direto
+      handleAddToPartnershipDirect(selectedHouse, partnerships[0].id);
+    } else if (selectedHouse && partnerships.length > 1 && !isLoadingPartnerships) {
+      // Múltiplas parcerias, abrir dialog
+      setIsAddDialogOpen(true);
+    }
+  }, [partnerships, selectedHouse, isLoadingPartnerships]);
+
+  const handleAddToPartnershipDirect = async (house: BettingHouse, partnershipId: string) => {
+    setIsAdding(true);
+    try {
+      const { data: existingHouse, error: checkError } = await supabase
+        .from('partnership_houses')
+        .select('id')
+        .eq('partnership_id', partnershipId)
+        .eq('house_name', house.name)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (existingHouse) {
+        toast({
+          title: 'Casa já existe',
+          description: 'Esta casa já está cadastrada nesta parceria.',
+          variant: 'destructive',
+        });
+        setSelectedHouse(null);
+        return;
+      }
+
+      const { error: insertError } = await supabase
+        .from('partnership_houses')
+        .insert({
+          partnership_id: partnershipId,
+          house_name: house.name,
+          status: 'aguardando_verificacao',
+        });
+
+      if (insertError) throw insertError;
+
+      const partnershipName = partnerships.find(p => p.id === partnershipId)?.nome_completo;
+      
+      toast({
+        title: 'Casa adicionada!',
+        description: `${house.name} foi adicionada à parceria "${partnershipName}".`,
+      });
+
+      // Atualização instantânea das casas em uso
+      loadPartnershipHouses();
+      
+      setSelectedHouse(null);
+    } catch (error: any) {
+      console.error('Erro ao adicionar casa:', error);
+      toast({
+        title: 'Erro',
+        description: error.message || 'Não foi possível adicionar a casa.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   const handleAddToPartnership = async () => {
@@ -379,56 +446,9 @@ const CasasDeApostas = () => {
       return;
     }
 
-    setIsAdding(true);
-    try {
-      const { data: existingHouse, error: checkError } = await supabase
-        .from('partnership_houses')
-        .select('id')
-        .eq('partnership_id', selectedPartnershipId)
-        .eq('house_name', selectedHouse.name)
-        .maybeSingle();
-
-      if (checkError) throw checkError;
-
-      if (existingHouse) {
-        toast({
-          title: 'Casa já existe',
-          description: 'Esta casa já está cadastrada nesta parceria.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      const { error: insertError } = await supabase
-        .from('partnership_houses')
-        .insert({
-          partnership_id: selectedPartnershipId,
-          house_name: selectedHouse.name,
-          status: 'aguardando_verificacao',
-        });
-
-      if (insertError) throw insertError;
-
-      const partnershipName = partnerships.find(p => p.id === selectedPartnershipId)?.nome_completo;
-      
-      toast({
-        title: 'Casa adicionada!',
-        description: `${selectedHouse.name} foi adicionada à parceria "${partnershipName}".`,
-      });
-
-      setIsAddDialogOpen(false);
-      setSelectedHouse(null);
-      setSelectedPartnershipId('');
-    } catch (error: any) {
-      console.error('Erro ao adicionar casa:', error);
-      toast({
-        title: 'Erro',
-        description: error.message || 'Não foi possível adicionar a casa.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsAdding(false);
-    }
+    await handleAddToPartnershipDirect(selectedHouse, selectedPartnershipId);
+    setIsAddDialogOpen(false);
+    setSelectedPartnershipId('');
   };
 
   // Abrir dialog de edição
