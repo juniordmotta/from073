@@ -1620,59 +1620,81 @@ export default function MinhasArbitragens() {
             )}
 
             {/* Botão Ir para Casas */}
-            <Dialog open={goToHousesOpen} onOpenChange={setGoToHousesOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 h-8">
-                  <Building2 className="h-4 w-4" />
-                  Ir para Casas
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Selecionar Parceria</DialogTitle>
-                  <DialogDescription>
-                    Escolha a parceria para ver o desempenho das casas de apostas.
-                  </DialogDescription>
-                </DialogHeader>
-                <form 
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (selectedPartnershipForHouses) {
-                      navigate(`/parcerias?partnership=${selectedPartnershipForHouses}&view=report`);
-                      setGoToHousesOpen(false);
-                    }
-                  }} 
-                  className="space-y-4"
-                >
-                  <div className="space-y-2">
-                    <Label>Parceria</Label>
-                    <Select
-                      value={selectedPartnershipForHouses}
-                      onValueChange={setSelectedPartnershipForHouses}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma parceria" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {partnerships.filter(p => p.status === 'ativo').map((partnership) => (
-                          <SelectItem key={partnership.id} value={partnership.id}>
-                            {formatUserName(partnership.nome_completo)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={() => setGoToHousesOpen(false)}>
-                      Cancelar
-                    </Button>
-                    <Button type="submit" disabled={!selectedPartnershipForHouses}>
+            {(() => {
+              const activePartnerships = partnerships.filter(p => p.status === 'ativo');
+              
+              // Se só tem 1 parceria ativa, vai direto
+              if (activePartnerships.length === 1) {
+                return (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-2 h-8"
+                    onClick={() => navigate(`/parcerias?partnership=${activePartnerships[0].id}&view=report`)}
+                  >
+                    <Building2 className="h-4 w-4" />
+                    Ir para Casas
+                  </Button>
+                );
+              }
+              
+              // Múltiplas parcerias: mostra dialog
+              return (
+                <Dialog open={goToHousesOpen} onOpenChange={setGoToHousesOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2 h-8">
+                      <Building2 className="h-4 w-4" />
                       Ir para Casas
                     </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Selecionar Parceria</DialogTitle>
+                      <DialogDescription>
+                        Escolha a parceria para ver o desempenho das casas de apostas.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form 
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (selectedPartnershipForHouses) {
+                          navigate(`/parcerias?partnership=${selectedPartnershipForHouses}&view=report`);
+                          setGoToHousesOpen(false);
+                        }
+                      }} 
+                      className="space-y-4"
+                    >
+                      <div className="space-y-2">
+                        <Label>Parceria</Label>
+                        <Select
+                          value={selectedPartnershipForHouses}
+                          onValueChange={setSelectedPartnershipForHouses}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma parceria" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {activePartnerships.map((partnership) => (
+                              <SelectItem key={partnership.id} value={partnership.id}>
+                                {formatUserName(partnership.nome_completo)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button type="button" variant="outline" onClick={() => setGoToHousesOpen(false)}>
+                          Cancelar
+                        </Button>
+                        <Button type="submit" disabled={!selectedPartnershipForHouses}>
+                          Ir para Casas
+                        </Button>
+                      </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              );
+            })()}
           </div>
           
           <div className="flex items-end gap-2 flex-wrap">

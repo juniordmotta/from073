@@ -5,90 +5,101 @@
  import { Building2 } from 'lucide-react';
  import { cn } from '@/lib/utils';
  
- interface CustomHouse {
-   id: string;
-   name: string;
-   url: string | null;
-   group_id: string;
- }
+interface CustomHouse {
+  id: string;
+  name: string;
+  url: string | null;
+  group_id: string;
+}
+
+interface BettingHouseInputProps {
+  id?: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  required?: boolean;
+  className?: string;
+}
+
+// Função para normalizar nome de casa de apostas para deduplicação
+// Remove "(BR)", "(br)", "BR", transforma em minúsculas, remove espaços extras
+const normalizeForComparison = (name: string): string => {
+  return name
+    .toLowerCase()
+    .replace(/\s*\(br\)\s*/gi, '') // Remove (BR) e (br) com espaços
+    .replace(/\s+br\s*$/gi, '')    // Remove "BR" no final
+    .replace(/\s+/g, ' ')          // Normaliza espaços múltiplos
+    .trim();
+};
+
+export const BettingHouseInput = ({
+  id,
+  value,
+  onChange,
+  placeholder = "Ex: Bet365",
+  required = false,
+  className,
+}: BettingHouseInputProps) => {
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [customHouses, setCustomHouses] = useState<CustomHouse[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  // Carregar casas customizadas do banco
+  useEffect(() => {
+    const loadCustomHouses = async () => {
+      const { data } = await supabase
+        .from('custom_betting_houses')
+        .select('id, name, url, group_id');
+      if (data) {
+        setCustomHouses(data);
+      }
+    };
+    loadCustomHouses();
+  }, []);
+
+  // Combinar casas estáticas + customizadas com deduplicação inteligente
+  const allHouses = useMemo(() => {
+    const housesMap = new Map<string, { id: string; name: string; groupName: string }>();
+    
+    // Casas estáticas primeiro (prioridade)
+    bettingHouseGroups.forEach(group => {
+      group.houses.forEach(house => {
+        const normalizedKey = normalizeForComparison(house.name);
+        if (!housesMap.has(normalizedKey)) {
+          housesMap.set(normalizedKey, {
+            id: house.id,
+            name: house.name,
+            groupName: group.name,
+          });
+        }
+      });
+    });
+    
+    // Casas customizadas (apenas se não existir versão similar)
+    customHouses.forEach(custom => {
+      const normalizedKey = normalizeForComparison(custom.name);
+      if (!housesMap.has(normalizedKey)) {
+        housesMap.set(normalizedKey, {
+          id: custom.id,
+          name: custom.name,
+          groupName: 'Customizada',
+        });
+      }
+    });
+    
+    return Array.from(housesMap.values());
+  }, [customHouses]);
  
- interface BettingHouseInputProps {
-   id?: string;
-   value: string;
-   onChange: (value: string) => void;
-   placeholder?: string;
-   required?: boolean;
-   className?: string;
- }
- 
- export const BettingHouseInput = ({
-   id,
-   value,
-   onChange,
-   placeholder = "Ex: Bet365",
-   required = false,
-   className,
- }: BettingHouseInputProps) => {
-   const [showSuggestions, setShowSuggestions] = useState(false);
-   const [customHouses, setCustomHouses] = useState<CustomHouse[]>([]);
-   const inputRef = useRef<HTMLInputElement>(null);
-   const suggestionsRef = useRef<HTMLDivElement>(null);
- 
-   // Carregar casas customizadas do banco
-   useEffect(() => {
-     const loadCustomHouses = async () => {
-       const { data } = await supabase
-         .from('custom_betting_houses')
-         .select('id, name, url, group_id');
-       if (data) {
-         setCustomHouses(data);
-       }
-     };
-     loadCustomHouses();
-   }, []);
- 
-   // Combinar casas estáticas + customizadas
-   const allHouses = useMemo(() => {
-     const houses: { id: string; name: string; groupName: string }[] = [];
-     
-     // Casas estáticas
-     bettingHouseGroups.forEach(group => {
-       group.houses.forEach(house => {
-         houses.push({
-           id: house.id,
-           name: house.name,
-           groupName: group.name,
-         });
-       });
-     });
-     
-     // Casas customizadas (não duplicar se já existe)
-     customHouses.forEach(custom => {
-       const exists = houses.some(h => h.name.toLowerCase() === custom.name.toLowerCase());
-       if (!exists) {
-         houses.push({
-           id: custom.id,
-           name: custom.name,
-           groupName: 'Customizada',
-         });
-       }
-     });
-     
-     return houses;
-   }, [customHouses]);
- 
-   // Normalizar nome para comparação case-insensitive
-   const normalizeHouseName = (name: string) => name.toLowerCase().trim();
- 
-   // Filtrar sugestões baseado no input
-   const filteredSuggestions = useMemo(() => {
-     if (!value.trim()) return [];
-     
-     const search = normalizeHouseName(value);
-     return allHouses
-       .filter(house => normalizeHouseName(house.name).includes(search))
-       .slice(0, 8);
-   }, [value, allHouses]);
+  // Filtrar sugestões baseado no input (usa normalização para busca também)
+  const filteredSuggestions = useMemo(() => {
+    if (!value.trim()) return [];
+    
+    const searchNormalized = normalizeForComparison(value);
+    return allHouses
+      .filter(house => normalizeForComparison(house.name).includes(searchNormalized))
+      .slice(0, 8);
+  }, [value, allHouses]);
  
    // Fechar sugestões ao clicar fora
    useEffect(() => {
