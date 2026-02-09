@@ -42,6 +42,8 @@ export default function CustosOperacionais() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [deleteTarget, setDeleteTarget] = useState<OperationalCost | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string>(user?.id || '');
+  const [users, setUsers] = useState<Array<{ id: string; name: string }>>([]);
   const [formData, setFormData] = useState({
     descricao: '',
     valor: '',
@@ -139,16 +141,40 @@ export default function CustosOperacionais() {
     };
   }, [selectedMonth]);
 
+  // Inicializar selectedUserId com usuário logado
+  useEffect(() => {
+    if (user?.id && !selectedUserId) {
+      setSelectedUserId(user.id);
+    }
+  }, [user?.id]);
+
   useEffect(() => {
     loadAvailableMonths();
+    if (isAdmin) {
+      loadUsers();
+    }
   }, [isAdmin, user?.id]);
 
   useEffect(() => {
     loadCosts();
-    if (isAdmin) {
-      loadProfiles();
+  }, [startDate, endDate, isAdmin, selectedUserId]);
+
+  const loadUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .order('name');
+
+      if (error) {
+        console.warn('Erro ao buscar usuários:', error.message);
+        return;
+      }
+      setUsers(data || []);
+    } catch (error) {
+      console.error('Erro inesperado ao carregar usuários:', error);
     }
-  }, [startDate, endDate, isAdmin]);
+  };
 
   // Navegação entre meses
   const currentMonthIndex = availableMonths.indexOf(selectedMonth);
@@ -200,7 +226,10 @@ export default function CustosOperacionais() {
         .select('*')
         .order('data', { ascending: false });
 
-      if (!isAdmin) {
+      // Filtrar por usuário selecionado (ou próprio se não for admin)
+      if (isAdmin && selectedUserId && selectedUserId !== 'all') {
+        query = query.eq('user_id', selectedUserId);
+      } else if (!isAdmin) {
         query = query.eq('user_id', user.id);
       }
 
@@ -432,37 +461,57 @@ export default function CustosOperacionais() {
             <CardTitle>Filtros</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <Label htmlFor="month">Mês</Label>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={goToPreviousMonth}
-                  disabled={!canGoPrevious}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                  <SelectTrigger id="month" className="w-[200px]">
-                    <SelectValue placeholder="Selecione o mês" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {monthOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label.charAt(0).toUpperCase() + option.label.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={goToNextMonth}
-                  disabled={!canGoNext}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+            <div className="flex flex-wrap gap-4">
+              {isAdmin && (
+                <div className="space-y-2">
+                  <Label htmlFor="user-filter">Usuário</Label>
+                  <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                    <SelectTrigger id="user-filter" className="w-[200px]">
+                      <SelectValue placeholder="Selecione o usuário" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      {users.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="month">Mês</Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={goToPreviousMonth}
+                    disabled={!canGoPrevious}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                    <SelectTrigger id="month" className="w-[200px]">
+                      <SelectValue placeholder="Selecione o mês" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {monthOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label.charAt(0).toUpperCase() + option.label.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={goToNextMonth}
+                    disabled={!canGoNext}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           </CardContent>

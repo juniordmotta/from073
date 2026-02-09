@@ -19,6 +19,7 @@ interface BettingHouseInputProps {
   placeholder?: string;
   required?: boolean;
   className?: string;
+  partnershipId?: string; // Se fornecido, inclui casas específicas da parceria
 }
 
 // Função para normalizar nome de casa de apostas para deduplicação
@@ -39,44 +40,79 @@ export const BettingHouseInput = ({
   placeholder = "Ex: Bet365",
   required = false,
   className,
+  partnershipId,
 }: BettingHouseInputProps) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [customHouses, setCustomHouses] = useState<CustomHouse[]>([]);
+  const [partnershipHouses, setPartnershipHouses] = useState<string[]>([]);
+  const [hiddenHouseIds, setHiddenHouseIds] = useState<Set<string>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
-  // Carregar casas customizadas do banco
+  // Carregar casas customizadas do catálogo e casas ocultas
   useEffect(() => {
-    const loadCustomHouses = async () => {
-      const { data } = await supabase
+    const loadCatalogData = async () => {
+      // Carregar casas customizadas
+      const { data: customData } = await supabase
         .from('custom_betting_houses')
         .select('id, name, url, group_id');
-      if (data) {
-        setCustomHouses(data);
+      if (customData) {
+        setCustomHouses(customData);
+      }
+      
+      // Carregar casas ocultas
+      const { data: hiddenData } = await supabase
+        .from('hidden_betting_houses')
+        .select('house_id');
+      if (hiddenData) {
+        setHiddenHouseIds(new Set(hiddenData.map(h => h.house_id)));
       }
     };
-    loadCustomHouses();
+    loadCatalogData();
   }, []);
 
-  // Combinar casas estáticas + customizadas com deduplicação inteligente
-  const allHouses = useMemo(() => {
-    const housesMap = new Map<string, { id: string; name: string; groupName: string }>();
+  // Carregar casas específicas da parceria (se fornecido)
+  useEffect(() => {
+    if (!partnershipId) {
+      setPartnershipHouses([]);
+      return;
+    }
     
-    // Casas estáticas primeiro (prioridade)
+    const loadPartnershipHouses = async () => {
+      const { data } = await supabase
+        .from('partnership_houses')
+        .select('house_name')
+        .eq('partnership_id', partnershipId);
+      if (data) {
+        setPartnershipHouses(data.map(h => h.house_name));
+      }
+    };
+    loadPartnershipHouses();
+  }, [partnershipId]);
+
+  // Combinar casas do catálogo (estáticas + customizadas) com deduplicação
+  // Apenas casas visíveis no catálogo "Casas de Apostas"
+  const catalogHouses = useMemo(() => {
+    const housesMap = new Map<string, { id: string; name: string; groupName: string; source: 'catalog' }>();
+    
+    // Casas estáticas (apenas não ocultas)
     bettingHouseGroups.forEach(group => {
       group.houses.forEach(house => {
+        if (hiddenHouseIds.has(house.id)) return; // Pular casas ocultas
+        
         const normalizedKey = normalizeForComparison(house.name);
         if (!housesMap.has(normalizedKey)) {
           housesMap.set(normalizedKey, {
             id: house.id,
             name: house.name,
             groupName: group.name,
+            source: 'catalog',
           });
         }
       });
     });
     
-    // Casas customizadas (apenas se não existir versão similar)
+    // Casas customizadas do catálogo (apenas se não existir versão similar)
     customHouses.forEach(custom => {
       const normalizedKey = normalizeForComparison(custom.name);
       if (!housesMap.has(normalizedKey)) {
@@ -84,12 +120,33 @@ export const BettingHouseInput = ({
           id: custom.id,
           name: custom.name,
           groupName: 'Customizada',
+          source: 'catalog',
+        });
+      }
+    });
+    
+    return housesMap;
+  }, [customHouses, hiddenHouseIds]);
+
+  // Combinar catálogo + casas específicas da parceria
+  const allHouses = useMemo(() => {
+    const housesMap = new Map(catalogHouses);
+    
+    // Adicionar casas da parceria (podem não estar no catálogo)
+    partnershipHouses.forEach(houseName => {
+      const normalizedKey = normalizeForComparison(houseName);
+      if (!housesMap.has(normalizedKey)) {
+        housesMap.set(normalizedKey, {
+          id: `partnership-${houseName}`,
+          name: houseName,
+          groupName: 'Parceria',
+          source: 'catalog' as const,
         });
       }
     });
     
     return Array.from(housesMap.values());
-  }, [customHouses]);
+  }, [catalogHouses, partnershipHouses]);
  
   // Filtrar sugestões baseado no input (usa normalização para busca também)
   const filteredSuggestions = useMemo(() => {
