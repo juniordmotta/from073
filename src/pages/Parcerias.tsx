@@ -100,7 +100,7 @@ const Parcerias = () => {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPartnership, setEditingPartnership] = useState<Partnership | null>(null);
-  const [selectedUserId, setSelectedUserId] = useState<string>('all');
+  const [selectedUserId, setSelectedUserId] = useState<string>(user?.id || '');
   const [users, setUsers] = useState<{ id: string; name: string; email: string }[]>([]);
   const [viewMode, setViewMode] = useState<'list' | 'history' | 'report' | 'dashboard'>('list');
   const [history, setHistory] = useState<HistoryEntry[]>([]);
@@ -193,6 +193,13 @@ const Parcerias = () => {
     data_inicio: format(new Date(), 'yyyy-MM-dd'),
     status: 'ativo',
   });
+
+  // Inicializar selectedUserId com o usuário logado (para admins)
+  useEffect(() => {
+    if (user?.id && !selectedUserId) {
+      setSelectedUserId(user.id);
+    }
+  }, [user?.id]);
 
   // Carregar dados iniciais apenas uma vez quando user estiver disponível
   useEffect(() => {

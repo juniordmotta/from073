@@ -336,7 +336,7 @@ const CasasDeApostas = () => {
       .filter((group): group is BettingHouseGroup => group !== null);
   }, [searchTerm, hiddenHouseIds, showHidden, editedHousesMap, newHousesByGroup, customGroups]);
 
-  // Carregar parcerias
+  // Carregar apenas parcerias ativas do usuário logado
   const loadPartnerships = async () => {
     if (!user?.id) return;
     
@@ -345,6 +345,7 @@ const CasasDeApostas = () => {
       const { data, error } = await supabase
         .from('partnerships')
         .select('id, nome_completo, status')
+        .eq('user_id', user.id)
         .eq('status', 'ativo')
         .order('nome_completo');
       
