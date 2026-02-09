@@ -777,8 +777,51 @@ const CasasDeApostas = () => {
     try {
       const customHouse = customHouses.find(h => h.id === movingHouse.house.id);
       
-      if (customHouse) {
-        // Casa customizada: atualizar group_id
+      // Verificar se a casa é uma cópia de uma casa estática original
+      const isStaticHouseCopy = customHouse && !customHouse.original_house_id && 
+        bettingHouseGroups.some(g => g.houses.some(h => 
+          h.name.toLowerCase() === customHouse.name.toLowerCase()
+        ));
+      
+      // Encontrar a casa estática original (se existir)
+      let originalStaticHouse: BettingHouse | null = null;
+      let originalGroupId: string | null = null;
+      
+      if (isStaticHouseCopy) {
+        for (const group of bettingHouseGroups) {
+          const found = group.houses.find(h => h.name.toLowerCase() === customHouse!.name.toLowerCase());
+          if (found) {
+            originalStaticHouse = found;
+            originalGroupId = group.id;
+            break;
+          }
+        }
+      }
+      
+      // Caso especial: movendo de volta para o grupo original de uma casa estática
+      if (isStaticHouseCopy && originalGroupId === targetGroupId && originalStaticHouse) {
+        // Deletar a cópia customizada
+        const { error: deleteError } = await supabase
+          .from('custom_betting_houses')
+          .delete()
+          .eq('id', customHouse!.id);
+        
+        if (deleteError) throw deleteError;
+        
+        // Restaurar a casa original (remover do hidden)
+        const { error: restoreError } = await supabase
+          .from('hidden_betting_houses')
+          .delete()
+          .eq('house_id', originalStaticHouse.id);
+        
+        if (restoreError) throw restoreError;
+        
+        // Atualizar estados locais
+        setCustomHouses(prev => prev.filter(h => h.id !== customHouse!.id));
+        setHiddenHouses(prev => prev.filter(h => h.house_id !== originalStaticHouse!.id));
+        
+      } else if (customHouse) {
+        // Casa customizada normal: atualizar group_id
         const { error } = await supabase
           .from('custom_betting_houses')
           .update({ group_id: targetGroupId })
@@ -790,8 +833,7 @@ const CasasDeApostas = () => {
           h.id === customHouse.id ? { ...h, group_id: targetGroupId } : h
         ));
       } else {
-        // Casa original: criar entry customizada no novo grupo e ocultar a original
-        // Primeiro, adicionar ao novo grupo como customizada
+        // Casa original estática: criar entry customizada no novo grupo e ocultar a original
         const { data: newHouse, error: insertError } = await supabase
           .from('custom_betting_houses')
           .insert({
