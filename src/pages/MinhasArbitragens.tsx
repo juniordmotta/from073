@@ -728,7 +728,7 @@ export default function MinhasArbitragens() {
     }
   }, [user?.id, isAdmin, debouncedFilterUser]);
 
-  // Carregar lucro do mês do usuário logado (independente de filtros)
+  // Carregar lucro do mês (responde a filtros de operador e parceria)
   const loadUserMonthStats = useCallback(async () => {
     if (!user?.id) return;
     
@@ -737,12 +737,17 @@ export default function MinhasArbitragens() {
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
       const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-      const { data, error } = await supabase
+      // Se admin com filtro de operador, buscar dados desse operador
+      const targetUserIds = isAdmin && debouncedFilterUser.length > 0 ? debouncedFilterUser : [user.id];
+
+      let query = supabase
         .from('arbitrages')
-        .select('status, lucro_projetado, lucro_real, casa_01_valor, casa_02_valor, casa_03_valor, created_at')
-        .eq('user_id', user.id)
+        .select('status, lucro_projetado, lucro_real, casa_01_valor, casa_02_valor, casa_03_valor, created_at, casa_01_parceria_id, casa_02_parceria_id, casa_03_parceria_id')
+        .in('user_id', targetUserIds)
         .gte('created_at', firstDayOfMonth.toISOString())
         .lte('created_at', lastDayOfMonth.toISOString());
+
+      const { data, error } = await query;
 
       if (error) {
         console.warn('Erro ao carregar stats do mês:', error.message);
@@ -750,19 +755,32 @@ export default function MinhasArbitragens() {
       }
 
       if (data) {
-        const totalLucro = data.reduce((sum, arb) => {
+        // Aplicar filtro de parceria se ativo
+        let filtered = data;
+        if (debouncedFilterPartnership.length > 0) {
+          filtered = data.filter(arb => {
+            const partnershipIds = [
+              arb.casa_01_parceria_id,
+              arb.casa_02_parceria_id,
+              arb.casa_03_parceria_id,
+            ].filter(Boolean);
+            return partnershipIds.some(id => debouncedFilterPartnership.includes(id as string));
+          });
+        }
+
+        const totalLucro = filtered.reduce((sum, arb) => {
           const lucro = arb.status === 'aguardando' ? Number(arb.lucro_projetado) : Number(arb.lucro_real);
           return sum + lucro;
         }, 0);
 
-        const totalInvestido = data.reduce(
+        const totalInvestido = filtered.reduce(
           (sum, arb) => sum + Number(arb.casa_01_valor) + Number(arb.casa_02_valor) + Number(arb.casa_03_valor || 0),
           0
         );
 
         // Contar dias únicos com apostas
         const uniqueDays = new Set(
-          data.map(arb => format(new Date(arb.created_at), 'yyyy-MM-dd'))
+          filtered.map(arb => format(new Date(arb.created_at), 'yyyy-MM-dd'))
         );
 
         setUserMonthStats({
@@ -774,7 +792,7 @@ export default function MinhasArbitragens() {
     } catch (error) {
       console.error('Erro ao carregar stats do mês:', error);
     }
-  }, [user?.id]);
+  }, [user?.id, isAdmin, debouncedFilterUser, debouncedFilterPartnership]);
 
   // Carregar dados inicialmente
   useEffect(() => {
@@ -790,10 +808,11 @@ export default function MinhasArbitragens() {
     // Apenas uma vez quando user.id ou isAdmin mudar
   }, [user?.id, isAdmin]);
 
-  // Recarregar banca quando filtro de usuário mudar
+  // Recarregar banca e stats quando filtro de usuário/parceria mudar
   useEffect(() => {
     loadBancaTotal();
-  }, [debouncedFilterUser]);
+    loadUserMonthStats();
+  }, [debouncedFilterUser, debouncedFilterPartnership]);
 
   // Aplicar filtros quando arbitragens ou filtros mudarem
   useEffect(() => {
@@ -2099,7 +2118,7 @@ export default function MinhasArbitragens() {
               </div>
             </div>
 
-            {/* Lucro do Mês + Média/Dia + ROI (sempre do usuário logado) */}
+            {/* Lucro do Mês + Média/Dia + ROI (responde a filtros de operador e parceria) */}
             <div className="rounded-lg border bg-card p-2 animate-fade-in" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
               <div className="flex items-center gap-1 mb-0.5">
                 {userMonthStats.totalLucro >= 0 ? (

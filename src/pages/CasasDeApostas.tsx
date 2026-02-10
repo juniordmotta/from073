@@ -33,6 +33,22 @@ import {
 import { bettingHouseGroups, BettingHouse, BettingHouseGroup } from '@/data/bettingHousesData';
 import { highlightText } from '@/lib/utils/highlightText';
 
+// Função para normalizar nome de casa para comparação
+const normalizeHouseName = (name: string): string => {
+  return name
+    .toLowerCase()
+    .replace(/\s*\(br\)\s*/gi, '')
+    .replace(/\s+br\s*$/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+// Cores fixas para parcerias
+const PARTNERSHIP_COLORS = [
+  'bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-purple-500', 
+  'bg-pink-500', 'bg-cyan-500', 'bg-orange-500', 'bg-indigo-500',
+];
+
 interface Partnership {
   id: string;
   nome_completo: string;
@@ -235,11 +251,21 @@ const CasasDeApostas = () => {
     return map;
   }, [customHouses]);
 
-  // Mapa de casas por nome -> parcerias que usam
+  // Mapa de parcerias -> cor
+  const partnershipColorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    const uniquePartnershipNames = [...new Set(partnershipHouses.map(ph => ph.partnership_name))];
+    uniquePartnershipNames.forEach((name, i) => {
+      map.set(name, PARTNERSHIP_COLORS[i % PARTNERSHIP_COLORS.length]);
+    });
+    return map;
+  }, [partnershipHouses]);
+
+  // Mapa de casas por nome -> parcerias que usam (com normalização)
   const housePartnershipsMap = useMemo(() => {
     const map = new Map<string, string[]>();
     partnershipHouses.forEach(ph => {
-      const normalizedName = ph.house_name.toLowerCase();
+      const normalizedName = normalizeHouseName(ph.house_name);
       const existing = map.get(normalizedName) || [];
       if (!existing.includes(ph.partnership_name)) {
         existing.push(ph.partnership_name);
@@ -252,7 +278,7 @@ const CasasDeApostas = () => {
   // Função para contar casas em uso por grupo
   const getGroupUsageCount = (group: BettingHouseGroup): number => {
     return group.houses.filter(house => 
-      housePartnershipsMap.has(house.name.toLowerCase())
+      housePartnershipsMap.has(normalizeHouseName(house.name))
     ).length;
   };
 
@@ -778,9 +804,12 @@ const CasasDeApostas = () => {
       const customHouse = customHouses.find(h => h.id === movingHouse.house.id);
       
       // Verificar se a casa é uma cópia de uma casa estática original
-      const isStaticHouseCopy = customHouse && !customHouse.original_house_id && 
+      // Usar normalização para comparar nomes (Bet365 == Bet365 (BR) == bet365)
+      const normalizedMovingName = normalizeHouseName(movingHouse.house.name);
+      
+      const isStaticHouseCopy = customHouse && 
         bettingHouseGroups.some(g => g.houses.some(h => 
-          h.name.toLowerCase() === customHouse.name.toLowerCase()
+          normalizeHouseName(h.name) === normalizedMovingName
         ));
       
       // Encontrar a casa estática original (se existir)
@@ -789,7 +818,7 @@ const CasasDeApostas = () => {
       
       if (isStaticHouseCopy) {
         for (const group of bettingHouseGroups) {
-          const found = group.houses.find(h => h.name.toLowerCase() === customHouse!.name.toLowerCase());
+          const found = group.houses.find(h => normalizeHouseName(h.name) === normalizedMovingName);
           if (found) {
             originalStaticHouse = found;
             originalGroupId = group.id;
@@ -809,16 +838,24 @@ const CasasDeApostas = () => {
         if (deleteError) throw deleteError;
         
         // Restaurar a casa original (remover do hidden)
-        const { error: restoreError } = await supabase
+        // Deletar por house_id OR por normalização do nome para cobrir todos os casos
+        await supabase
           .from('hidden_betting_houses')
           .delete()
           .eq('house_id', originalStaticHouse.id);
         
-        if (restoreError) throw restoreError;
+        // Também tentar deletar por nome normalizado caso o house_id não bata
+        await supabase
+          .from('hidden_betting_houses')
+          .delete()
+          .eq('house_name', originalStaticHouse.name);
         
         // Atualizar estados locais
         setCustomHouses(prev => prev.filter(h => h.id !== customHouse!.id));
-        setHiddenHouses(prev => prev.filter(h => h.house_id !== originalStaticHouse!.id));
+        setHiddenHouses(prev => prev.filter(h => 
+          h.house_id !== originalStaticHouse!.id && 
+          normalizeHouseName(h.house_name) !== normalizedMovingName
+        ));
         
       } else if (customHouse) {
         // Casa customizada normal: atualizar group_id
@@ -1056,7 +1093,7 @@ const CasasDeApostas = () => {
                           const isHidden = hiddenHouseIds.has(house.id);
                           const isCustom = customHouses.some(h => h.id === house.id);
                           const isEdited = editedHousesMap.has(house.id);
-                          const usedByPartnerships = housePartnershipsMap.get(house.name.toLowerCase()) || [];
+                          const usedByPartnerships = housePartnershipsMap.get(normalizeHouseName(house.name)) || [];
                           const isUsedByPartnership = usedByPartnerships.length > 0;
                           
                           return (
@@ -1077,13 +1114,14 @@ const CasasDeApostas = () => {
                                   <div className="font-medium truncate flex items-center gap-2 flex-wrap">
                                     {searchTerm ? highlightText(house.name, searchTerm) : house.name}
                                     {isUsedByPartnership && (
-                                      <Badge variant="default" className="text-xs bg-success hover:bg-success/90 gap-1">
-                                        <CheckCircle2 className="h-3 w-3" />
-                                        {usedByPartnerships.length === 1 
-                                          ? usedByPartnerships[0]
-                                          : `${usedByPartnerships.length} parcerias`
-                                        }
-                                      </Badge>
+                                      <span className="flex items-center gap-1 flex-wrap">
+                                        {usedByPartnerships.map((partnershipName, idx) => (
+                                          <Badge key={idx} variant="default" className={`text-xs gap-1 text-white ${partnershipColorMap.get(partnershipName) || 'bg-success'}`}>
+                                            <CheckCircle2 className="h-3 w-3" />
+                                            {partnershipName}
+                                          </Badge>
+                                        ))}
+                                      </span>
                                     )}
                                     {isHidden && (
                                       <Badge variant="destructive" className="text-xs">Oculta</Badge>
