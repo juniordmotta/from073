@@ -181,8 +181,10 @@ export default function MinhasArbitragens() {
   const debouncedFilterStatus = useDebounce(filterStatus, 300);
   const debouncedFilterUser = useDebounce(filterUser, 300);
   
-  // Estados para parcerias
+  // Estados para parcerias (para adicionar arbitragem - sempre do user logado)
   const [partnerships, setPartnerships] = useState<Partnership[]>([]);
+  // Parcerias disponíveis no filtro (baseado no operador selecionado)
+  const [filterablePartnerships, setFilterablePartnerships] = useState<Partnership[]>([]);
   const [selectedPartnership01, setSelectedPartnership01] = useState('');
   const [selectedPartnership02, setSelectedPartnership02] = useState('');
   const [selectedPartnership03, setSelectedPartnership03] = useState('');
@@ -704,6 +706,52 @@ export default function MinhasArbitragens() {
       console.error('Erro ao carregar parcerias:', error);
     }
   }, [user?.id]);
+
+  // Carregar parcerias para o filtro (baseado no operador selecionado)
+  const loadFilterablePartnerships = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      let query = supabase
+        .from('partnerships')
+        .select('id, nome_completo, status, user_id, created_at, data_inicio')
+        .eq('status', 'ativo')
+        .order('created_at');
+      
+      if (isAdmin && debouncedFilterUser.length > 0) {
+        // Admin com filtro de operador: mostrar parcerias dos operadores selecionados
+        query = query.in('user_id', debouncedFilterUser);
+      } else if (isAdmin) {
+        // Admin sem filtro: mostrar todas
+        // não adiciona filtro de user_id
+      } else {
+        // Operador: apenas suas próprias
+        query = query.eq('user_id', user.id);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        console.warn('Erro ao carregar parcerias filtráveis:', error.message);
+        return;
+      }
+      
+      setFilterablePartnerships(data || []);
+      
+      // Limpar filtro de parceria se as parcerias selecionadas não existem mais na lista
+      if (data) {
+        const validIds = new Set(data.map(p => p.id));
+        setFilterPartnership(prev => prev.filter(id => validIds.has(id)));
+      }
+    } catch (error) {
+      console.error('Erro ao carregar parcerias filtráveis:', error);
+    }
+  }, [user?.id, isAdmin, debouncedFilterUser]);
+
+  // Recarregar parcerias filtráveis quando operador mudar
+  useEffect(() => {
+    loadFilterablePartnerships();
+  }, [loadFilterablePartnerships]);
 
   // Carregar total da banca das parcerias ativas
   const loadBancaTotal = useCallback(async () => {
@@ -2007,7 +2055,7 @@ export default function MinhasArbitragens() {
                     <span className="truncate">
                       {filterPartnership.length === 0 
                         ? 'Todas as parcerias' 
-                        : filterPartnership.length === partnerships.length
+                        : filterPartnership.length === filterablePartnerships.length
                         ? 'Todas as parcerias'
                         : `${filterPartnership.length} parceria${filterPartnership.length > 1 ? 's' : ''}`
                       }
@@ -2018,48 +2066,56 @@ export default function MinhasArbitragens() {
                 <PopoverContent className="w-64 p-3 bg-background z-50" align="start">
                   <div className="space-y-3">
                     <div className="font-semibold text-sm">Filtrar por Parceria</div>
-                    <div className="flex items-center space-x-2 pb-2 border-b">
-                      <Checkbox
-                        id="select-all-partnerships"
-                        checked={filterPartnership.length === partnerships.length}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setFilterPartnership(partnerships.map(p => p.id));
-                          } else {
-                            setFilterPartnership([]);
-                          }
-                        }}
-                      />
-                      <label
-                        htmlFor="select-all-partnerships"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                      >
-                        Selecionar Todas
-                      </label>
-                    </div>
-                    <div className="space-y-2 max-h-60 overflow-y-auto">
-                      {partnerships.map((p) => (
-                        <div key={p.id} className="flex items-center space-x-2">
+                    {filterablePartnerships.length === 0 ? (
+                      <div className="text-sm text-muted-foreground py-2">
+                        Nenhuma parceria ativa encontrada para o(s) operador(es) selecionado(s).
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center space-x-2 pb-2 border-b">
                           <Checkbox
-                            id={`partnership-${p.id}`}
-                            checked={filterPartnership.includes(p.id)}
+                            id="select-all-partnerships"
+                            checked={filterPartnership.length === filterablePartnerships.length && filterablePartnerships.length > 0}
                             onCheckedChange={(checked) => {
                               if (checked) {
-                                setFilterPartnership([...filterPartnership, p.id]);
+                                setFilterPartnership(filterablePartnerships.map(p => p.id));
                               } else {
-                                setFilterPartnership(filterPartnership.filter(id => id !== p.id));
+                                setFilterPartnership([]);
                               }
                             }}
                           />
                           <label
-                            htmlFor={`partnership-${p.id}`}
-                            className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                            htmlFor="select-all-partnerships"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                           >
-                            {formatUserName(p.nome_completo)}
+                            Selecionar Todas
                           </label>
                         </div>
-                      ))}
-                    </div>
+                        <div className="space-y-2 max-h-60 overflow-y-auto">
+                          {filterablePartnerships.map((p) => (
+                            <div key={p.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`partnership-${p.id}`}
+                                checked={filterPartnership.includes(p.id)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setFilterPartnership([...filterPartnership, p.id]);
+                                  } else {
+                                    setFilterPartnership(filterPartnership.filter(id => id !== p.id));
+                                  }
+                                }}
+                              />
+                              <label
+                                htmlFor={`partnership-${p.id}`}
+                                className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                              >
+                                {formatUserName(p.nome_completo)}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </PopoverContent>
             </Popover>
