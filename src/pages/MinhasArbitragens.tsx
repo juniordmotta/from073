@@ -39,7 +39,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter, X, Maximize2, Minimize2, Search, LayoutGrid, Table as TableIcon, Star, Calendar, Building2, ArrowUpDown, ArrowUp, ArrowDown, TrendingUp, TrendingDown } from 'lucide-react';
+import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter, X, Maximize2, Minimize2, Search, LayoutGrid, Table as TableIcon, Star, Calendar, Building2, ArrowUpDown, ArrowUp, ArrowDown, TrendingUp, TrendingDown, ExternalLink } from 'lucide-react';
 import { format, differenceInMilliseconds } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -50,6 +50,7 @@ import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { highlightText } from '@/lib/utils/highlightText';
 import { Progress } from '@/components/ui/progress';
 import { BettingHouseInput } from '@/components/BettingHouseInput';
+import { bettingHouseGroups } from '@/data/bettingHousesData';
 
 interface Arbitrage {
   id: string;
@@ -276,6 +277,26 @@ export default function MinhasArbitragens() {
   });
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
+
+  // Mapa de URLs das casas para links
+  const [customHousesUrls, setCustomHousesUrls] = useState<Map<string, string>>(new Map());
+  
+  const houseUrlsMap = useMemo(() => {
+    const map = new Map<string, string>();
+    bettingHouseGroups.forEach(group => {
+      group.houses.forEach(house => {
+        if (house.url) map.set(house.name.toLowerCase(), house.url);
+      });
+    });
+    customHousesUrls.forEach((url, name) => {
+      if (url) map.set(name.toLowerCase(), url);
+    });
+    return map;
+  }, [customHousesUrls]);
+
+  const getHouseUrl = (houseName: string): string | undefined => {
+    return houseUrlsMap.get(houseName.toLowerCase());
+  };
 
   // Valores derivados para animação do card de Lucro do Mês
   const mediaDia = useMemo(() => 
@@ -841,6 +862,19 @@ export default function MinhasArbitragens() {
       console.error('Erro ao carregar stats do mês:', error);
     }
   }, [user?.id, isAdmin, debouncedFilterUser, debouncedFilterPartnership]);
+
+  // Carregar URLs das casas customizadas
+  useEffect(() => {
+    const loadCustomHousesUrls = async () => {
+      const { data } = await supabase.from('custom_betting_houses').select('name, url');
+      if (data) {
+        const urlMap = new Map<string, string>();
+        data.forEach(h => { if (h.url) urlMap.set(h.name.toLowerCase(), h.url); });
+        setCustomHousesUrls(urlMap);
+      }
+    };
+    loadCustomHousesUrls();
+  }, []);
 
   // Carregar dados inicialmente
   useEffect(() => {
@@ -2468,7 +2502,16 @@ export default function MinhasArbitragens() {
                               {formatUserName(arb.partnerships_casa_01.nome_completo)}
                             </div>
                           )}
-                          <div className="font-medium">{highlightText(arb.casa_01_nome, debouncedSearchText)}</div>
+                          {(() => {
+                            const url = getHouseUrl(arb.casa_01_nome);
+                            return url ? (
+                              <a href={url.startsWith('http') ? url : `https://${url}`} target="_blank" rel="noopener noreferrer" className="font-medium hover:underline flex items-center gap-1">
+                                {highlightText(arb.casa_01_nome, debouncedSearchText)}<ExternalLink className="h-3 w-3 inline flex-shrink-0" />
+                              </a>
+                            ) : (
+                              <div className="font-medium">{highlightText(arb.casa_01_nome, debouncedSearchText)}</div>
+                            );
+                          })()}
                           {arb.casa_01_mercado && (
                             <div className="text-xs text-muted-foreground">{arb.casa_01_mercado}</div>
                           )}
@@ -2496,7 +2539,16 @@ export default function MinhasArbitragens() {
                               {formatUserName(arb.partnerships_casa_02.nome_completo)}
                             </div>
                           )}
-                          <div className="font-medium">{highlightText(arb.casa_02_nome, debouncedSearchText)}</div>
+                          {(() => {
+                            const url = getHouseUrl(arb.casa_02_nome);
+                            return url ? (
+                              <a href={url.startsWith('http') ? url : `https://${url}`} target="_blank" rel="noopener noreferrer" className="font-medium hover:underline flex items-center gap-1">
+                                {highlightText(arb.casa_02_nome, debouncedSearchText)}<ExternalLink className="h-3 w-3 inline flex-shrink-0" />
+                              </a>
+                            ) : (
+                              <div className="font-medium">{highlightText(arb.casa_02_nome, debouncedSearchText)}</div>
+                            );
+                          })()}
                           {arb.casa_02_mercado && (
                             <div className="text-xs text-muted-foreground">{arb.casa_02_mercado}</div>
                           )}
@@ -2525,7 +2577,16 @@ export default function MinhasArbitragens() {
                                 {formatUserName(arb.partnerships_casa_03.nome_completo)}
                               </div>
                             )}
-                            <div className="font-medium">{highlightText(arb.casa_03_nome!, debouncedSearchText)}</div>
+                            {(() => {
+                              const url = getHouseUrl(arb.casa_03_nome!);
+                              return url ? (
+                                <a href={url.startsWith('http') ? url : `https://${url}`} target="_blank" rel="noopener noreferrer" className="font-medium hover:underline flex items-center gap-1">
+                                  {highlightText(arb.casa_03_nome!, debouncedSearchText)}<ExternalLink className="h-3 w-3 inline flex-shrink-0" />
+                                </a>
+                              ) : (
+                                <div className="font-medium">{highlightText(arb.casa_03_nome!, debouncedSearchText)}</div>
+                              );
+                            })()}
                             {arb.casa_03_mercado && (
                               <div className="text-xs text-muted-foreground">{arb.casa_03_mercado}</div>
                             )}
@@ -2675,7 +2736,16 @@ export default function MinhasArbitragens() {
                               {formatUserName(arb.partnerships_casa_01.nome_completo)}
                             </div>
                           )}
-                          <div className="font-medium break-words whitespace-normal">{arb.casa_01_nome}</div>
+                          {(() => {
+                            const url = getHouseUrl(arb.casa_01_nome);
+                            return url ? (
+                              <a href={url.startsWith('http') ? url : `https://${url}`} target="_blank" rel="noopener noreferrer" className="font-medium break-words whitespace-normal hover:underline flex items-center gap-1">
+                                {arb.casa_01_nome}<ExternalLink className="h-3 w-3 inline flex-shrink-0" />
+                              </a>
+                            ) : (
+                              <div className="font-medium break-words whitespace-normal">{arb.casa_01_nome}</div>
+                            );
+                          })()}
                           {arb.casa_01_mercado && (
                             <div className="text-muted-foreground text-[10px]">{arb.casa_01_mercado}</div>
                           )}
@@ -2701,7 +2771,16 @@ export default function MinhasArbitragens() {
                               {formatUserName(arb.partnerships_casa_02.nome_completo)}
                             </div>
                           )}
-                          <div className="font-medium break-words whitespace-normal">{arb.casa_02_nome}</div>
+                          {(() => {
+                            const url = getHouseUrl(arb.casa_02_nome);
+                            return url ? (
+                              <a href={url.startsWith('http') ? url : `https://${url}`} target="_blank" rel="noopener noreferrer" className="font-medium break-words whitespace-normal hover:underline flex items-center gap-1">
+                                {arb.casa_02_nome}<ExternalLink className="h-3 w-3 inline flex-shrink-0" />
+                              </a>
+                            ) : (
+                              <div className="font-medium break-words whitespace-normal">{arb.casa_02_nome}</div>
+                            );
+                          })()}
                           {arb.casa_02_mercado && (
                             <div className="text-muted-foreground text-[10px]">{arb.casa_02_mercado}</div>
                           )}
@@ -2728,7 +2807,16 @@ export default function MinhasArbitragens() {
                                 {formatUserName(arb.partnerships_casa_03.nome_completo)}
                               </div>
                             )}
-                            <div className="font-medium break-words whitespace-normal">{arb.casa_03_nome}</div>
+                            {(() => {
+                              const url = getHouseUrl(arb.casa_03_nome!);
+                              return url ? (
+                                <a href={url.startsWith('http') ? url : `https://${url}`} target="_blank" rel="noopener noreferrer" className="font-medium break-words whitespace-normal hover:underline flex items-center gap-1">
+                                  {arb.casa_03_nome}<ExternalLink className="h-3 w-3 inline flex-shrink-0" />
+                                </a>
+                              ) : (
+                                <div className="font-medium break-words whitespace-normal">{arb.casa_03_nome}</div>
+                              );
+                            })()}
                             {arb.casa_03_mercado && (
                               <div className="text-muted-foreground text-[10px]">{arb.casa_03_mercado}</div>
                             )}
