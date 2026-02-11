@@ -89,6 +89,18 @@ const fieldLabels: Record<string, string> = {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
+// Mascarar dados sensíveis para admins vendo parcerias de outros usuários
+const maskCpf = (cpf: string) => {
+  const formatted = formatCpf(cpf);
+  // Mostra apenas os 3 primeiros dígitos: 123.***.***-**
+  return formatted.substring(0, 3) + '.***.***.***-**'.substring(3);
+};
+
+const maskEndereco = (endereco: string) => {
+  if (endereco.length <= 10) return '***';
+  return endereco.substring(0, 10) + '...';
+};
+
 // Removido AddHouseForm - substituído por AddHouseAutocomplete
 
 const Parcerias = () => {
@@ -675,21 +687,28 @@ const Parcerias = () => {
       // Calcular estatísticas por casa
       const casasStats = new Map();
 
+      const initCasaStats = (nome: string) => ({
+        nome,
+        ganhos: 0,
+        perdas: 0,
+        devolvidos: 0,
+        aguardando: 0,
+        totalApostas: 0,
+        lucroEnvolvido: 0, // lucro das arbitragens em que a casa participou
+      });
+
       arbs?.forEach((arb: any) => {
+        // Calcular lucro desta arbitragem (para distribuir às casas envolvidas)
+        const arbLucro = arb.status !== 'aguardando' ? (arb.lucro_real || 0) : 0;
+
         // Casa 01
         if (arb.casa_01_parceria_id === partnershipId) {
           if (!casasStats.has(arb.casa_01_nome)) {
-            casasStats.set(arb.casa_01_nome, {
-              nome: arb.casa_01_nome,
-              ganhos: 0,
-              perdas: 0,
-              devolvidos: 0,
-              aguardando: 0,
-              totalApostas: 0,
-            });
+            casasStats.set(arb.casa_01_nome, initCasaStats(arb.casa_01_nome));
           }
           const stats = casasStats.get(arb.casa_01_nome);
           stats.totalApostas++;
+          if (arb.status !== 'aguardando') stats.lucroEnvolvido += arbLucro;
           
           if (arb.casa_01_resultado === 'green' || arb.casa_01_resultado === 'parcial_green') {
             stats.ganhos += (arb.casa_01_valor_resultado || 0) - (arb.casa_01_valor || 0);
@@ -705,17 +724,11 @@ const Parcerias = () => {
         // Casa 02
         if (arb.casa_02_parceria_id === partnershipId) {
           if (!casasStats.has(arb.casa_02_nome)) {
-            casasStats.set(arb.casa_02_nome, {
-              nome: arb.casa_02_nome,
-              ganhos: 0,
-              perdas: 0,
-              devolvidos: 0,
-              aguardando: 0,
-              totalApostas: 0,
-            });
+            casasStats.set(arb.casa_02_nome, initCasaStats(arb.casa_02_nome));
           }
           const stats = casasStats.get(arb.casa_02_nome);
           stats.totalApostas++;
+          if (arb.status !== 'aguardando') stats.lucroEnvolvido += arbLucro;
           
           if (arb.casa_02_resultado === 'green' || arb.casa_02_resultado === 'parcial_green') {
             stats.ganhos += (arb.casa_02_valor_resultado || 0) - (arb.casa_02_valor || 0);
@@ -731,17 +744,11 @@ const Parcerias = () => {
         // Casa 03
         if (arb.casa_03_parceria_id === partnershipId && arb.casa_03_nome) {
           if (!casasStats.has(arb.casa_03_nome)) {
-            casasStats.set(arb.casa_03_nome, {
-              nome: arb.casa_03_nome,
-              ganhos: 0,
-              perdas: 0,
-              devolvidos: 0,
-              aguardando: 0,
-              totalApostas: 0,
-            });
+            casasStats.set(arb.casa_03_nome, initCasaStats(arb.casa_03_nome));
           }
           const stats = casasStats.get(arb.casa_03_nome);
           stats.totalApostas++;
+          if (arb.status !== 'aguardando') stats.lucroEnvolvido += arbLucro;
           
           if (arb.casa_03_resultado === 'green' || arb.casa_03_resultado === 'parcial_green') {
             stats.ganhos += (arb.casa_03_valor_resultado || 0) - (arb.casa_03_valor || 0);
@@ -769,6 +776,7 @@ const Parcerias = () => {
       const casasArray = Array.from(casasStats.values()).map(casa => ({
         ...casa,
         lucroLiquido: casa.ganhos - casa.perdas,
+        lucroEnvolvido: casa.lucroEnvolvido || 0,
         status: houseStatusMap.get(casa.nome) || 'ativa',
         saldo: houseSaldoMap.get(casa.nome) || 0,
       }));
@@ -784,6 +792,7 @@ const Parcerias = () => {
             aguardando: 0,
             totalApostas: 0,
             lucroLiquido: 0,
+            lucroEnvolvido: 0,
             status: house.status,
             saldo: house.saldo || 0,
           });
@@ -1552,8 +1561,8 @@ const Parcerias = () => {
                             {highlightText(formatUserName(partnership.nome_completo), debouncedSearch)}
                           </button>
                         </TableCell>
-                        <TableCell>{highlightText(formatCpf(partnership.cpf), debouncedSearch)}</TableCell>
-                        <TableCell className="max-w-xs truncate">{highlightText(partnership.endereco, debouncedSearch)}</TableCell>
+                        <TableCell>{highlightText(isAdmin && partnership.user_id !== user?.id ? maskCpf(partnership.cpf) : formatCpf(partnership.cpf), debouncedSearch)}</TableCell>
+                        <TableCell className="max-w-xs truncate">{highlightText(isAdmin && partnership.user_id !== user?.id ? maskEndereco(partnership.endereco) : partnership.endereco, debouncedSearch)}</TableCell>
                         <TableCell>R$ {formatCurrency(partnership.valor_banca)}</TableCell>
                         <TableCell>{partnership.bancos_cadastrados}</TableCell>
                         <TableCell>
@@ -1627,7 +1636,7 @@ const Parcerias = () => {
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">CPF:</span>
-                          <span className="font-medium">{highlightText(formatCpf(partnership.cpf), debouncedSearch)}</span>
+                          <span className="font-medium">{highlightText(isAdmin && partnership.user_id !== user?.id ? maskCpf(partnership.cpf) : formatCpf(partnership.cpf), debouncedSearch)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Valor da Banca:</span>
@@ -1641,7 +1650,7 @@ const Parcerias = () => {
                         </div>
                         <div className="space-y-1">
                           <span className="text-muted-foreground">Endereço:</span>
-                          <p className="font-medium text-xs">{highlightText(partnership.endereco, debouncedSearch)}</p>
+                          <p className="font-medium text-xs">{highlightText(isAdmin && partnership.user_id !== user?.id ? maskEndereco(partnership.endereco) : partnership.endereco, debouncedSearch)}</p>
                         </div>
                         <div className="space-y-1">
                           <span className="text-muted-foreground">Bancos:</span>
@@ -2069,6 +2078,7 @@ const Parcerias = () => {
                                 <TableHead className="text-right">Devolvidos</TableHead>
                                 <TableHead className="text-right">Aguardando</TableHead>
                                 <TableHead className="text-right">Lucro Líquido</TableHead>
+                                <TableHead className="text-right">Lucro Envolvido</TableHead>
                                 <TableHead className="w-[50px]"></TableHead>
                               </TableRow>
                             </TableHeader>
@@ -2170,6 +2180,9 @@ const Parcerias = () => {
                                   <TableCell className="text-right text-muted-foreground">{casa.aguardando}</TableCell>
                                   <TableCell className={`text-right font-semibold ${casa.lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
                                     R$ {formatCurrency(casa.lucroLiquido)}
+                                  </TableCell>
+                                  <TableCell className={`text-right font-semibold ${casa.lucroEnvolvido >= 0 ? 'text-success' : 'text-destructive'}`}>
+                                    R$ {formatCurrency(casa.lucroEnvolvido)}
                                   </TableCell>
                                   <TableCell>
                                     {casa.totalApostas === 0 && (

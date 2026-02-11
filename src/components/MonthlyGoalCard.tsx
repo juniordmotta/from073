@@ -157,6 +157,26 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
   const progressPercent = goalValue > 0 ? Math.min((currentProfit / goalValue) * 100, 100) : 0;
   const remaining = goalValue - currentProfit;
 
+  // Calcular ritmo da meta
+  const paceInfo = useMemo(() => {
+    if (goalValue <= 0) return null;
+    const now = new Date();
+    const currentDay = now.getDate();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const dailyTarget = goalValue / daysInMonth;
+    const expectedByToday = dailyTarget * currentDay;
+    const diff = currentProfit - expectedByToday;
+    const isOnTrack = diff >= 0;
+    return {
+      expectedByToday,
+      diff,
+      isOnTrack,
+      dailyTarget,
+      currentDay,
+      daysInMonth,
+    };
+  }, [goalValue, currentProfit]);
+
   // Hook de notificações
   useGoalNotifications({
     goalValue,
@@ -197,9 +217,16 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
           <div className="text-[10px] text-muted-foreground mb-1">{capitalizedMonth}</div>
           <div className="text-xl font-bold">R$ {formatCurrency(goalValue)}</div>
           {goalValue > 0 && (
-            <p className={`text-[10px] font-medium ${remaining > 0 ? 'text-muted-foreground' : 'text-success'}`}>
-              {progressPercent.toFixed(1)}% da meta
-            </p>
+            <>
+              <p className={`text-[10px] font-medium ${remaining > 0 ? 'text-muted-foreground' : 'text-success'}`}>
+                {progressPercent.toFixed(1)}% da meta
+              </p>
+              {paceInfo && (
+                <p className={`text-[10px] font-medium ${paceInfo.isOnTrack ? 'text-success' : 'text-destructive'}`}>
+                  {paceInfo.isOnTrack ? '✅ Na meta' : `⚠️ Faltam R$ ${formatCurrency(Math.abs(paceInfo.diff))} p/ dia ${paceInfo.currentDay}`}
+                </p>
+              )}
+            </>
           )}
         </Card>
 
@@ -292,6 +319,18 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
                   {progressPercent.toFixed(1)}% da meta
                 </span>
               </div>
+              {paceInfo && (
+                <div className={`text-center text-xs font-medium p-2 rounded-md ${paceInfo.isOnTrack ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+                  {paceInfo.isOnTrack ? (
+                    <>✅ Na meta — adiantado R$ {formatCurrency(Math.abs(paceInfo.diff))}</>
+                  ) : (
+                    <>⚠️ Atrasado — precisa de R$ {formatCurrency(Math.abs(paceInfo.diff))} para estar no dia {paceInfo.currentDay}</>
+                  )}
+                  <div className="text-[10px] mt-1 opacity-70">
+                    Meta diária: R$ {formatCurrency(paceInfo.dailyTarget)} • Esperado até hoje: R$ {formatCurrency(paceInfo.expectedByToday)}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </CardContent>
