@@ -1561,8 +1561,8 @@ const Parcerias = () => {
                             {highlightText(formatUserName(partnership.nome_completo), debouncedSearch)}
                           </button>
                         </TableCell>
-                        <TableCell>{highlightText(isAdmin && partnership.user_id !== user?.id ? maskCpf(partnership.cpf) : formatCpf(partnership.cpf), debouncedSearch)}</TableCell>
-                        <TableCell className="max-w-xs truncate">{highlightText(isAdmin && partnership.user_id !== user?.id ? maskEndereco(partnership.endereco) : partnership.endereco, debouncedSearch)}</TableCell>
+                        <TableCell>{highlightText(maskCpf(partnership.cpf), debouncedSearch)}</TableCell>
+                        <TableCell className="max-w-xs truncate">{highlightText(maskEndereco(partnership.endereco), debouncedSearch)}</TableCell>
                         <TableCell>R$ {formatCurrency(partnership.valor_banca)}</TableCell>
                         <TableCell>{partnership.bancos_cadastrados}</TableCell>
                         <TableCell>
@@ -1636,7 +1636,7 @@ const Parcerias = () => {
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">CPF:</span>
-                          <span className="font-medium">{highlightText(isAdmin && partnership.user_id !== user?.id ? maskCpf(partnership.cpf) : formatCpf(partnership.cpf), debouncedSearch)}</span>
+                          <span className="font-medium">{highlightText(maskCpf(partnership.cpf), debouncedSearch)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Valor da Banca:</span>
@@ -1650,7 +1650,7 @@ const Parcerias = () => {
                         </div>
                         <div className="space-y-1">
                           <span className="text-muted-foreground">Endereço:</span>
-                          <p className="font-medium text-xs">{highlightText(isAdmin && partnership.user_id !== user?.id ? maskEndereco(partnership.endereco) : partnership.endereco, debouncedSearch)}</p>
+                          <p className="font-medium text-xs">{highlightText(maskEndereco(partnership.endereco), debouncedSearch)}</p>
                         </div>
                         <div className="space-y-1">
                           <span className="text-muted-foreground">Bancos:</span>
