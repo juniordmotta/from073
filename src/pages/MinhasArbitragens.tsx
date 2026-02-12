@@ -1487,9 +1487,11 @@ export default function MinhasArbitragens() {
       casa_01_nome: editArbitrage.casa_01_nome,
       casa_01_odd: editArbitrage.casa_01_odd,
       casa_01_valor: editArbitrage.casa_01_valor,
+      casa_01_mercado: editArbitrage.casa_01_mercado || 'Mercado não especificado',
       casa_02_nome: editArbitrage.casa_02_nome,
       casa_02_odd: editArbitrage.casa_02_odd,
       casa_02_valor: editArbitrage.casa_02_valor,
+      casa_02_mercado: editArbitrage.casa_02_mercado || 'Mercado não especificado',
       porcentagem: porcentagem,
       retorno_previsto: retornoPrevisto,
       lucro_projetado: lucroProjetado,
@@ -1500,6 +1502,7 @@ export default function MinhasArbitragens() {
       updateData.casa_03_nome = editArbitrage.casa_03_nome;
       updateData.casa_03_odd = editArbitrage.casa_03_odd;
       updateData.casa_03_valor = editArbitrage.casa_03_valor;
+      updateData.casa_03_mercado = editArbitrage.casa_03_mercado || 'Mercado não especificado';
     }
 
     // Atualização otimística - atualizar estado local imediatamente
