@@ -2988,6 +2988,13 @@ export default function MinhasArbitragens() {
                         />
                       </div>
                       <div>
+                        <Label>Mercado</Label>
+                        <Input
+                          value={editArbitrage.casa_01_mercado || ''}
+                          onChange={(e) => setEditArbitrage({ ...editArbitrage, casa_01_mercado: e.target.value })}
+                        />
+                      </div>
+                      <div>
                         <Label>Odd</Label>
                         <Input
                           type="number"
@@ -3015,6 +3022,13 @@ export default function MinhasArbitragens() {
                         <Input
                           value={editArbitrage.casa_02_nome}
                           onChange={(e) => setEditArbitrage({ ...editArbitrage, casa_02_nome: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>Mercado</Label>
+                        <Input
+                          value={editArbitrage.casa_02_mercado || ''}
+                          onChange={(e) => setEditArbitrage({ ...editArbitrage, casa_02_mercado: e.target.value })}
                         />
                       </div>
                       <div>
@@ -3046,6 +3060,13 @@ export default function MinhasArbitragens() {
                           <Input
                             value={editArbitrage.casa_03_nome}
                             onChange={(e) => setEditArbitrage({ ...editArbitrage, casa_03_nome: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label>Mercado</Label>
+                          <Input
+                            value={editArbitrage.casa_03_mercado || ''}
+                            onChange={(e) => setEditArbitrage({ ...editArbitrage, casa_03_mercado: e.target.value })}
                           />
                         </div>
                         <div>

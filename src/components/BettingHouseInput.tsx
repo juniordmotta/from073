@@ -10,6 +10,7 @@ interface CustomHouse {
   name: string;
   url: string | null;
   group_id: string;
+  original_house_id: string | null;
 }
 
 interface BettingHouseInputProps {
@@ -55,7 +56,7 @@ export const BettingHouseInput = ({
       // Carregar casas customizadas
       const { data: customData } = await supabase
         .from('custom_betting_houses')
-        .select('id, name, url, group_id');
+        .select('id, name, url, group_id, original_house_id');
       if (customData) {
         setCustomHouses(customData);
       }
@@ -95,10 +96,16 @@ export const BettingHouseInput = ({
   const catalogHouses = useMemo(() => {
     const housesMap = new Map<string, { id: string; name: string; groupName: string; source: 'catalog' }>();
     
-    // Casas estáticas (apenas não ocultas)
+    // Collect original_house_ids from custom houses to skip their static originals
+    const replacedOriginalIds = new Set(
+      customHouses.filter(c => c.original_house_id).map(c => c.original_house_id!)
+    );
+    
+    // Casas estáticas (apenas não ocultas e não substituídas por customizadas)
     bettingHouseGroups.forEach(group => {
       group.houses.forEach(house => {
-        if (hiddenHouseIds.has(house.id)) return; // Pular casas ocultas
+        if (hiddenHouseIds.has(house.id)) return;
+        if (replacedOriginalIds.has(house.id)) return; // Skip if replaced by custom
         
         const normalizedKey = normalizeForComparison(house.name);
         if (!housesMap.has(normalizedKey)) {
@@ -116,10 +123,20 @@ export const BettingHouseInput = ({
     customHouses.forEach(custom => {
       const normalizedKey = normalizeForComparison(custom.name);
       if (!housesMap.has(normalizedKey)) {
+        // Find the original group name if it replaced a static house
+        let groupName = 'Customizada';
+        if (custom.original_house_id) {
+          for (const group of bettingHouseGroups) {
+            if (group.houses.some(h => h.id === custom.original_house_id)) {
+              groupName = group.name;
+              break;
+            }
+          }
+        }
         housesMap.set(normalizedKey, {
           id: custom.id,
           name: custom.name,
-          groupName: 'Customizada',
+          groupName,
           source: 'catalog',
         });
       }
