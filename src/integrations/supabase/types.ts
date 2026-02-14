@@ -273,6 +273,8 @@ export type Database = {
       }
       custom_betting_houses: {
         Row: {
+          annotation: string | null
+          annotation_color: string | null
           created_at: string
           created_by: string
           group_id: string
@@ -283,6 +285,8 @@ export type Database = {
           url: string | null
         }
         Insert: {
+          annotation?: string | null
+          annotation_color?: string | null
           created_at?: string
           created_by: string
           group_id: string
@@ -293,6 +297,8 @@ export type Database = {
           url?: string | null
         }
         Update: {
+          annotation?: string | null
+          annotation_color?: string | null
           created_at?: string
           created_by?: string
           group_id?: string
@@ -328,6 +334,36 @@ export type Database = {
           house_id?: string
           house_name?: string
           id?: string
+        }
+        Relationships: []
+      }
+      house_annotations: {
+        Row: {
+          annotation: string
+          annotation_color: string
+          created_at: string
+          created_by: string
+          house_id: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          annotation: string
+          annotation_color?: string
+          created_at?: string
+          created_by: string
+          house_id: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          annotation?: string
+          annotation_color?: string
+          created_at?: string
+          created_by?: string
+          house_id?: string
+          id?: string
+          updated_at?: string
         }
         Relationships: []
       }

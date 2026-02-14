@@ -28,7 +28,9 @@ import {
   Pencil,
   Folder,
   MoveRight,
-  CheckCircle2
+  CheckCircle2,
+  StickyNote,
+  AlertTriangle
 } from 'lucide-react';
 import { bettingHouseGroups, BettingHouse, BettingHouseGroup } from '@/data/bettingHousesData';
 import { highlightText } from '@/lib/utils/highlightText';
@@ -74,6 +76,15 @@ interface CustomHouse {
   group_id: string;
   name: string;
   url: string | null;
+  annotation: string | null;
+  annotation_color: string | null;
+}
+
+interface HouseAnnotation {
+  id: string;
+  house_id: string;
+  annotation: string;
+  annotation_color: string;
 }
 
 interface CustomGroup {
@@ -132,6 +143,18 @@ const CasasDeApostas = () => {
   const [targetGroupId, setTargetGroupId] = useState<string>('');
   const [isMovingHouse, setIsMovingHouse] = useState(false);
 
+  // Estados para anotações de casas estáticas
+  const [houseAnnotations, setHouseAnnotations] = useState<HouseAnnotation[]>([]);
+  
+  // Estados para anotação nos dialogs
+  const [editedAnnotation, setEditedAnnotation] = useState('');
+  const [editedAnnotationColor, setEditedAnnotationColor] = useState('#6366f1');
+  const [newHouseAnnotation, setNewHouseAnnotation] = useState('');
+  const [newHouseAnnotationColor, setNewHouseAnnotationColor] = useState('#6366f1');
+  
+  // Estado para aviso de casa duplicada ao adicionar ao grupo
+  const [duplicateHouseWarning, setDuplicateHouseWarning] = useState('');
+
   // Estado para casas já cadastradas em parcerias ativas
   const [partnershipHouses, setPartnershipHouses] = useState<PartnershipHouse[]>([]);
 
@@ -140,6 +163,7 @@ const CasasDeApostas = () => {
     loadCustomHouses();
     loadCustomGroups();
     loadPartnershipHouses();
+    loadHouseAnnotations();
     if (isAdmin) {
       loadHiddenHouses();
     }
@@ -162,7 +186,7 @@ const CasasDeApostas = () => {
     try {
       const { data, error } = await supabase
         .from('custom_betting_houses')
-        .select('id, original_house_id, group_id, name, url');
+        .select('id, original_house_id, group_id, name, url, annotation, annotation_color');
       
       if (error) throw error;
       setCustomHouses(data || []);
@@ -182,6 +206,19 @@ const CasasDeApostas = () => {
       setCustomGroups(data || []);
     } catch (error) {
       console.error('Erro ao carregar grupos customizados:', error);
+    }
+  };
+
+  const loadHouseAnnotations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('house_annotations')
+        .select('id, house_id, annotation, annotation_color');
+      
+      if (error) throw error;
+      setHouseAnnotations(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar anotações:', error);
     }
   };
 
@@ -483,6 +520,11 @@ const CasasDeApostas = () => {
     setEditingHouse({ house, groupId });
     setEditedName(house.name);
     setEditedUrl(house.url || '');
+    // Load annotation
+    const customHouse = customHouses.find(h => h.id === house.id || h.original_house_id === house.id);
+    const staticAnnotation = houseAnnotations.find(a => a.house_id === house.id);
+    setEditedAnnotation(customHouse?.annotation || staticAnnotation?.annotation || '');
+    setEditedAnnotationColor(customHouse?.annotation_color || staticAnnotation?.annotation_color || '#6366f1');
   };
 
   // Salvar edição
@@ -501,6 +543,8 @@ const CasasDeApostas = () => {
           .update({
             name: editedName.trim(),
             url: editedUrl.trim() || null,
+            annotation: editedAnnotation.trim() || null,
+            annotation_color: editedAnnotationColor,
           })
           .eq('id', existingEdit.id);
         
@@ -508,7 +552,7 @@ const CasasDeApostas = () => {
         
         setCustomHouses(prev => prev.map(h => 
           h.id === existingEdit.id 
-            ? { ...h, name: editedName.trim(), url: editedUrl.trim() || null }
+            ? { ...h, name: editedName.trim(), url: editedUrl.trim() || null, annotation: editedAnnotation.trim() || null, annotation_color: editedAnnotationColor }
             : h
         ));
       } else {
@@ -520,6 +564,8 @@ const CasasDeApostas = () => {
             group_id: editingHouse.groupId,
             name: editedName.trim(),
             url: editedUrl.trim() || null,
+            annotation: editedAnnotation.trim() || null,
+            annotation_color: editedAnnotationColor,
             created_by: user.id,
           })
           .select()
@@ -528,6 +574,26 @@ const CasasDeApostas = () => {
         if (error) throw error;
         
         setCustomHouses(prev => [...prev, data]);
+      }
+
+      // Also save annotation for static houses via house_annotations table
+      const isStaticHouse = !customHouses.some(h => h.id === editingHouse.house.id);
+      if (isStaticHouse && !editedHousesMap.has(editingHouse.house.id) && editedAnnotation.trim()) {
+        await supabase
+          .from('house_annotations')
+          .upsert({
+            house_id: editingHouse.house.id,
+            annotation: editedAnnotation.trim(),
+            annotation_color: editedAnnotationColor,
+            created_by: user.id,
+          }, { onConflict: 'house_id' });
+        loadHouseAnnotations();
+      } else if (isStaticHouse && !editedHousesMap.has(editingHouse.house.id) && !editedAnnotation.trim()) {
+        await supabase
+          .from('house_annotations')
+          .delete()
+          .eq('house_id', editingHouse.house.id);
+        loadHouseAnnotations();
       }
       
       toast({
@@ -550,9 +616,38 @@ const CasasDeApostas = () => {
     }
   };
 
+  // Verificar se casa já existe em algum grupo
+  const checkHouseExistsInCatalog = (name: string): string | null => {
+    const normalized = normalizeHouseName(name);
+    // Check static houses
+    for (const group of bettingHouseGroups) {
+      for (const house of group.houses) {
+        if (normalizeHouseName(house.name) === normalized && !hiddenHouseIds.has(house.id)) {
+          return group.name;
+        }
+      }
+    }
+    // Check custom houses
+    for (const custom of customHouses) {
+      if (normalizeHouseName(custom.name) === normalized) {
+        const groupStatic = bettingHouseGroups.find(g => g.id === custom.group_id);
+        const groupCustom = customGroups.find(g => g.id === custom.group_id);
+        return groupStatic?.name || groupCustom?.nome || 'Outro grupo';
+      }
+    }
+    return null;
+  };
+
   // Adicionar nova casa ao grupo
   const handleAddNewHouse = async () => {
     if (!user?.id || !newHouseName.trim() || !addHouseGroupId) return;
+    
+    // Check for duplicates
+    const existingGroup = checkHouseExistsInCatalog(newHouseName.trim());
+    if (existingGroup) {
+      setDuplicateHouseWarning(`Casa já existente no grupo "${existingGroup}". Se quiser, poderá movê-la para este grupo.`);
+      return;
+    }
     
     setIsAddingHouse(true);
     try {
@@ -562,6 +657,8 @@ const CasasDeApostas = () => {
           group_id: addHouseGroupId,
           name: newHouseName.trim(),
           url: newHouseUrl.trim() || null,
+          annotation: newHouseAnnotation.trim() || null,
+          annotation_color: newHouseAnnotationColor,
           created_by: user.id,
         })
         .select()
@@ -579,7 +676,10 @@ const CasasDeApostas = () => {
       setIsAddHouseDialogOpen(false);
       setNewHouseName('');
       setNewHouseUrl('');
+      setNewHouseAnnotation('');
+      setNewHouseAnnotationColor('#6366f1');
       setAddHouseGroupId('');
+      setDuplicateHouseWarning('');
     } catch (error: any) {
       console.error('Erro ao adicionar casa:', error);
       toast({
@@ -1095,6 +1195,11 @@ const CasasDeApostas = () => {
                           const isEdited = editedHousesMap.has(house.id);
                           const usedByPartnerships = housePartnershipsMap.get(normalizeHouseName(house.name)) || [];
                           const isUsedByPartnership = usedByPartnerships.length > 0;
+                          // Get annotation
+                          const customHouseData = customHouses.find(h => h.id === house.id || h.original_house_id === house.id);
+                          const staticAnnotation = houseAnnotations.find(a => a.house_id === house.id);
+                          const annotation = customHouseData?.annotation || staticAnnotation?.annotation || null;
+                          const annotationColor = customHouseData?.annotation_color || staticAnnotation?.annotation_color || '#6366f1';
                           
                           return (
                             <div
@@ -1133,6 +1238,15 @@ const CasasDeApostas = () => {
                                       <Badge variant="outline" className="text-xs">Editada</Badge>
                                     )}
                                   </div>
+                                  {annotation && (
+                                    <span 
+                                      className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full text-white mt-0.5"
+                                      style={{ backgroundColor: annotationColor }}
+                                    >
+                                      <StickyNote className="h-3 w-3" />
+                                      {annotation}
+                                    </span>
+                                  )}
                                   {house.url && (
                                     <a
                                       href={house.url.startsWith('http://') || house.url.startsWith('https://') ? house.url : `https://${house.url}`}
@@ -1341,6 +1455,38 @@ const CasasDeApostas = () => {
                   placeholder="exemplo.bet.br"
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="editAnnotation">Anotação resumida (máx. 15 caracteres)</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="editAnnotation"
+                    value={editedAnnotation}
+                    onChange={(e) => {
+                      if (e.target.value.length <= 15) setEditedAnnotation(e.target.value);
+                    }}
+                    placeholder="Ex: Boa odd"
+                    maxLength={15}
+                    className="flex-1"
+                  />
+                  <input
+                    type="color"
+                    value={editedAnnotationColor}
+                    onChange={(e) => setEditedAnnotationColor(e.target.value)}
+                    className="h-10 w-10 rounded-md border border-input cursor-pointer"
+                    title="Cor da anotação"
+                  />
+                </div>
+                {editedAnnotation && (
+                  <span 
+                    className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full text-white"
+                    style={{ backgroundColor: editedAnnotationColor }}
+                  >
+                    <StickyNote className="h-3 w-3" />
+                    {editedAnnotation}
+                  </span>
+                )}
+              </div>
             </div>
             
             <DialogFooter className="gap-2 sm:gap-0">
@@ -1377,7 +1523,10 @@ const CasasDeApostas = () => {
                 <Input
                   id="newName"
                   value={newHouseName}
-                  onChange={(e) => setNewHouseName(e.target.value)}
+                  onChange={(e) => {
+                    setNewHouseName(e.target.value);
+                    setDuplicateHouseWarning('');
+                  }}
                   placeholder="Nome da casa de apostas"
                   autoFocus
                   onKeyDown={(e) => {
@@ -1386,6 +1535,12 @@ const CasasDeApostas = () => {
                     }
                   }}
                 />
+                {duplicateHouseWarning && (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertTriangle className="h-4 w-4 shrink-0" />
+                    {duplicateHouseWarning}
+                  </p>
+                )}
               </div>
               
               <div className="space-y-2">
@@ -1402,6 +1557,38 @@ const CasasDeApostas = () => {
                   }}
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="newAnnotation">Anotação resumida (máx. 15 caracteres)</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="newAnnotation"
+                    value={newHouseAnnotation}
+                    onChange={(e) => {
+                      if (e.target.value.length <= 15) setNewHouseAnnotation(e.target.value);
+                    }}
+                    placeholder="Ex: Boa odd"
+                    maxLength={15}
+                    className="flex-1"
+                  />
+                  <input
+                    type="color"
+                    value={newHouseAnnotationColor}
+                    onChange={(e) => setNewHouseAnnotationColor(e.target.value)}
+                    className="h-10 w-10 rounded-md border border-input cursor-pointer"
+                    title="Cor da anotação"
+                  />
+                </div>
+                {newHouseAnnotation && (
+                  <span 
+                    className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full text-white"
+                    style={{ backgroundColor: newHouseAnnotationColor }}
+                  >
+                    <StickyNote className="h-3 w-3" />
+                    {newHouseAnnotation}
+                  </span>
+                )}
+              </div>
             </div>
             
             <DialogFooter className="gap-2 sm:gap-0">
@@ -1411,6 +1598,9 @@ const CasasDeApostas = () => {
                   setIsAddHouseDialogOpen(false);
                   setNewHouseName('');
                   setNewHouseUrl('');
+                  setNewHouseAnnotation('');
+                  setNewHouseAnnotationColor('#6366f1');
+                  setDuplicateHouseWarning('');
                 }}
                 disabled={isAddingHouse}
               >
