@@ -14,6 +14,7 @@ interface CustomHouse {
   name: string;
   url: string | null;
   group_id: string;
+  original_house_id: string | null;
 }
 
 interface AddHouseAutocompleteProps {
@@ -38,7 +39,7 @@ export const AddHouseAutocomplete = ({ partnershipId, existingHouses, onSuccess 
     const loadCustomHouses = async () => {
       const { data } = await supabase
         .from('custom_betting_houses')
-        .select('id, name, url, group_id');
+        .select('id, name, url, group_id, original_house_id');
       if (data) {
         setCustomHouses(data);
       }
@@ -46,13 +47,29 @@ export const AddHouseAutocomplete = ({ partnershipId, existingHouses, onSuccess 
     loadCustomHouses();
   }, []);
 
-  // Combinar casas estáticas + customizadas
+  // Função para normalizar nome para deduplicação
+  const normalizeForComparison = (name: string): string => {
+    return name
+      .toLowerCase()
+      .replace(/\s*\(br\)\s*/gi, '')
+      .replace(/\s+br\s*$/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
+  // Combinar casas estáticas + customizadas com deduplicação
   const allHouses = useMemo(() => {
     const houses: { id: string; name: string; url?: string; groupName: string }[] = [];
     
-    // Casas estáticas
+    // Collect original_house_ids from custom houses to skip their static originals
+    const replacedOriginalIds = new Set(
+      customHouses.filter(c => c.original_house_id).map(c => c.original_house_id!)
+    );
+    
+    // Casas estáticas (apenas não substituídas por customizadas)
     bettingHouseGroups.forEach(group => {
       group.houses.forEach(house => {
+        if (replacedOriginalIds.has(house.id)) return; // Skip if replaced by custom
         houses.push({
           id: house.id,
           name: house.name,
@@ -62,16 +79,28 @@ export const AddHouseAutocomplete = ({ partnershipId, existingHouses, onSuccess 
       });
     });
     
-    // Casas customizadas (não duplicar se já existe)
+    // Casas customizadas (com deduplicação por nome normalizado)
+    const existingNormalized = new Set(houses.map(h => normalizeForComparison(h.name)));
     customHouses.forEach(custom => {
-      const exists = houses.some(h => h.name.toLowerCase() === custom.name.toLowerCase());
-      if (!exists) {
+      const normalizedKey = normalizeForComparison(custom.name);
+      if (!existingNormalized.has(normalizedKey)) {
+        // Find original group name
+        let groupName = 'Customizada';
+        if (custom.original_house_id) {
+          for (const group of bettingHouseGroups) {
+            if (group.houses.some(h => h.id === custom.original_house_id)) {
+              groupName = group.name;
+              break;
+            }
+          }
+        }
         houses.push({
           id: custom.id,
           name: custom.name,
           url: custom.url || undefined,
-          groupName: 'Customizada',
+          groupName,
         });
+        existingNormalized.add(normalizedKey);
       }
     });
     
