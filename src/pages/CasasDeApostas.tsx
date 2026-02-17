@@ -533,11 +533,32 @@ const CasasDeApostas = () => {
     
     setIsSavingEdit(true);
     try {
-      // Verificar se já existe edição para esta casa
+      // Check if the house itself IS a custom house (added as new)
+      const isDirectCustomHouse = customHouses.some(h => h.id === editingHouse.house.id);
+      // Check if there's an existing edit override (via original_house_id)
       const existingEdit = editedHousesMap.get(editingHouse.house.id);
       
-      if (existingEdit) {
-        // Atualizar edição existente
+      if (isDirectCustomHouse) {
+        // House is already a custom house entry - update it directly
+        const { error } = await supabase
+          .from('custom_betting_houses')
+          .update({
+            name: editedName.trim(),
+            url: editedUrl.trim() || null,
+            annotation: editedAnnotation.trim() || null,
+            annotation_color: editedAnnotationColor,
+          })
+          .eq('id', editingHouse.house.id);
+        
+        if (error) throw error;
+        
+        setCustomHouses(prev => prev.map(h => 
+          h.id === editingHouse.house.id 
+            ? { ...h, name: editedName.trim(), url: editedUrl.trim() || null, annotation: editedAnnotation.trim() || null, annotation_color: editedAnnotationColor }
+            : h
+        ));
+      } else if (existingEdit) {
+        // Atualizar edição existente (override de casa estática)
         const { error } = await supabase
           .from('custom_betting_houses')
           .update({
@@ -556,7 +577,7 @@ const CasasDeApostas = () => {
             : h
         ));
       } else {
-        // Criar nova edição
+        // Criar nova edição para casa estática
         const { data, error } = await supabase
           .from('custom_betting_houses')
           .insert({
@@ -576,9 +597,9 @@ const CasasDeApostas = () => {
         setCustomHouses(prev => [...prev, data]);
       }
 
-      // Also save annotation for static houses via house_annotations table
-      const isStaticHouse = !customHouses.some(h => h.id === editingHouse.house.id);
-      if (isStaticHouse && !editedHousesMap.has(editingHouse.house.id) && editedAnnotation.trim()) {
+      // Also save annotation for static houses via house_annotations table (only if not custom and no override)
+      const isStaticHouse = !isDirectCustomHouse && !existingEdit;
+      if (isStaticHouse && editedAnnotation.trim()) {
         await supabase
           .from('house_annotations')
           .upsert({
@@ -588,7 +609,7 @@ const CasasDeApostas = () => {
             created_by: user.id,
           }, { onConflict: 'house_id' });
         loadHouseAnnotations();
-      } else if (isStaticHouse && !editedHousesMap.has(editingHouse.house.id) && !editedAnnotation.trim()) {
+      } else if (isStaticHouse && !editedAnnotation.trim()) {
         await supabase
           .from('house_annotations')
           .delete()
@@ -1117,7 +1138,7 @@ const CasasDeApostas = () => {
                 <p>Nenhuma casa encontrada para "{searchTerm}"</p>
               </div>
             ) : (
-              <Accordion type="multiple" className="w-full space-y-2">
+              <Accordion type="single" collapsible className="w-full space-y-2">
                 {filteredGroups.map((group) => (
                   <AccordionItem 
                     key={group.id} 
@@ -1520,21 +1541,87 @@ const CasasDeApostas = () => {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="newName">Nome da Casa *</Label>
-                <Input
-                  id="newName"
-                  value={newHouseName}
-                  onChange={(e) => {
-                    setNewHouseName(e.target.value);
-                    setDuplicateHouseWarning('');
-                  }}
-                  placeholder="Nome da casa de apostas"
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && newHouseName.trim()) {
-                      handleAddNewHouse();
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="newName"
+                    value={newHouseName}
+                    onChange={(e) => {
+                      setNewHouseName(e.target.value);
+                      setDuplicateHouseWarning('');
+                    }}
+                    placeholder="Digite o nome da casa de apostas..."
+                    autoFocus
+                    className="pl-9"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newHouseName.trim()) {
+                        handleAddNewHouse();
+                      }
+                    }}
+                  />
+                </div>
+                {/* Autocomplete suggestions */}
+                {newHouseName.trim().length >= 2 && (() => {
+                  const search = newHouseName.toLowerCase().trim();
+                  const replacedOriginalIds = new Set(
+                    customHouses.filter(c => c.original_house_id).map(c => c.original_house_id!)
+                  );
+                  const suggestions: { name: string; groupName: string; exists: boolean }[] = [];
+                  // Static houses
+                  bettingHouseGroups.forEach(group => {
+                    group.houses.forEach(house => {
+                      if (hiddenHouseIds.has(house.id) || replacedOriginalIds.has(house.id)) return;
+                      if (house.name.toLowerCase().includes(search)) {
+                        const existsInGroup = normalizeHouseName(house.name) === normalizeHouseName(newHouseName);
+                        suggestions.push({ name: house.name, groupName: group.name, exists: existsInGroup });
+                      }
+                    });
+                  });
+                  // Custom houses (no original_house_id = truly new)
+                  customHouses.forEach(custom => {
+                    if (custom.name.toLowerCase().includes(search)) {
+                      const alreadyAdded = suggestions.some(s => normalizeHouseName(s.name) === normalizeHouseName(custom.name));
+                      if (!alreadyAdded) {
+                        const groupStatic = bettingHouseGroups.find(g => g.id === custom.group_id);
+                        const groupCustom = customGroups.find(g => g.id === custom.group_id);
+                        const groupName = custom.original_house_id 
+                          ? (bettingHouseGroups.find(g => g.houses.some(h => h.id === custom.original_house_id))?.name || groupStatic?.name || groupCustom?.nome || '')
+                          : (groupStatic?.name || groupCustom?.nome || '');
+                        suggestions.push({ name: custom.name, groupName, exists: true });
+                      }
                     }
-                  }}
-                />
+                  });
+                  const filtered = suggestions.slice(0, 8);
+                  if (filtered.length === 0) return null;
+                  return (
+                    <div className="border rounded-md shadow-lg max-h-48 overflow-auto bg-popover">
+                      {filtered.map((s, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => {
+                            // Check if exists in catalog
+                            const existingGroup = checkHouseExistsInCatalog(s.name);
+                            if (existingGroup) {
+                              setDuplicateHouseWarning(`Casa já existente no grupo "${existingGroup}". Se quiser, poderá movê-la para este grupo.`);
+                              setNewHouseName(s.name);
+                            } else {
+                              setNewHouseName(s.name);
+                              setDuplicateHouseWarning('');
+                            }
+                          }}
+                          className="w-full px-3 py-2 text-left hover:bg-accent flex items-center gap-2 transition-colors text-sm"
+                        >
+                          <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <span className="font-medium truncate block">{s.name}</span>
+                            <span className="text-xs text-muted-foreground">{s.groupName}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
                 {duplicateHouseWarning && (
                   <p className="text-sm text-destructive flex items-center gap-1">
                     <AlertTriangle className="h-4 w-4 shrink-0" />
