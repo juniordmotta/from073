@@ -1258,16 +1258,16 @@ const CasasDeApostas = () => {
                                     {isEdited && !isCustom && (
                                       <Badge variant="outline" className="text-xs">Editada</Badge>
                                     )}
+                                    {annotation && (
+                                      <span 
+                                        className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full text-white shrink-0"
+                                        style={{ backgroundColor: annotationColor }}
+                                      >
+                                        <StickyNote className="h-3 w-3" />
+                                        {annotation}
+                                      </span>
+                                    )}
                                   </div>
-                                  {annotation && (
-                                    <span 
-                                      className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full text-white mt-0.5"
-                                      style={{ backgroundColor: annotationColor }}
-                                    >
-                                      <StickyNote className="h-3 w-3" />
-                                      {annotation}
-                                    </span>
-                                  )}
                                   {house.url && (
                                     <a
                                       href={house.url.startsWith('http://') || house.url.startsWith('https://') ? house.url : `https://${house.url}`}
