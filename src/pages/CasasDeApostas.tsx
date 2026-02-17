@@ -1490,13 +1490,17 @@ const CasasDeApostas = () => {
                     maxLength={15}
                     className="flex-1"
                   />
-                  <input
-                    type="color"
-                    value={editedAnnotationColor}
-                    onChange={(e) => setEditedAnnotationColor(e.target.value)}
-                    className="h-10 w-10 rounded-md border border-input cursor-pointer"
-                    title="Cor da anotação"
-                  />
+                  <div className="flex items-center gap-1.5">
+                    {['#6366f1', '#ef4444', '#f59e0b', '#22c55e', '#3b82f6'].map(color => (
+                      <button
+                        key={color}
+                        type="button"
+                        className={`h-7 w-7 rounded-full border-2 transition-all ${editedAnnotationColor === color ? 'border-foreground scale-110' : 'border-transparent'}`}
+                        style={{ backgroundColor: color }}
+                        onClick={() => setEditedAnnotationColor(color)}
+                      />
+                    ))}
+                  </div>
                 </div>
                 {editedAnnotation && (
                   <span 
@@ -1658,13 +1662,17 @@ const CasasDeApostas = () => {
                     maxLength={15}
                     className="flex-1"
                   />
-                  <input
-                    type="color"
-                    value={newHouseAnnotationColor}
-                    onChange={(e) => setNewHouseAnnotationColor(e.target.value)}
-                    className="h-10 w-10 rounded-md border border-input cursor-pointer"
-                    title="Cor da anotação"
-                  />
+                  <div className="flex items-center gap-1.5">
+                    {['#6366f1', '#ef4444', '#f59e0b', '#22c55e', '#3b82f6'].map(color => (
+                      <button
+                        key={color}
+                        type="button"
+                        className={`h-7 w-7 rounded-full border-2 transition-all ${newHouseAnnotationColor === color ? 'border-foreground scale-110' : 'border-transparent'}`}
+                        style={{ backgroundColor: color }}
+                        onClick={() => setNewHouseAnnotationColor(color)}
+                      />
+                    ))}
+                  </div>
                 </div>
                 {newHouseAnnotation && (
                   <span 
