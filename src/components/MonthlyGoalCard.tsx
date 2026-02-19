@@ -223,7 +223,7 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
               </p>
               {paceInfo && (
                 <p className={`text-[10px] font-medium ${paceInfo.isOnTrack ? 'text-success' : 'text-destructive'}`}>
-                  {paceInfo.isOnTrack ? '✅ Na meta' : `⚠️ Faltam R$ ${formatCurrency(Math.abs(paceInfo.diff))} p/ dia ${paceInfo.currentDay}`}
+                  {paceInfo.isOnTrack ? `✅ +R$ ${formatCurrency(Math.abs(paceInfo.diff))} acima` : `⚠️ Faltam R$ ${formatCurrency(Math.abs(paceInfo.diff))} p/ dia ${paceInfo.currentDay}`}
                 </p>
               )}
             </>
@@ -322,7 +322,7 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
               {paceInfo && (
                 <div className={`text-center text-xs font-medium p-2 rounded-md ${paceInfo.isOnTrack ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
                   {paceInfo.isOnTrack ? (
-                    <>✅ Na meta — adiantado R$ {formatCurrency(Math.abs(paceInfo.diff))}</>
+                    <>✅ +R$ {formatCurrency(Math.abs(paceInfo.diff))} acima da meta</>
                   ) : (
                     <>⚠️ Atrasado — precisa de R$ {formatCurrency(Math.abs(paceInfo.diff))} para estar no dia {paceInfo.currentDay}</>
                   )}

@@ -668,6 +668,7 @@ export type Database = {
           created_at: string
           default_partnership_id: string | null
           email: string
+          expires_at: string | null
           id: string
           name: string
           updated_at: string
@@ -676,6 +677,7 @@ export type Database = {
           created_at?: string
           default_partnership_id?: string | null
           email: string
+          expires_at?: string | null
           id: string
           name: string
           updated_at?: string
@@ -684,6 +686,7 @@ export type Database = {
           created_at?: string
           default_partnership_id?: string | null
           email?: string
+          expires_at?: string | null
           id?: string
           name?: string
           updated_at?: string

@@ -20,7 +20,7 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Pencil, Trash2, History, Search, Filter, X, Eye, EyeOff } from 'lucide-react';
+import { UserPlus, Pencil, Trash2, History, Search, Filter, X, Eye, EyeOff, Clock, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatUserName } from '@/lib/utils';
@@ -37,6 +37,7 @@ interface User {
   created_at: string;
   role?: string;
   monthly_goal?: number;
+  expires_at?: string | null;
 }
 
 const roleLabels = {
@@ -66,6 +67,7 @@ export default function Usuarios() {
     name: '',
     role: 'operador' as 'admin_master' | 'admin' | 'operador',
     password: '',
+    expires_at: '' as string,
   });
   const [showEditPassword, setShowEditPassword] = useState(false);
   const [formTouched, setFormTouched] = useState({
@@ -148,7 +150,7 @@ export default function Usuarios() {
   const loadUsers = async () => {
     const { data: profilesData, error: profilesError } = await supabase
       .from('profiles')
-      .select('id, name, email, created_at')
+      .select('id, name, email, created_at, expires_at')
       .order('created_at', { ascending: false });
 
     if (profilesError) {
@@ -191,6 +193,7 @@ export default function Usuarios() {
           ...profile,
           role: roleData?.role || 'operador',
           monthly_goal: goalData?.goal_value || 0,
+          expires_at: profile.expires_at,
         };
       })
     );
@@ -245,7 +248,10 @@ export default function Usuarios() {
     // Atualizar perfil
     const { error: profileError } = await supabase
       .from('profiles')
-      .update({ name: editFormData.name })
+      .update({ 
+        name: editFormData.name,
+        expires_at: editFormData.expires_at ? new Date(editFormData.expires_at).toISOString() : null,
+      })
       .eq('id', editingUser.id);
 
     if (profileError) {
@@ -358,6 +364,7 @@ export default function Usuarios() {
       name: user.name,
       role: (user.role || 'operador') as 'admin_master' | 'admin' | 'operador',
       password: '',
+      expires_at: user.expires_at ? user.expires_at.slice(0, 16) : '',
     });
     setShowEditPassword(false);
     setEditOpen(true);
@@ -523,7 +530,6 @@ export default function Usuarios() {
                   </Select>
                 </div>
 
-
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? 'Criando...' : 'Criar Usuário'}
                 </Button>
@@ -588,6 +594,7 @@ export default function Usuarios() {
                 <TableHead>Email</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Meta Mensal</TableHead>
+                <TableHead>Acesso</TableHead>
                 <TableHead>Data de Cadastro</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -613,6 +620,23 @@ export default function Usuarios() {
                       <span className="font-medium">R$ {(user.monthly_goal).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     ) : (
                       <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {user.expires_at ? (
+                      new Date(user.expires_at) < new Date() ? (
+                        <Badge variant="destructive" className="gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          Expirado
+                        </Badge>
+                      ) : (
+                        <span className="text-xs flex items-center gap-1">
+                          <Clock className="h-3 w-3 text-muted-foreground" />
+                          {format(new Date(user.expires_at), 'dd/MM/yyyy', { locale: ptBR })}
+                        </span>
+                      )
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Ilimitado</span>
                     )}
                   </TableCell>
                   <TableCell>
@@ -672,6 +696,24 @@ export default function Usuarios() {
                       <span className="font-medium">R$ {(user.monthly_goal).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     ) : (
                       <span className="text-muted-foreground">-</span>
+                    )}
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Acesso:</span>
+                    {user.expires_at ? (
+                      new Date(user.expires_at) < new Date() ? (
+                        <Badge variant="destructive" className="gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          Expirado
+                        </Badge>
+                      ) : (
+                        <span className="font-medium flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {format(new Date(user.expires_at), 'dd/MM/yyyy', { locale: ptBR })}
+                        </span>
+                      )
+                    ) : (
+                      <span className="text-muted-foreground">Ilimitado</span>
                     )}
                   </div>
                   <div className="flex justify-between">
@@ -796,6 +838,30 @@ export default function Usuarios() {
                   </button>
                 </div>
                 <p className="text-xs text-muted-foreground">Mínimo 6 caracteres</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-expires">Prazo de Acesso (opcional)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="edit-expires"
+                    type="datetime-local"
+                    value={editFormData.expires_at}
+                    onChange={(e) => setEditFormData({ ...editFormData, expires_at: e.target.value })}
+                    className="flex-1"
+                  />
+                  {editFormData.expires_at && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditFormData({ ...editFormData, expires_at: '' })}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">Deixe vazio para acesso ilimitado</p>
               </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
