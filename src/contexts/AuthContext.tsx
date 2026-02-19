@@ -11,6 +11,8 @@ interface AuthContextType {
   session: Session | null;
   userRole: UserRole | null;
   isLoading: boolean;
+  isExpired: boolean;
+  expiresAt: Date | null;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, name: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -23,6 +25,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [expiresAt, setExpiresAt] = useState<Date | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -33,23 +36,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       roleLoaded = true;
       
       try {
-        const { data, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', userId)
-          .maybeSingle();
+        const [roleResult, profileResult] = await Promise.all([
+          supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', userId)
+            .maybeSingle(),
+          supabase
+            .from('profiles')
+            .select('expires_at')
+            .eq('id', userId)
+            .maybeSingle(),
+        ]);
         
         if (!isMounted) return;
         
-        if (error) {
-          console.error('Error fetching user role:', error);
+        if (roleResult.error) {
+          console.error('Error fetching user role:', roleResult.error);
           setUserRole(null);
-        } else if (data) {
-          console.log('User role found:', data);
-          setUserRole(data);
+        } else if (roleResult.data) {
+          setUserRole(roleResult.data);
         } else {
-          console.log('No role found for user');
           setUserRole(null);
+        }
+
+        if (profileResult.data?.expires_at) {
+          setExpiresAt(new Date(profileResult.data.expires_at));
+        } else {
+          setExpiresAt(null);
         }
       } catch (err) {
         console.error('Unexpected error loading role:', err);
@@ -126,6 +140,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await supabase.auth.signOut();
   };
 
+  const isExpired = expiresAt ? new Date() > expiresAt : false;
+
   return (
     <AuthContext.Provider
       value={{
@@ -133,6 +149,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         session,
         userRole,
         isLoading,
+        isExpired,
+        expiresAt,
         signIn,
         signUp,
         signOut,
