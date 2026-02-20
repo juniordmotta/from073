@@ -20,7 +20,7 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Pencil, Trash2, History, Search, Filter, X, Eye, EyeOff, Clock, AlertTriangle } from 'lucide-react';
+import { UserPlus, Pencil, Trash2, History, Search, Filter, X, Eye, EyeOff, Clock, AlertTriangle, Lock, Unlock } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatUserName } from '@/lib/utils';
@@ -364,6 +364,31 @@ export default function Usuarios() {
     setIsLoading(false);
   };
 
+  const handleToggleBlock = async (user: User) => {
+    const isBlocked = user.expires_at && new Date(user.expires_at) < new Date();
+    const newExpiresAt = isBlocked ? null : new Date().toISOString();
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ expires_at: newExpiresAt })
+      .eq('id', user.id);
+
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao atualizar acesso',
+        description: error.message,
+      });
+      return;
+    }
+
+    toast({
+      title: isBlocked ? 'Usuário desbloqueado!' : 'Usuário bloqueado!',
+      description: isBlocked ? 'O acesso foi restaurado (ilimitado).' : 'O acesso do usuário foi bloqueado.',
+    });
+    loadUsers();
+  };
+
   const openEditDialog = (user: User) => {
     setEditingUser(user);
     setEditFormData({
@@ -649,7 +674,19 @@ export default function Usuarios() {
                     {format(new Date(user.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleToggleBlock(user)}
+                        title={user.expires_at && new Date(user.expires_at) < new Date() ? 'Desbloquear' : 'Bloquear'}
+                      >
+                        {user.expires_at && new Date(user.expires_at) < new Date() ? (
+                          <Unlock className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <Lock className="h-4 w-4 text-destructive" />
+                        )}
+                      </Button>
                       <Button
                         size="sm"
                         variant="ghost"
@@ -732,6 +769,18 @@ export default function Usuarios() {
 
                 {/* Ações */}
                 <div className="flex gap-2 pt-2 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => handleToggleBlock(user)}
+                  >
+                    {user.expires_at && new Date(user.expires_at) < new Date() ? (
+                      <><Unlock className="h-4 w-4 mr-2 text-green-500" />Desbloquear</>
+                    ) : (
+                      <><Lock className="h-4 w-4 mr-2 text-destructive" />Bloquear</>
+                    )}
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
