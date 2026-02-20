@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -41,6 +42,26 @@ export default function Login() {
           description: error.message,
         });
       } else {
+        // Verificar se o usuário está bloqueado (expires_at no passado)
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (authUser) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('expires_at')
+            .eq('id', authUser.id)
+            .maybeSingle();
+
+          if (profile?.expires_at && new Date(profile.expires_at) < new Date()) {
+            await supabase.auth.signOut();
+            toast({
+              variant: 'destructive',
+              title: 'Acesso bloqueado',
+              description: 'Seu acesso foi bloqueado. Entre em contato com o administrador.',
+            });
+            setIsLoading(false);
+            return;
+          }
+        }
         navigate('/dashboard');
       }
     } catch (error) {
