@@ -245,12 +245,18 @@ export default function Usuarios() {
     
     setIsLoading(true);
 
-    // Atualizar perfil
+    // Atualizar perfil - usar formato correto para timestamp
+    let expiresAtValue: string | null = null;
+    if (editFormData.expires_at) {
+      const d = new Date(editFormData.expires_at);
+      expiresAtValue = d.toISOString();
+    }
+
     const { error: profileError } = await supabase
       .from('profiles')
       .update({ 
         name: editFormData.name,
-        expires_at: editFormData.expires_at ? new Date(editFormData.expires_at).toISOString() : null,
+        expires_at: expiresAtValue,
       })
       .eq('id', editingUser.id);
 
@@ -842,25 +848,50 @@ export default function Usuarios() {
 
               <div className="space-y-2">
                 <Label htmlFor="edit-expires">Prazo de Acesso (opcional)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="edit-expires"
-                    type="datetime-local"
-                    value={editFormData.expires_at}
-                    onChange={(e) => setEditFormData({ ...editFormData, expires_at: e.target.value })}
-                    className="flex-1"
-                  />
+                <div className="flex gap-2 flex-wrap">
+                  {[
+                    { label: '+7 dias', days: 7 },
+                    { label: '+30 dias', days: 30 },
+                    { label: '+90 dias', days: 90 },
+                  ].map(({ label, days }) => (
+                    <Button
+                      key={days}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const date = new Date();
+                        date.setDate(date.getDate() + days);
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const hours = String(date.getHours()).padStart(2, '0');
+                        const minutes = String(date.getMinutes()).padStart(2, '0');
+                        setEditFormData({ ...editFormData, expires_at: `${year}-${month}-${day}T${hours}:${minutes}` });
+                      }}
+                    >
+                      {label}
+                    </Button>
+                  ))}
                   {editFormData.expires_at && (
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
                       onClick={() => setEditFormData({ ...editFormData, expires_at: '' })}
+                      className="text-destructive"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-4 w-4 mr-1" />
+                      Remover
                     </Button>
                   )}
                 </div>
+                <Input
+                  id="edit-expires"
+                  type="datetime-local"
+                  value={editFormData.expires_at}
+                  onChange={(e) => setEditFormData({ ...editFormData, expires_at: e.target.value })}
+                />
                 <p className="text-xs text-muted-foreground">Deixe vazio para acesso ilimitado</p>
               </div>
 
