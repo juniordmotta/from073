@@ -28,6 +28,16 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ValidatedInput } from '@/components/ui/validated-input';
 import { createUserSchema } from '@/lib/validations/user';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { highlightText } from '@/lib/utils/highlightText';
 
 interface User {
@@ -364,6 +374,18 @@ export default function Usuarios() {
     setIsLoading(false);
   };
 
+  const [blockUser, setBlockUser] = useState<User | null>(null);
+
+  const handleToggleBlockConfirm = (user: User) => {
+    const isBlocked = user.expires_at && new Date(user.expires_at) < new Date();
+    if (isBlocked) {
+      // Desbloquear não precisa de confirmação
+      handleToggleBlock(user);
+    } else {
+      setBlockUser(user);
+    }
+  };
+
   const handleToggleBlock = async (user: User) => {
     const isBlocked = user.expires_at && new Date(user.expires_at) < new Date();
     const newExpiresAt = isBlocked ? null : new Date().toISOString();
@@ -387,6 +409,7 @@ export default function Usuarios() {
       description: isBlocked ? 'O acesso foi restaurado (ilimitado).' : 'O acesso do usuário foi bloqueado.',
     });
     loadUsers();
+    setBlockUser(null);
   };
 
   const openEditDialog = (user: User) => {
@@ -678,7 +701,7 @@ export default function Usuarios() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => handleToggleBlock(user)}
+                        onClick={() => handleToggleBlockConfirm(user)}
                         title={user.expires_at && new Date(user.expires_at) < new Date() ? 'Desbloquear' : 'Bloquear'}
                       >
                         {user.expires_at && new Date(user.expires_at) < new Date() ? (
@@ -773,7 +796,7 @@ export default function Usuarios() {
                     variant="outline"
                     size="sm"
                     className="flex-1"
-                    onClick={() => handleToggleBlock(user)}
+                    onClick={() => handleToggleBlockConfirm(user)}
                   >
                     {user.expires_at && new Date(user.expires_at) < new Date() ? (
                       <><Unlock className="h-4 w-4 mr-2 text-green-500" />Desbloquear</>
@@ -958,6 +981,29 @@ export default function Usuarios() {
           title="Excluir Usuário"
           itemName={deleteUser?.name}
         />
+
+        <AlertDialog open={!!blockUser} onOpenChange={(open) => !open && setBlockUser(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5 text-destructive" />
+                Confirmar Bloqueio
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja bloquear o acesso de "{blockUser?.name}"? O usuário não conseguirá mais acessar o sistema.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => blockUser && handleToggleBlock(blockUser)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Bloquear
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Dialog de Histórico de Alterações */}
         <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
