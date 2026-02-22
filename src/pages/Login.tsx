@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useToast } from '@/hooks/use-toast';
-import { TrendingUp, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { loginSchema } from '@/lib/validations/user';
 import { z } from 'zod';
 
@@ -91,7 +91,7 @@ export default function Login() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <TrendingUp className="h-12 w-12 text-success" />
+            <img src="/logo-192.png" alt="Arb From 073" className="h-20 w-20 rounded-2xl" />
           </div>
           <CardTitle className="text-2xl">Arb From 073</CardTitle>
           <CardDescription>
