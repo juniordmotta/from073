@@ -76,6 +76,10 @@ export function AppSidebar() {
       collapsible="icon"
     >
       <SidebarContent className="bg-black md:bg-primary/0 transition-all duration-300 ease-in-out">
+        <div className="flex items-center gap-3 px-3 py-4">
+          <img src="/logo-192.png" alt="Arb From 073" className="h-8 w-8 rounded-lg shrink-0" />
+          {!isCollapsed && <span className="text-sm font-semibold text-white md:text-foreground truncate">Arb From 073</span>}
+        </div>
         <SidebarGroup>
           <SidebarGroupLabel className="text-white md:text-foreground">Navegação</SidebarGroupLabel>
           <SidebarGroupContent>
