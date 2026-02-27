@@ -701,6 +701,83 @@ export type Database = {
           },
         ]
       }
+      push_config: {
+        Row: {
+          created_at: string
+          id: string
+          key_name: string
+          key_value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key_name: string
+          key_value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key_name?: string
+          key_value?: string
+        }
+        Relationships: []
+      }
+      push_sent_log: {
+        Row: {
+          arbitrage_id: string
+          id: string
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          arbitrage_id: string
+          id?: string
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          arbitrage_id?: string
+          id?: string
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_sent_log_arbitrage_id_fkey"
+            columns: ["arbitrage_id"]
+            isOneToOne: false
+            referencedRelation: "arbitrages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_subscriptions: {
+        Row: {
+          auth_key: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth_key: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_id: string
+        }
+        Update: {
+          auth_key?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

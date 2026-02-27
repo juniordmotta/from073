@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { supabase } from '@/integrations/supabase/client';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import * as React from 'react';
 import {
   DropdownMenu,
@@ -31,6 +32,9 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
   const isAdminMaster = userRole?.role === 'admin_master';
+
+  // Ativar push notifications em background
+  usePushNotifications({ userId: user?.id, enabled: true });
 
   // Buscar nome do usuário do perfil
   React.useEffect(() => {

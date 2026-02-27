@@ -18,6 +18,7 @@ export default defineConfig(({ mode }) => ({
       includeAssets: ["favicon.png", "logo-192.png", "logo-512.png"],
       workbox: {
         navigateFallbackDenylist: [/^\/~oauth/],
+        importScripts: ['/push-sw.js'],
       },
       manifest: {
         name: "Arb From 073",
