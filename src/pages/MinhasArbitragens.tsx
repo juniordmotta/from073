@@ -545,6 +545,8 @@ export default function MinhasArbitragens() {
     }
     
     try {
+      const dateField = dateFilterType === 'jogo' ? 'data_evento' : 'created_at';
+      
       let query = supabase.from('arbitrages').select(`
         id,
         descricao,
@@ -588,11 +590,27 @@ export default function MinhasArbitragens() {
         query = query.eq('user_id', user.id);
       }
 
+      // Aplicar filtro de data no servidor para evitar o limite de 1000 linhas
+      if (debouncedFilterStartDate && debouncedFilterEndDate) {
+        const [startYear, startMonth, startDay] = debouncedFilterStartDate.split('-').map(Number);
+        const [endYear, endMonth, endDay] = debouncedFilterEndDate.split('-').map(Number);
+        const startDate = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
+        const endDate = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
+        query = query.gte(dateField, startDate.toISOString()).lte(dateField, endDate.toISOString());
+      } else if (!debouncedFilterStartDate && debouncedFilterEndDate) {
+        const [year, month, day] = debouncedFilterEndDate.split('-').map(Number);
+        const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
+        const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
+        query = query.gte(dateField, startOfDay.toISOString()).lte(dateField, endOfDay.toISOString());
+      }
+
+      // Aumentar limite para garantir todos os dados do período
+      query = query.limit(5000);
+
       const { data, error } = await query;
 
       if (error) {
         console.warn('Erro ao carregar arbitragens:', error.message);
-        // Só mostrar toast se for erro inesperado
         if (!error.message.includes('permission') && !error.message.includes('RLS')) {
           toast({
             variant: 'destructive',
@@ -608,7 +626,7 @@ export default function MinhasArbitragens() {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id, isAdmin, toast]);
+  }, [user?.id, isAdmin, toast, debouncedFilterStartDate, debouncedFilterEndDate, dateFilterType]);
 
   const loadUsers = async () => {
     try {
@@ -876,7 +894,7 @@ export default function MinhasArbitragens() {
     loadCustomHousesUrls();
   }, []);
 
-  // Carregar dados inicialmente
+  // Carregar dados inicialmente e quando filtros de data/role mudam
   useEffect(() => {
     if (!user?.id) return;
     
@@ -887,14 +905,13 @@ export default function MinhasArbitragens() {
     if (isAdmin) {
       loadUsers();
     }
-    // Apenas uma vez quando user.id ou isAdmin mudar
-  }, [user?.id, isAdmin]);
+  }, [user?.id, isAdmin, loadArbitragens]);
 
   // Recarregar banca e stats quando filtro de usuário/parceria mudar
   useEffect(() => {
     loadBancaTotal();
     loadUserMonthStats();
-  }, [debouncedFilterUser, debouncedFilterPartnership]);
+  }, [loadBancaTotal, loadUserMonthStats]);
 
   // Aplicar filtros quando arbitragens ou filtros mudarem
   useEffect(() => {
