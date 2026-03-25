@@ -230,6 +230,9 @@ export default function MinhasArbitragens() {
     diasComApostas: 0,
   });
   
+  // Estado para custos operacionais do mês
+  const [monthlyCosts, setMonthlyCosts] = useState(0);
+  
   // Forçar visualização em cards no mobile
   useEffect(() => {
     if (isMobile) {
@@ -299,17 +302,20 @@ export default function MinhasArbitragens() {
   };
 
   // Valores derivados para animação do card de Lucro do Mês
+  const lucroLiquido = useMemo(() => userMonthStats.totalLucro - monthlyCosts, [userMonthStats.totalLucro, monthlyCosts]);
   const mediaDia = useMemo(() => 
-    userMonthStats.diasComApostas > 0 ? userMonthStats.totalLucro / userMonthStats.diasComApostas : 0,
-    [userMonthStats.totalLucro, userMonthStats.diasComApostas]
+    userMonthStats.diasComApostas > 0 ? lucroLiquido / userMonthStats.diasComApostas : 0,
+    [lucroLiquido, userMonthStats.diasComApostas]
   );
   const roiMensal = useMemo(() => 
-    userMonthStats.totalInvestido > 0 ? (userMonthStats.totalLucro / userMonthStats.totalInvestido) * 100 : 0,
-    [userMonthStats.totalLucro, userMonthStats.totalInvestido]
+    userMonthStats.totalInvestido > 0 ? (lucroLiquido / userMonthStats.totalInvestido) * 100 : 0,
+    [lucroLiquido, userMonthStats.totalInvestido]
   );
 
   // Hooks de animação para o card de Lucro do Mês (devem estar no nível superior)
   const animatedMonthLucro = useCountUp(userMonthStats.totalLucro);
+  const animatedLucroLiquido = useCountUp(lucroLiquido);
+  const animatedMonthlyCosts = useCountUp(monthlyCosts);
   const animatedMonthInvestido = useCountUp(userMonthStats.totalInvestido);
   const animatedMediaDia = useCountUp(mediaDia);
   const animatedRoiMensal = useCountUp(roiMensal);
