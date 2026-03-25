@@ -3178,7 +3178,7 @@ export default function MinhasArbitragens() {
             )}
           </DialogContent>
         </Dialog>
-      
+      </div>
 
       {/* Dialog de Ganhos por Casa */}
       {viewGanhosArbitrage && (
