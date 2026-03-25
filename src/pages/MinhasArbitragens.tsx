@@ -2319,7 +2319,7 @@ export default function MinhasArbitragens() {
 
         {/* Cards de resumo - Layout igual ao Dashboard */}
         {filteredArbitragens.length > 0 && (
-          <div className="grid gap-2 grid-cols-2 md:grid-cols-[1fr_1fr_2fr_1fr]">
+          <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-[1fr_1fr_2fr_1fr]">
             {/* Total Investido */}
             <div className="rounded-lg border bg-card p-2 animate-fade-in">
               <div className="flex items-center gap-1 mb-0.5">
