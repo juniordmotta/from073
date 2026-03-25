@@ -2427,8 +2427,8 @@ export default function MinhasArbitragens() {
             </div>
 
             {/* Mobile only: Lucro do Mês full width */}
-            <div className="rounded-lg border bg-card p-2 animate-fade-in md:hidden" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
-              <div className="flex items-center gap-1 mb-1">
+            <div className="rounded-lg border bg-card p-3 animate-fade-in md:hidden" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
+              <div className="flex items-center gap-1 mb-2">
                 {lucroLiquido >= 0 ? (
                   <TrendingUp className="h-3 w-3 text-success" />
                 ) : (
@@ -2436,41 +2436,41 @@ export default function MinhasArbitragens() {
                 )}
                 <span className="text-[10px] text-muted-foreground">Lucro do Mês</span>
               </div>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[9px] text-muted-foreground">Líquido</span>
-                <span className={`text-lg font-bold ${lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-muted-foreground">Líquido</span>
+                <span className={`text-xl font-bold ${lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
                   R$ {formatCurrency(animatedLucroLiquido)}
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1 border-t pt-1.5">
+              <div className="space-y-1 border-t pt-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] text-muted-foreground">Bruto</span>
+                  <span className="text-[10px] text-muted-foreground">Bruto</span>
                   <span className={`text-xs font-medium ${userMonthStats.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
                     R$ {formatCurrency(animatedMonthLucro)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] text-muted-foreground">Custos</span>
+                  <span className="text-[10px] text-muted-foreground">Custos</span>
                   <span className="text-xs font-medium text-destructive">
                     - R$ {formatCurrency(animatedMonthlyCosts)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] text-muted-foreground">Investido</span>
+                  <span className="text-[10px] text-muted-foreground">Investido</span>
                   <span className="text-xs font-medium">R$ {formatCurrency(animatedMonthInvestido)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] text-muted-foreground">Média/Dia</span>
+                  <span className="text-[10px] text-muted-foreground">Média/Dia ({userMonthStats.diasComApostas} dias)</span>
                   <span className={`text-xs font-medium ${mediaDia >= 0 ? 'text-success' : 'text-destructive'}`}>
                     R$ {formatCurrency(animatedMediaDia)}
                   </span>
                 </div>
-              </div>
-              <div className="border-t pt-1 mt-1 flex items-center justify-between">
-                <span className="text-[9px] text-muted-foreground">ROI Mensal</span>
-                <span className={`text-xs font-medium ${roiMensal >= 0 ? 'text-success' : 'text-destructive'}`}>
-                  {formatCurrency(animatedRoiMensal)}%
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-muted-foreground">ROI Mensal</span>
+                  <span className={`text-xs font-medium ${roiMensal >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    {formatCurrency(animatedRoiMensal)}%
+                  </span>
+                </div>
               </div>
             </div>
 
