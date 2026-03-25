@@ -2148,6 +2148,7 @@ const Parcerias = () => {
                                   </TableCell>
                                   <TableCell className="text-right">
                                     <Input
+                                      key={`${selectedPartnershipId}-${casa.nome}`}
                                       type="text"
                                       inputMode="decimal"
                                       className="w-[100px] h-8 text-right text-sm ml-auto"
