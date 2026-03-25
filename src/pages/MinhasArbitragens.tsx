@@ -1955,20 +1955,11 @@ export default function MinhasArbitragens() {
                     </form>
                   </DialogContent>
                 </Dialog>
+                {addButton}
+                </div>
               );
             })()}
           </div>
-          
-          <div className="flex items-center gap-2">
-            <Dialog open={openAdd} onOpenChange={setOpenAdd}>
-              <DialogTrigger asChild>
-                <Button size="icon" className="h-10 w-10 shrink-0">
-                  <Plus className="h-5 w-5" />
-                </Button>
-              </DialogTrigger>
-            </Dialog>
-          </div>
-        </div>
 
         {/* Filtros agrupados */}
         <div className="flex flex-col gap-2">
