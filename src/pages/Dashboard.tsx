@@ -143,6 +143,9 @@ export default function Dashboard() {
           casa_03_nome,
           casa_03_odd,
           casa_03_valor,
+          casa_01_mercado,
+          casa_02_mercado,
+          casa_03_mercado,
           lucro_projetado,
           profiles:user_id (name)
         `)
@@ -455,17 +458,20 @@ export default function Dashboard() {
                               <div className="font-medium">{bet.casa_01_nome}</div>
                               <div className="text-muted-foreground">Odd: {Number(bet.casa_01_odd).toFixed(3)}</div>
                               <div className="text-muted-foreground">R$ {formatCurrency(bet.casa_01_valor)}</div>
+                              {bet.casa_01_mercado && <div className="text-muted-foreground">{bet.casa_01_mercado}</div>}
                             </div>
                             <div className="rounded-md border p-2 text-[10px] space-y-0.5">
                               <div className="font-medium">{bet.casa_02_nome}</div>
                               <div className="text-muted-foreground">Odd: {Number(bet.casa_02_odd).toFixed(3)}</div>
                               <div className="text-muted-foreground">R$ {formatCurrency(bet.casa_02_valor)}</div>
+                              {bet.casa_02_mercado && <div className="text-muted-foreground">{bet.casa_02_mercado}</div>}
                             </div>
                           </div>
                           {bet.casa_03_nome && (
                             <div className="rounded-md border p-2 text-[10px] space-y-0.5">
                               <div className="font-medium">{bet.casa_03_nome}</div>
                               <div className="text-muted-foreground">Odd: {Number(bet.casa_03_odd).toFixed(3)} • R$ {formatCurrency(bet.casa_03_valor)}</div>
+                              {bet.casa_03_mercado && <div className="text-muted-foreground">{bet.casa_03_mercado}</div>}
                             </div>
                           )}
                           <div className="flex items-center justify-between text-[10px] pt-1 border-t">
