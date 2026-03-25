@@ -1368,6 +1368,14 @@ export default function MinhasArbitragens() {
         setArbitragens(prev => [...prev, insertedData as unknown as Arbitrage]);
       }
 
+      // Auto-debitar saldo da casa
+      const valorApostadoNum = parseLocalizedNumber(prejuizoData.valor_apostado);
+      if (prejuizoData.casa_nome && valorApostadoNum > 0) {
+        await autoDebitHouseBalances([
+          { partnershipId: selectedPartnership01, houseName: prejuizoData.casa_nome, valor: valorApostadoNum },
+        ]);
+      }
+
       loadUserMonthStats();
       
       toast({
