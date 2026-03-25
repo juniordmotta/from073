@@ -1304,7 +1304,7 @@ const Parcerias = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="valor_banca">Valor da Banca</Label>
                     <Input
@@ -1314,6 +1314,18 @@ const Parcerias = () => {
                       value={formData.valor_banca}
                       onChange={(e) => setFormData({ ...formData, valor_banca: e.target.value })}
                       required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="saldo_bancario">Saldo em Conta Bancária</Label>
+                    <Input
+                      id="saldo_bancario"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.saldo_bancario}
+                      onChange={(e) => setFormData({ ...formData, saldo_bancario: e.target.value })}
+                      placeholder="Opcional"
                     />
                   </div>
                   <div className="space-y-2">
