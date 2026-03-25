@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
@@ -131,6 +131,7 @@ const Parcerias = () => {
   const [houseSearchTerm, setHouseSearchTerm] = useState('');
   const [recentlyUpdatedHouse, setRecentlyUpdatedHouse] = useState<string | null>(null);
   const [customHousesUrls, setCustomHousesUrls] = useState<Map<string, string>>(new Map());
+  const detailsRequestRef = useRef(0);
   const debouncedSearch = useDebounce(searchTerm, 300);
   const debouncedHouseSearch = useDebounce(houseSearchTerm, 300);
 
@@ -648,6 +649,7 @@ const Parcerias = () => {
   };
 
   const loadPartnershipDetails = async (partnershipId: string) => {
+    const requestId = ++detailsRequestRef.current;
     setLoadingData(true);
     try {
       // Buscar dados da parceria
@@ -657,6 +659,7 @@ const Parcerias = () => {
         .eq('id', partnershipId)
         .single();
 
+      if (requestId !== detailsRequestRef.current) return;
       if (partnershipError) throw partnershipError;
 
       // Buscar arbitragens relacionadas
@@ -665,6 +668,7 @@ const Parcerias = () => {
         .select('*')
         .or(`casa_01_parceria_id.eq.${partnershipId},casa_02_parceria_id.eq.${partnershipId},casa_03_parceria_id.eq.${partnershipId}`);
 
+      if (requestId !== detailsRequestRef.current) return;
       if (arbsError) throw arbsError;
 
       // Buscar status das casas
@@ -673,6 +677,7 @@ const Parcerias = () => {
         .select('*, saldo')
         .eq('partnership_id', partnershipId);
 
+      if (requestId !== detailsRequestRef.current) return;
       if (housesError) throw housesError;
 
       // Buscar custos operacionais do mês atual
@@ -687,6 +692,7 @@ const Parcerias = () => {
         .gte('data', format(firstDayOfMonth, 'yyyy-MM-dd'))
         .lte('data', format(lastDayOfMonth, 'yyyy-MM-dd'));
 
+      if (requestId !== detailsRequestRef.current) return;
       if (costsError) throw costsError;
 
       // Calcular estatísticas por casa
@@ -836,6 +842,7 @@ const Parcerias = () => {
         totalArbitragens: arbs?.length || 0,
       });
     } catch (error) {
+      if (requestId !== detailsRequestRef.current) return;
       console.error('Erro ao carregar detalhes da parceria:', error);
       toast({
         title: 'Erro',
@@ -843,18 +850,27 @@ const Parcerias = () => {
         variant: 'destructive',
       });
     } finally {
-      setLoadingData(false);
+      if (requestId === detailsRequestRef.current) {
+        setLoadingData(false);
+      }
     }
   };
 
   const handlePartnershipClick = (partnershipId: string) => {
     setSelectedPartnershipId(partnershipId);
+    setPartnershipDetails(null);
+    setHouseStatusFilter([]);
+    setHouseSearchTerm('');
     loadPartnershipDetails(partnershipId);
   };
 
   const handleBackToReport = () => {
+    detailsRequestRef.current += 1;
     setSelectedPartnershipId(null);
     setPartnershipDetails(null);
+    setLoadingData(false);
+    setHouseStatusFilter([]);
+    setHouseSearchTerm('');
   };
 
   // Função para ordenar casas por status
