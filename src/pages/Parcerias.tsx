@@ -1955,9 +1955,32 @@ const Parcerias = () => {
                           <Building2 className="h-3 w-3 text-muted-foreground" />
                           <span className="text-xs text-muted-foreground">Saldo Conta Bancária</span>
                         </div>
-                        <p className="text-lg font-bold">
-                          R$ {formatCurrency(Math.max(0, partnershipDetails.partnership.saldo_bancario || 0))}
-                        </p>
+                        <div className="flex items-center gap-1">
+                          <span className="text-lg font-bold">R$</span>
+                          <Input
+                            key={`bank-${selectedPartnershipId}`}
+                            type="text"
+                            inputMode="decimal"
+                            className="h-8 text-lg font-bold border-dashed w-[120px]"
+                            defaultValue={formatCurrency(Math.max(0, partnershipDetails.partnership.saldo_bancario || 0))}
+                            onBlur={async (e) => {
+                              const numValue = Math.max(0, parseLocalizedNumber(e.target.value));
+                              if (numValue !== (partnershipDetails.partnership.saldo_bancario || 0)) {
+                                await supabase
+                                  .from('partnerships')
+                                  .update({ saldo_bancario: numValue })
+                                  .eq('id', selectedPartnershipId!);
+                                setPartnershipDetails((prev: any) => ({
+                                  ...prev,
+                                  partnership: { ...prev.partnership, saldo_bancario: numValue },
+                                }));
+                              }
+                              e.target.value = formatCurrency(numValue);
+                            }}
+                            onFocus={(e) => e.target.select()}
+                            onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                          />
+                        </div>
                       </Card>
 
                       <Card className="p-3">
