@@ -164,10 +164,8 @@ const CasasDeApostas = () => {
     loadCustomGroups();
     loadPartnershipHouses();
     loadHouseAnnotations();
-    if (isAdmin) {
-      loadHiddenHouses();
-    }
-  }, [isAdmin, user?.id]);
+    loadHiddenHouses();
+  }, [user?.id]);
 
   const loadHiddenHouses = async () => {
     try {

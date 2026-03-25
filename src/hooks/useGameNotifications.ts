@@ -18,7 +18,7 @@ interface UseGameNotificationsProps {
 
 export const useGameNotifications = ({ userId, enabled = true }: UseGameNotificationsProps) => {
   const notifiedGamesRef = useRef<Set<string>>(new Set());
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const requestNotificationPermission = async () => {
     if ('Notification' in window && Notification.permission === 'default') {
