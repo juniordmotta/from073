@@ -2377,11 +2377,6 @@ export default function MinhasArbitragens() {
                       className="flex items-center gap-2 px-2.5 py-2 cursor-pointer active:bg-muted/50"
                       onClick={() => setExpandedMobileCard(isExpanded ? null : arb.id)}
                     >
-                      {/* Status indicator */}
-                      <Badge variant={getConsolidatedStatus(arb.status, arb.lucro_real).variant} className="text-[9px] h-5 px-1.5 shrink-0">
-                        {getConsolidatedStatus(arb.status, arb.lucro_real).label}
-                      </Badge>
-                      
                       {/* Descrição + casas */}
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium truncate">{arb.descricao}</p>
