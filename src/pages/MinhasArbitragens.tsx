@@ -2325,7 +2325,7 @@ export default function MinhasArbitragens() {
               <div className="flex items-center gap-1 mb-0.5">
                 <span className="text-[10px] text-muted-foreground">Total Investido</span>
               </div>
-              <div className="text-lg font-bold">R$ {formatCurrency(totais.totalInvestido)}</div>
+              <div className="text-base md:text-lg font-bold truncate">R$ {formatCurrency(totais.totalInvestido)}</div>
               {isOnlyAguardando && totalBanca > 0 && (
                 <>
                   <Progress 
@@ -2347,7 +2347,7 @@ export default function MinhasArbitragens() {
               </div>
               <div className="border-t pt-1 flex items-center justify-between">
                 <span className="text-[10px] text-muted-foreground">Lucro</span>
-                <span className={`text-sm font-bold ${totais.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
+                <span className={`text-xs md:text-sm font-bold truncate ml-1 ${totais.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
                   R$ {formatCurrency(totais.totalLucro)}
                 </span>
               </div>
@@ -2361,7 +2361,7 @@ export default function MinhasArbitragens() {
 
             {/* Lucro do Mês - Expandido com bruto, custos e líquido */}
             <div className="rounded-lg border bg-card p-2 animate-fade-in col-span-2 md:col-span-1" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
-              <div className="flex items-center gap-1 mb-0.5">
+              <div className="flex items-center gap-1 mb-1">
                 {lucroLiquido >= 0 ? (
                   <TrendingUp className="h-3 w-3 text-success" />
                 ) : (
@@ -2369,8 +2369,9 @@ export default function MinhasArbitragens() {
                 )}
                 <span className="text-[10px] text-muted-foreground">Lucro do Mês</span>
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                {/* Coluna 1: Bruto + Custos + Líquido */}
+              {/* Mobile: 2 rows layout / Desktop: 3 columns */}
+              <div className="hidden md:grid grid-cols-3 gap-2">
+                {/* Coluna 1: Bruto + Custos */}
                 <div className="space-y-1">
                   <div>
                     <span className="text-[9px] text-muted-foreground block">Bruto</span>
@@ -2412,11 +2413,51 @@ export default function MinhasArbitragens() {
                   </div>
                 </div>
               </div>
+              {/* Mobile layout */}
+              <div className="md:hidden space-y-1.5">
+                {/* Líquido destaque */}
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] text-muted-foreground">Líquido</span>
+                  <span className={`text-lg font-bold ${lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    R$ {formatCurrency(animatedLucroLiquido)}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1 border-t pt-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] text-muted-foreground">Bruto</span>
+                    <span className={`text-xs font-medium ${userMonthStats.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      R$ {formatCurrency(animatedMonthLucro)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] text-muted-foreground">Custos</span>
+                    <span className="text-xs font-medium text-destructive">
+                      - R$ {formatCurrency(animatedMonthlyCosts)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] text-muted-foreground">Investido</span>
+                    <span className="text-xs font-medium">R$ {formatCurrency(animatedMonthInvestido)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] text-muted-foreground">Média/Dia</span>
+                    <span className={`text-xs font-medium ${mediaDia >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      R$ {formatCurrency(animatedMediaDia)}
+                    </span>
+                  </div>
+                </div>
+                <div className="border-t pt-1 flex items-center justify-between">
+                  <span className="text-[9px] text-muted-foreground">ROI Mensal</span>
+                  <span className={`text-xs font-medium ${roiMensal >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    {formatCurrency(animatedRoiMensal)}%
+                  </span>
+                </div>
+              </div>
             </div>
 
             {/* Meta Mensal */}
             {user?.id && (
-              <div className="animate-fade-in" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
+              <div className="animate-fade-in col-span-2 md:col-span-1" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
                 <MonthlyGoalCard
                   userId={user.id}
                   selectedUserIds={isAdmin && filterUser.length > 0 ? filterUser : undefined}
