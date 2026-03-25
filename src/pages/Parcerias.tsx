@@ -1892,7 +1892,7 @@ const Parcerias = () => {
                 {loadingData ? (
                   <div className="space-y-6">
                     {/* Skeleton métricas */}
-                    <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+                    <div className="hidden md:grid gap-3 grid-cols-3 lg:grid-cols-6">
                       {Array.from({ length: 6 }).map((_, i) => (
                         <Card key={i} className="p-3">
                           <div className="flex items-center gap-2 mb-2">
@@ -1903,8 +1903,16 @@ const Parcerias = () => {
                         </Card>
                       ))}
                     </div>
+                    <div className="md:hidden space-y-1.5">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className="rounded-lg border bg-card px-3 py-2 flex items-center justify-between">
+                          <Skeleton className="h-3 w-24" />
+                          <Skeleton className="h-4 w-20" />
+                        </div>
+                      ))}
+                    </div>
                     {/* Skeleton saldos */}
-                    <div className="grid gap-3 grid-cols-3">
+                    <div className="hidden md:grid gap-3 grid-cols-3 mt-3">
                       {Array.from({ length: 3 }).map((_, i) => (
                         <Card key={i} className="p-3">
                           <div className="flex items-center gap-2 mb-2">
@@ -1913,6 +1921,14 @@ const Parcerias = () => {
                           </div>
                           <Skeleton className="h-7 w-28" />
                         </Card>
+                      ))}
+                    </div>
+                    <div className="md:hidden space-y-1.5 mt-3">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="rounded-lg border bg-card px-3 py-2 flex items-center justify-between">
+                          <Skeleton className="h-3 w-24" />
+                          <Skeleton className="h-4 w-20" />
+                        </div>
                       ))}
                     </div>
                     {/* Skeleton tabela */}
