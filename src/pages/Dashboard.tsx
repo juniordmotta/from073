@@ -6,7 +6,7 @@ import { useCountUp } from '@/hooks/useCountUp';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TrendingUp, TrendingDown, DollarSign, Target, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Target, Calendar, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatCurrency, formatUserName } from '@/lib/utils';
 import { MonthlyGoalCard } from '@/components/MonthlyGoalCard';
@@ -37,6 +37,7 @@ export default function Dashboard() {
   });
   const [openBets, setOpenBets] = useState<any[]>([]);
   const [totalBanca, setTotalBanca] = useState(0);
+  const [expandedDashboardBet, setExpandedDashboardBet] = useState<string | null>(null);
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
