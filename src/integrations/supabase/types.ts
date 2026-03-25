@@ -589,6 +589,7 @@ export type Database = {
           endereco: string
           id: string
           nome_completo: string
+          saldo_bancario: number
           status: string
           updated_at: string
           user_id: string
@@ -602,6 +603,7 @@ export type Database = {
           endereco: string
           id?: string
           nome_completo: string
+          saldo_bancario?: number
           status?: string
           updated_at?: string
           user_id: string
@@ -615,6 +617,7 @@ export type Database = {
           endereco?: string
           id?: string
           nome_completo?: string
+          saldo_bancario?: number
           status?: string
           updated_at?: string
           user_id?: string

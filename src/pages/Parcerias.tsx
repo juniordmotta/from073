@@ -42,6 +42,7 @@ interface Partnership {
   cpf: string;
   endereco: string;
   valor_banca: number;
+  saldo_bancario: number;
   bancos_cadastrados: string;
   data_inicio: string;
   status: string;
@@ -201,6 +202,7 @@ const Parcerias = () => {
     cpf: '',
     endereco: '',
     valor_banca: '',
+    saldo_bancario: '',
     bancos_cadastrados: '',
     data_inicio: format(new Date(), 'yyyy-MM-dd'),
     status: 'ativo',
@@ -376,6 +378,7 @@ const Parcerias = () => {
         cpf: unformatCpf(formData.cpf),
         endereco: formData.endereco,
         valor_banca: parseFloat(formData.valor_banca),
+        saldo_bancario: formData.saldo_bancario ? parseFloat(formData.saldo_bancario) : 0,
         bancos_cadastrados: filteredBanks.length > 0 ? filteredBanks.join(', ') : 'Não informado',
         data_inicio: formData.data_inicio,
         status: formData.status,
@@ -479,6 +482,7 @@ const Parcerias = () => {
       cpf: formatCpf(partnership.cpf),
       endereco: partnership.endereco,
       valor_banca: partnership.valor_banca.toString(),
+      saldo_bancario: partnership.saldo_bancario?.toString() || '0',
       bancos_cadastrados: partnership.bancos_cadastrados,
       data_inicio: partnership.data_inicio,
       status: partnership.status,
@@ -494,6 +498,7 @@ const Parcerias = () => {
       cpf: '',
       endereco: '',
       valor_banca: '',
+      saldo_bancario: '',
       bancos_cadastrados: '',
       data_inicio: format(new Date(), 'yyyy-MM-dd'),
       status: 'ativo',
@@ -1299,7 +1304,7 @@ const Parcerias = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="valor_banca">Valor da Banca</Label>
                     <Input
@@ -1309,6 +1314,18 @@ const Parcerias = () => {
                       value={formData.valor_banca}
                       onChange={(e) => setFormData({ ...formData, valor_banca: e.target.value })}
                       required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="saldo_bancario">Saldo em Conta Bancária</Label>
+                    <Input
+                      id="saldo_bancario"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.saldo_bancario}
+                      onChange={(e) => setFormData({ ...formData, saldo_bancario: e.target.value })}
+                      placeholder="Opcional"
                     />
                   </div>
                   <div className="space-y-2">
@@ -1929,6 +1946,65 @@ const Parcerias = () => {
                           compact
                         />
                       )}
+                    </div>
+
+                    {/* Resumo de Saldos */}
+                    <div className="grid gap-3 grid-cols-3">
+                      <Card className="p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Building2 className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Saldo Conta Bancária</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-lg font-bold">R$</span>
+                          <Input
+                            key={`bank-${selectedPartnershipId}`}
+                            type="text"
+                            inputMode="decimal"
+                            className="h-8 text-lg font-bold border-dashed w-[120px]"
+                            defaultValue={formatCurrency(Math.max(0, partnershipDetails.partnership.saldo_bancario || 0))}
+                            onBlur={async (e) => {
+                              const numValue = Math.max(0, parseLocalizedNumber(e.target.value));
+                              if (numValue !== (partnershipDetails.partnership.saldo_bancario || 0)) {
+                                await supabase
+                                  .from('partnerships')
+                                  .update({ saldo_bancario: numValue })
+                                  .eq('id', selectedPartnershipId!);
+                                setPartnershipDetails((prev: any) => ({
+                                  ...prev,
+                                  partnership: { ...prev.partnership, saldo_bancario: numValue },
+                                }));
+                              }
+                              e.target.value = formatCurrency(numValue);
+                            }}
+                            onFocus={(e) => e.target.select()}
+                            onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                          />
+                        </div>
+                      </Card>
+
+                      <Card className="p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <DollarSign className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Saldo nas Casas</span>
+                        </div>
+                        <p className="text-lg font-bold">
+                          R$ {formatCurrency(partnershipDetails.casas.reduce((sum: number, casa: any) => sum + (casa.saldo || 0), 0))}
+                        </p>
+                      </Card>
+
+                      <Card className="p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <TrendingUp className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Saldo Total</span>
+                        </div>
+                        <p className="text-lg font-bold text-primary">
+                          R$ {formatCurrency(
+                            Math.max(0, partnershipDetails.partnership.saldo_bancario || 0) + 
+                            partnershipDetails.casas.reduce((sum: number, casa: any) => sum + (casa.saldo || 0), 0)
+                          )}
+                        </p>
+                      </Card>
                     </div>
 
                     {/* Tabela de casas */}

@@ -1050,6 +1050,83 @@ export default function MinhasArbitragens() {
     useTresCasas,
   ]);
 
+  // Auto-debitar saldos das casas ao criar arbitragem
+  // Se a aposta for maior que o saldo da casa, entende-se que houve depósito (debita do saldo bancário)
+  const autoDebitHouseBalances = async (bets: { partnershipId: string; houseName: string; valor: number }[]) => {
+    // Agrupar por partnership para otimizar queries
+    const byPartnership = new Map<string, { houseName: string; valor: number }[]>();
+    for (const bet of bets) {
+      if (!bet.partnershipId || !bet.houseName || !bet.valor) continue;
+      const existing = byPartnership.get(bet.partnershipId) || [];
+      existing.push({ houseName: bet.houseName, valor: bet.valor });
+      byPartnership.set(bet.partnershipId, existing);
+    }
+
+    for (const [partnershipId, houseBets] of byPartnership) {
+      try {
+        // Buscar saldo bancário atual da parceria
+        const { data: partnershipData } = await supabase
+          .from('partnerships')
+          .select('saldo_bancario')
+          .eq('id', partnershipId)
+          .single();
+
+        let saldoBancario = partnershipData?.saldo_bancario || 0;
+        let totalDepositado = 0;
+
+        for (const bet of houseBets) {
+          // Buscar saldo atual da casa
+          const { data: houseData } = await supabase
+            .from('partnership_houses')
+            .select('id, saldo')
+            .eq('partnership_id', partnershipId)
+            .eq('house_name', bet.houseName)
+            .maybeSingle();
+
+          const currentSaldo = houseData?.saldo || 0;
+          let newSaldo = currentSaldo - bet.valor;
+
+          // Se o saldo ficaria negativo, significa que houve depósito
+          if (newSaldo < 0) {
+            const depositNeeded = Math.abs(newSaldo);
+            totalDepositado += depositNeeded;
+            newSaldo = 0; // Nunca fica negativo
+          }
+
+          // Atualizar saldo da casa
+          if (houseData) {
+            await supabase
+              .from('partnership_houses')
+              .update({ saldo: Math.max(0, newSaldo) })
+              .eq('id', houseData.id);
+          } else {
+            // Criar registro da casa se não existir (saldo fica 0 pois foi usado na aposta)
+            await supabase
+              .from('partnership_houses')
+              .insert({
+                partnership_id: partnershipId,
+                house_name: bet.houseName,
+                status: 'ativa',
+                saldo: 0,
+              });
+          }
+        }
+
+        // Debitar do saldo bancário o valor depositado nas casas
+        if (totalDepositado > 0) {
+          const novoSaldoBancario = Math.max(0, saldoBancario - totalDepositado);
+          await supabase
+            .from('partnerships')
+            .update({ saldo_bancario: novoSaldoBancario })
+            .eq('id', partnershipId);
+        }
+      } catch (error) {
+        console.error('Erro ao debitar saldos:', error);
+        // Não bloquear a criação da arbitragem por erro no débito
+      }
+    }
+  };
+
   const handleSubmitAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -1163,6 +1240,13 @@ export default function MinhasArbitragens() {
       if (insertedData) {
         setArbitragens(prev => [...prev, insertedData as unknown as Arbitrage]);
       }
+
+      // Auto-debitar saldos das casas e ajustar saldo bancário
+      await autoDebitHouseBalances([
+        { partnershipId: selectedPartnership01, houseName: formData.casa_01_nome, valor: parseFloat(formData.casa_01_valor) },
+        { partnershipId: selectedPartnership02, houseName: formData.casa_02_nome, valor: parseFloat(formData.casa_02_valor) },
+        ...(useTresCasas && formData.casa_03_nome ? [{ partnershipId: selectedPartnership03, houseName: formData.casa_03_nome, valor: parseFloat(formData.casa_03_valor) }] : []),
+      ]);
 
       // Recarregar stats do mês para atualizar o card de lucro
       loadUserMonthStats();
@@ -1282,6 +1366,14 @@ export default function MinhasArbitragens() {
       // Atualização otimística
       if (insertedData) {
         setArbitragens(prev => [...prev, insertedData as unknown as Arbitrage]);
+      }
+
+      // Auto-debitar saldo da casa
+      const valorApostadoNum = parseLocalizedNumber(prejuizoData.valor_apostado);
+      if (prejuizoData.casa_nome && valorApostadoNum > 0) {
+        await autoDebitHouseBalances([
+          { partnershipId: selectedPartnership01, houseName: prejuizoData.casa_nome, valor: valorApostadoNum },
+        ]);
       }
 
       loadUserMonthStats();
