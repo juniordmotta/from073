@@ -1926,7 +1926,7 @@ const Parcerias = () => {
                     </Card>
                   </div>
                 ) : partnershipDetails ? (
-                  <>
+                  <div className="animate-fade-in">
                     {/* Métricas principais */}
                     <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
                       <Card className="p-3">
@@ -2353,7 +2353,7 @@ const Parcerias = () => {
                         );
                       })()}
                     </Card>
-                  </>
+                  </div>
                 ) : null}
               </div>
             )}
