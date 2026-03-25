@@ -2608,15 +2608,15 @@ const Parcerias = () => {
                                 </div>
                               </div>
 
-                              {/* Métricas em grid compacto */}
-                              <div className="grid grid-cols-4 gap-1.5 text-xs">
+                              {/* Métricas em grid */}
+                              <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
                                 <div>
                                   <span className="text-muted-foreground">Saldo</span>
                                   <Input
                                     key={`m-${selectedPartnershipId}-${casa.nome}`}
                                     type="text"
                                     inputMode="decimal"
-                                    className="h-6 text-xs font-bold w-full mt-0.5"
+                                    className="h-7 text-xs font-bold w-full mt-0.5"
                                     defaultValue={formatCurrency(casa.saldo || 0)}
                                     onBlur={(e) => {
                                       const numValue = parseLocalizedNumber(e.target.value);
@@ -2631,18 +2631,18 @@ const Parcerias = () => {
                                 </div>
                                 <div>
                                   <span className="text-muted-foreground">Apostas</span>
-                                  <p className="font-medium">{casa.totalApostas}</p>
+                                  <p className="font-medium mt-0.5">{casa.totalApostas}</p>
                                 </div>
                                 <div>
-                                  <span className="text-muted-foreground">Lucro</span>
-                                  <p className={`font-bold ${casa.lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
-                                    {formatCurrency(casa.lucroLiquido)}
+                                  <span className="text-muted-foreground">Lucro Líquido</span>
+                                  <p className={`font-bold mt-0.5 ${casa.lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
+                                    R$ {formatCurrency(casa.lucroLiquido)}
                                   </p>
                                 </div>
                                 <div>
-                                  <span className="text-muted-foreground">Envolvido</span>
-                                  <p className={`font-medium ${casa.lucroEnvolvido >= 0 ? 'text-success' : 'text-destructive'}`}>
-                                    {formatCurrency(casa.lucroEnvolvido)}
+                                  <span className="text-muted-foreground">Lucro Envolvido</span>
+                                  <p className={`font-medium mt-0.5 ${casa.lucroEnvolvido >= 0 ? 'text-success' : 'text-destructive'}`}>
+                                    R$ {formatCurrency(casa.lucroEnvolvido)}
                                   </p>
                                 </div>
                               </div>
