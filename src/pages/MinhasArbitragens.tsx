@@ -2382,18 +2382,21 @@ export default function MinhasArbitragens() {
                         {getConsolidatedStatus(arb.status, arb.lucro_real).label}
                       </Badge>
                       
-                      {/* Descrição (times) */}
+                      {/* Descrição + casas */}
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium truncate">{arb.descricao}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          {arb.casa_01_nome} × {arb.casa_02_nome}
+                        </p>
                       </div>
                       
-                      {/* Data/hora + casas resumidas */}
+                      {/* Data/hora + lucro */}
                       <div className="text-right shrink-0">
                         <div className={`text-[10px] ${shouldPulse ? 'text-destructive font-semibold animate-pulse' : 'text-muted-foreground'}`}>
                           {format(eventDateTime, 'dd/MM HH:mm')}
                         </div>
-                        <div className="text-[9px] text-muted-foreground truncate max-w-[90px]">
-                          {arb.casa_01_nome} × {arb.casa_02_nome}
+                        <div className={`text-[10px] font-medium ${(arb.status === 'aguardando' ? arb.lucro_projetado : (arb.lucro_real ?? 0)) >= 0 ? 'text-success' : 'text-destructive'}`}>
+                          R$ {formatCurrency(arb.status === 'aguardando' ? arb.lucro_projetado : (arb.lucro_real ?? 0))}
                         </div>
                       </div>
                       
