@@ -1227,8 +1227,8 @@ const Parcerias = () => {
 
   return (
     <Layout>
-      <div className="p-6 space-y-6">
-        <div className="flex justify-between items-center flex-wrap gap-4">
+      <div className="p-4 md:p-6 space-y-4">
+        <div className="flex justify-between items-center flex-wrap gap-2">
           <div className="flex items-center gap-4">
             <h1 className="text-3xl font-bold">Parcerias</h1>
             {viewMode !== 'list' && (
@@ -2000,19 +2000,19 @@ const Parcerias = () => {
                     </div>
 
                     {/* Resumo de Saldos */}
-                    <div className="grid gap-3 grid-cols-3">
-                      <Card className="p-3">
-                        <div className="flex items-center gap-2 mb-1">
+                    <div className="grid gap-2 grid-cols-3 mt-3">
+                      <div className="rounded-lg border bg-card p-2.5">
+                        <div className="flex items-center gap-1.5 mb-1">
                           <Building2 className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">Saldo Conta Bancária</span>
+                          <span className="text-[10px] md:text-xs text-muted-foreground">Conta Bancária</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <span className="text-lg font-bold">R$</span>
+                          <span className="text-sm font-bold">R$</span>
                           <Input
                             key={`bank-${selectedPartnershipId}`}
                             type="text"
                             inputMode="decimal"
-                            className="h-8 text-lg font-bold border-dashed w-[120px]"
+                            className="h-7 text-sm font-bold border-dashed w-[90px] md:w-[120px]"
                             defaultValue={formatCurrency(Math.max(0, partnershipDetails.partnership.saldo_bancario || 0))}
                             onBlur={async (e) => {
                               const numValue = Math.max(0, parseLocalizedNumber(e.target.value));
@@ -2032,30 +2032,30 @@ const Parcerias = () => {
                             onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
                           />
                         </div>
-                      </Card>
+                      </div>
 
-                      <Card className="p-3">
-                        <div className="flex items-center gap-2 mb-1">
+                      <div className="rounded-lg border bg-card p-2.5">
+                        <div className="flex items-center gap-1.5 mb-1">
                           <DollarSign className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">Saldo nas Casas</span>
+                          <span className="text-[10px] md:text-xs text-muted-foreground">Saldo Casas</span>
                         </div>
-                        <p className="text-lg font-bold">
+                        <p className="text-sm font-bold">
                           R$ {formatCurrency(partnershipDetails.casas.reduce((sum: number, casa: any) => sum + (casa.saldo || 0), 0))}
                         </p>
-                      </Card>
+                      </div>
 
-                      <Card className="p-3">
-                        <div className="flex items-center gap-2 mb-1">
+                      <div className="rounded-lg border bg-card p-2.5">
+                        <div className="flex items-center gap-1.5 mb-1">
                           <TrendingUp className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">Saldo Total</span>
+                          <span className="text-[10px] md:text-xs text-muted-foreground">Saldo Total</span>
                         </div>
-                        <p className="text-lg font-bold text-primary">
+                        <p className="text-sm font-bold text-primary">
                           R$ {formatCurrency(
                             Math.max(0, partnershipDetails.partnership.saldo_bancario || 0) + 
                             partnershipDetails.casas.reduce((sum: number, casa: any) => sum + (casa.saldo || 0), 0)
                           )}
                         </p>
-                      </Card>
+                      </div>
                     </div>
 
                     {/* Tabela de casas */}
@@ -2187,7 +2187,9 @@ const Parcerias = () => {
                               : 'Nenhuma casa encontrada com os filtros aplicados'}
                           </p>
                         ) : (
-                        <div className="rounded-md border">
+                        <>
+                        {/* Desktop: Tabela */}
+                        <div className="hidden md:block rounded-md border">
                           <Table>
                             <TableHeader>
                               <TableRow>
@@ -2210,17 +2212,7 @@ const Parcerias = () => {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {(() => {
-                                const searchLower = debouncedHouseSearch.toLowerCase();
-                                return partnershipDetails.casas.filter((c: any) => {
-                                  const statusMatch = houseStatusFilter.length === 0 || houseStatusFilter.includes(c.status);
-                                  const searchMatch = !searchLower || 
-                                    c.nome.toLowerCase().includes(searchLower) ||
-                                    getStatusLabel(c.status).toLowerCase().includes(searchLower) ||
-                                    c.totalApostas.toString().includes(searchLower) ||
-                                    c.lucroLiquido.toString().includes(searchLower);
-                                  return statusMatch && searchMatch;
-                                }).map((casa: any, index: number) => (
+                              {filteredCasas.map((casa: any) => (
                                 <TableRow 
                                   key={casa.nome}
                                   className={`transition-all duration-500 ease-out ${
@@ -2287,14 +2279,8 @@ const Parcerias = () => {
                                         }
                                         e.target.value = formatCurrency(numValue);
                                       }}
-                                      onFocus={(e) => {
-                                        e.target.select();
-                                      }}
-                                      onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                          e.currentTarget.blur();
-                                        }
-                                      }}
+                                      onFocus={(e) => e.target.select()}
+                                      onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
                                     />
                                   </TableCell>
                                   <TableCell className="text-right">{casa.totalApostas}</TableCell>
@@ -2345,11 +2331,129 @@ const Parcerias = () => {
                                     )}
                                   </TableCell>
                                 </TableRow>
-                              ));
-                              })()}
+                              ))}
                             </TableBody>
                           </Table>
                         </div>
+
+                        {/* Mobile: Cards */}
+                        <div className="md:hidden space-y-2">
+                          {filteredCasas.map((casa: any) => (
+                            <div 
+                              key={casa.nome} 
+                              className={`rounded-lg border bg-card p-3 space-y-2 transition-all duration-500 ${
+                                recentlyUpdatedHouse === casa.nome ? 'ring-2 ring-primary/30 bg-primary/5' : ''
+                              }`}
+                            >
+                              {/* Header: Nome + Status + Delete */}
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                  {(() => {
+                                    const houseUrl = getHouseUrl(casa.nome);
+                                    return houseUrl ? (
+                                      <a
+                                        href={houseUrl.startsWith('http://') || houseUrl.startsWith('https://') ? houseUrl : `https://${houseUrl}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="font-semibold text-sm text-primary hover:underline truncate flex items-center gap-1"
+                                      >
+                                        {casa.nome}
+                                        <ExternalLink className="h-3 w-3 shrink-0" />
+                                      </a>
+                                    ) : (
+                                      <span className="font-semibold text-sm truncate">{casa.nome}</span>
+                                    );
+                                  })()}
+                                </div>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <Select
+                                    value={casa.status}
+                                    onValueChange={(value) => updateHouseStatus(selectedPartnershipId!, casa.nome, value)}
+                                  >
+                                    <SelectTrigger className="h-6 w-auto border-0 p-0">
+                                      <Badge className={`text-[10px] ${getStatusColor(casa.status)}`}>
+                                        {getStatusLabel(casa.status)}
+                                      </Badge>
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-popover z-50">
+                                      <SelectItem value="ativa">Ativa</SelectItem>
+                                      <SelectItem value="bloqueada">Bloqueada</SelectItem>
+                                      <SelectItem value="sacar">Sacar</SelectItem>
+                                      <SelectItem value="aguardando_pagamento">Aguardando Pagamento</SelectItem>
+                                      <SelectItem value="aguardando_verificacao">Aguardando Verificação</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  {casa.totalApostas === 0 && (
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive">
+                                          <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Remover "{casa.nome}"?
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                            onClick={() => deleteManualHouse(selectedPartnershipId!, casa.nome)}
+                                          >
+                                            Excluir
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Métricas em grid compacto */}
+                              <div className="grid grid-cols-4 gap-1.5 text-xs">
+                                <div>
+                                  <span className="text-muted-foreground">Saldo</span>
+                                  <Input
+                                    key={`m-${selectedPartnershipId}-${casa.nome}`}
+                                    type="text"
+                                    inputMode="decimal"
+                                    className="h-6 text-xs font-bold w-full mt-0.5"
+                                    defaultValue={formatCurrency(casa.saldo || 0)}
+                                    onBlur={(e) => {
+                                      const numValue = parseLocalizedNumber(e.target.value);
+                                      if (numValue !== (casa.saldo || 0)) {
+                                        updateHouseSaldo(selectedPartnershipId!, casa.nome, numValue);
+                                      }
+                                      e.target.value = formatCurrency(numValue);
+                                    }}
+                                    onFocus={(e) => e.target.select()}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                                  />
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Apostas</span>
+                                  <p className="font-medium">{casa.totalApostas}</p>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Lucro</span>
+                                  <p className={`font-bold ${casa.lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
+                                    {formatCurrency(casa.lucroLiquido)}
+                                  </p>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Envolvido</span>
+                                  <p className={`font-medium ${casa.lucroEnvolvido >= 0 ? 'text-success' : 'text-destructive'}`}>
+                                    {formatCurrency(casa.lucroEnvolvido)}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        </>
                         );
                       })()}
                     </Card>

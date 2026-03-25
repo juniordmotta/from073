@@ -223,192 +223,203 @@ export default function RelatorioCasas() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-3xl font-bold">Relatório por Casa de Apostas</h1>
-          <p className="text-muted-foreground">Análise de performance por casa de apostas</p>
+          <h1 className="text-2xl md:text-3xl font-bold">Relatório por Casa</h1>
+          <p className="text-sm text-muted-foreground">Performance por casa de apostas</p>
         </div>
 
-        {/* Filtros */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Filtros</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <div className="space-y-2">
-                <Label>Data Início</Label>
-                <Input
-                  type="date"
-                  value={dataInicio}
-                  onChange={(e) => setDataInicio(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Data Fim</Label>
-                <Input
-                  type="date"
-                  value={dataFim}
-                  onChange={(e) => setDataFim(e.target.value)}
-                />
-              </div>
-              {isAdmin && (
-                <div className="space-y-2">
-                  <Label>Usuário</Label>
-                  <Select value={usuarioFiltro} onValueChange={setUsuarioFiltro}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todos" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todos">Todos</SelectItem>
-                      {usuarios.map((u) => (
-                        <SelectItem key={u.id} value={u.id}>
-                          {u.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={statusFiltro} onValueChange={setStatusFiltro}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos</SelectItem>
-                    <SelectItem value="aguardando">Aguardando</SelectItem>
-                    <SelectItem value="green">Green</SelectItem>
-                    <SelectItem value="parcial_green">Parcial Green</SelectItem>
-                    <SelectItem value="red">Red</SelectItem>
-                    <SelectItem value="parcial_red">Parcial Red</SelectItem>
-                    <SelectItem value="devolvido">Devolvido</SelectItem>
-                    <SelectItem value="perda_total">Perda Total</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Cards de resumo */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Apostado</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">R$ {formatCurrency(totalGeralApostado)}</div>
-              <p className="text-xs text-muted-foreground">{totalApostas} apostas</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Lucro Total</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${totalGeralLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
-                R$ {formatCurrency(totalGeralLucro)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {totalGeralApostado > 0 ? `${formatCurrency((totalGeralLucro / totalGeralApostado) * 100)}% ROI` : '0% ROI'}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Casas Diferentes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{casasStats.length}</div>
-              <p className="text-xs text-muted-foreground">casas utilizadas</p>
-            </CardContent>
-          </Card>
+        {/* Filtros inline */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            type="date"
+            value={dataInicio}
+            onChange={(e) => setDataInicio(e.target.value)}
+            className="w-[130px] h-8 text-sm"
+            placeholder="Início"
+          />
+          <Input
+            type="date"
+            value={dataFim}
+            onChange={(e) => setDataFim(e.target.value)}
+            className="w-[130px] h-8 text-sm"
+            placeholder="Fim"
+          />
+          {isAdmin && (
+            <Select value={usuarioFiltro} onValueChange={setUsuarioFiltro}>
+              <SelectTrigger className="w-[130px] h-8 text-sm">
+                <SelectValue placeholder="Usuário" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                {usuarios.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Select value={statusFiltro} onValueChange={setStatusFiltro}>
+            <SelectTrigger className="w-[130px] h-8 text-sm">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos</SelectItem>
+              <SelectItem value="green">Green</SelectItem>
+              <SelectItem value="parcial_green">Parcial Green</SelectItem>
+              <SelectItem value="red">Red</SelectItem>
+              <SelectItem value="parcial_red">Parcial Red</SelectItem>
+              <SelectItem value="perda_total">Perda Total</SelectItem>
+              <SelectItem value="devolvido">Devolvido</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Tabela de casas */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Desempenho por Casa</CardTitle>
-            <CardDescription>Estatísticas detalhadas de cada casa de apostas</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="text-center py-8">Carregando...</div>
-            ) : casasStats.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">Nenhum dado encontrado</div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Casa</TableHead>
-                    <TableHead className="text-right">Apostas</TableHead>
-                    <TableHead className="text-right">Investido</TableHead>
-                    <TableHead className="text-right">Lucro/Prejuízo</TableHead>
-                    <TableHead className="text-right">ROI</TableHead>
-                    <TableHead className="text-right">Taxa Sucesso</TableHead>
-                    <TableHead className="text-center">Resultados</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {casasStats.map((casa) => (
-                    <TableRow key={casa.nome}>
-                      <TableCell className="font-medium">{casa.nome}</TableCell>
-                      <TableCell className="text-right">{casa.totalApostas}</TableCell>
-                      <TableCell className="text-right">R$ {formatCurrency(casa.valorApostado)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className={`flex items-center justify-end gap-1 font-semibold ${casa.lucroReal >= 0 ? 'text-success' : 'text-destructive'}`}>
-                          {casa.lucroReal >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-                          R$ {formatCurrency(casa.lucroReal)}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span className={casa.lucroReal >= 0 ? 'text-success' : 'text-destructive'}>
-                          {formatCurrency((casa.lucroReal / casa.valorApostado) * 100)}%
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span className={casa.taxaSucesso >= 50 ? 'text-success' : 'text-destructive'}>
-                          {casa.taxaSucesso.toFixed(1)}%
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1 justify-center flex-wrap">
-                          {casa.green > 0 && (
-                            <Badge variant="default" className="bg-success text-white">
-                              {casa.green} Green
-                            </Badge>
-                          )}
-                          {casa.red > 0 && (
-                            <Badge variant="destructive">
-                              {casa.red} Red
-                            </Badge>
-                          )}
-                          {casa.aguardando > 0 && (
-                            <Badge variant="secondary">
-                              {casa.aguardando} Aguard.
-                            </Badge>
-                          )}
-                          {casa.devolvido > 0 && (
-                            <Badge variant="outline">
-                              {casa.devolvido} Devol.
-                            </Badge>
-                          )}
-                          {casa.perdaTotal > 0 && (
-                            <Badge variant="destructive" className="bg-destructive/80">
-                              {casa.perdaTotal} P.Total
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
+        {/* Cards de resumo compactos */}
+        <div className="grid gap-2 grid-cols-3">
+          <div className="rounded-lg border bg-card p-3">
+            <p className="text-xs text-muted-foreground">Total Apostado</p>
+            <p className="text-lg font-bold">R$ {formatCurrency(totalGeralApostado)}</p>
+            <p className="text-xs text-muted-foreground">{totalApostas} apostas</p>
+          </div>
+          <div className="rounded-lg border bg-card p-3">
+            <p className="text-xs text-muted-foreground">Lucro Total</p>
+            <p className={`text-lg font-bold ${totalGeralLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
+              R$ {formatCurrency(totalGeralLucro)}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {totalGeralApostado > 0 ? `${formatCurrency((totalGeralLucro / totalGeralApostado) * 100)}% ROI` : '0% ROI'}
+            </p>
+          </div>
+          <div className="rounded-lg border bg-card p-3">
+            <p className="text-xs text-muted-foreground">Casas</p>
+            <p className="text-lg font-bold">{casasStats.length}</p>
+            <p className="text-xs text-muted-foreground">utilizadas</p>
+          </div>
+        </div>
+
+        {/* Desktop: Tabela */}
+        <div className="hidden md:block">
+          <Card>
+            <CardHeader>
+              <CardTitle>Desempenho por Casa</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="text-center py-8">Carregando...</div>
+              ) : casasStats.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">Nenhum dado encontrado</div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Casa</TableHead>
+                      <TableHead className="text-right">Apostas</TableHead>
+                      <TableHead className="text-right">Investido</TableHead>
+                      <TableHead className="text-right">Lucro/Prejuízo</TableHead>
+                      <TableHead className="text-right">ROI</TableHead>
+                      <TableHead className="text-right">Taxa Sucesso</TableHead>
+                      <TableHead className="text-center">Resultados</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {casasStats.map((casa) => (
+                      <TableRow key={casa.nome}>
+                        <TableCell className="font-medium">{casa.nome}</TableCell>
+                        <TableCell className="text-right">{casa.totalApostas}</TableCell>
+                        <TableCell className="text-right">R$ {formatCurrency(casa.valorApostado)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className={`flex items-center justify-end gap-1 font-semibold ${casa.lucroReal >= 0 ? 'text-success' : 'text-destructive'}`}>
+                            {casa.lucroReal >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                            R$ {formatCurrency(casa.lucroReal)}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <span className={casa.lucroReal >= 0 ? 'text-success' : 'text-destructive'}>
+                            {formatCurrency((casa.lucroReal / casa.valorApostado) * 100)}%
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <span className={casa.taxaSucesso >= 50 ? 'text-success' : 'text-destructive'}>
+                            {casa.taxaSucesso.toFixed(1)}%
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1 justify-center flex-wrap">
+                            {casa.green > 0 && (
+                              <Badge variant="default" className="bg-success text-white">
+                                {casa.green} G
+                              </Badge>
+                            )}
+                            {casa.red > 0 && (
+                              <Badge variant="destructive">
+                                {casa.red} R
+                              </Badge>
+                            )}
+                            {casa.devolvido > 0 && (
+                              <Badge variant="outline">
+                                {casa.devolvido} D
+                              </Badge>
+                            )}
+                            {casa.perdaTotal > 0 && (
+                              <Badge variant="destructive" className="bg-destructive/80">
+                                {casa.perdaTotal} PT
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Mobile: Cards */}
+        <div className="md:hidden space-y-2">
+          {loading ? (
+            <div className="text-center py-8">Carregando...</div>
+          ) : casasStats.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">Nenhum dado encontrado</div>
+          ) : (
+            casasStats.map((casa) => (
+              <div key={casa.nome} className="rounded-lg border bg-card p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-sm">{casa.nome}</span>
+                  <div className={`flex items-center gap-1 text-sm font-bold ${casa.lucroReal >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    {casa.lucroReal >= 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+                    R$ {formatCurrency(casa.lucroReal)}
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <span className="text-muted-foreground">Apostas</span>
+                    <p className="font-medium">{casa.totalApostas}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Investido</span>
+                    <p className="font-medium">R$ {formatCurrency(casa.valorApostado)}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">ROI</span>
+                    <p className={`font-medium ${casa.lucroReal >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      {formatCurrency((casa.lucroReal / casa.valorApostado) * 100)}%
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-1 flex-wrap">
+                  {casa.green > 0 && <Badge variant="default" className="bg-success text-white text-xs h-5">{casa.green} G</Badge>}
+                  {casa.red > 0 && <Badge variant="destructive" className="text-xs h-5">{casa.red} R</Badge>}
+                  {casa.devolvido > 0 && <Badge variant="outline" className="text-xs h-5">{casa.devolvido} D</Badge>}
+                  {casa.perdaTotal > 0 && <Badge variant="destructive" className="bg-destructive/80 text-xs h-5">{casa.perdaTotal} PT</Badge>}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </Layout>
   );
