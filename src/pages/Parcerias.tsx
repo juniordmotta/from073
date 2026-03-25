@@ -34,6 +34,7 @@ import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { highlightText } from '@/lib/utils/highlightText';
 import { AddHouseAutocomplete } from '@/components/AddHouseAutocomplete';
 import { bettingHouseGroups } from '@/data/bettingHousesData';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Partnership {
   id: string;
@@ -1889,7 +1890,41 @@ const Parcerias = () => {
                 </div>
 
                 {loadingData ? (
-                  <div className="text-center py-8">Carregando detalhes...</div>
+                  <div className="space-y-6">
+                    {/* Skeleton métricas */}
+                    <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <Card key={i} className="p-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Skeleton className="h-3 w-3 rounded" />
+                            <Skeleton className="h-3 w-20" />
+                          </div>
+                          <Skeleton className="h-7 w-24" />
+                        </Card>
+                      ))}
+                    </div>
+                    {/* Skeleton saldos */}
+                    <div className="grid gap-3 grid-cols-3">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <Card key={i} className="p-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Skeleton className="h-3 w-3 rounded" />
+                            <Skeleton className="h-3 w-28" />
+                          </div>
+                          <Skeleton className="h-7 w-28" />
+                        </Card>
+                      ))}
+                    </div>
+                    {/* Skeleton tabela */}
+                    <Card className="p-6">
+                      <Skeleton className="h-5 w-64 mb-4" />
+                      <div className="space-y-3">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Skeleton key={i} className="h-10 w-full" />
+                        ))}
+                      </div>
+                    </Card>
+                  </div>
                 ) : partnershipDetails ? (
                   <>
                     {/* Métricas principais */}
