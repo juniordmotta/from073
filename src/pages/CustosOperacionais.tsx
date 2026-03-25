@@ -369,15 +369,15 @@ export default function CustosOperacionais() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-4">
+        {/* Header compacto */}
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Custos Operacionais</h1>
-          
+          <h1 className="text-2xl md:text-3xl font-bold">Custos Operacionais</h1>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button size="lg" className="gap-2">
-                <Plus className="h-5 w-5" />
-                Adicionar Custo
+              <Button size="sm" className="gap-1">
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Adicionar</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">
@@ -439,139 +439,152 @@ export default function CustosOperacionais() {
           </Dialog>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-1">
+        {/* Filtros inline */}
+        <div className="flex flex-wrap items-center gap-2">
+          {isAdmin && (
+            <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+              <SelectTrigger className="w-[140px] h-8 text-sm">
+                <SelectValue placeholder="Usuário" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                {users.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={goToPreviousMonth}
+              disabled={!canGoPrevious}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-[160px] h-8 text-sm">
+                <SelectValue placeholder="Mês" />
+              </SelectTrigger>
+              <SelectContent>
+                {monthOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label.charAt(0).toUpperCase() + option.label.slice(1)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={goToNextMonth}
+              disabled={!canGoNext}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="ml-auto flex items-center gap-2 rounded-lg border bg-card px-3 py-1.5">
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Total:</span>
+            <span className="text-sm font-bold">R$ {formatCurrency(totalCosts)}</span>
+          </div>
+        </div>
+
+        {/* Lista de custos - Desktop: tabela, Mobile: cards */}
+        <div className="hidden md:block">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Custos</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                R$ {formatCurrency(totalCosts)}
+            <CardContent className="p-0">
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead>Valor</TableHead>
+                      {isAdmin && <TableHead>Usuário</TableHead>}
+                      <TableHead className="w-[50px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {costs.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={isAdmin ? 5 : 4} className="text-center text-muted-foreground">
+                          Nenhum custo encontrado
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      costs.map((cost) => (
+                        <TableRow key={cost.id}>
+                          <TableCell className="font-medium">
+                            {format(new Date(cost.data), 'dd/MM/yyyy', { locale: ptBR })}
+                          </TableCell>
+                          <TableCell>{cost.descricao}</TableCell>
+                          <TableCell className="font-semibold">
+                            R$ {formatCurrency(cost.valor)}
+                          </TableCell>
+                          {isAdmin && (
+                            <TableCell>
+                              {profiles[cost.user_id]?.name || 'N/A'}
+                            </TableCell>
+                          )}
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setDeleteTarget(cost)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Período selecionado
-              </p>
             </CardContent>
           </Card>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Filtros</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-4">
-              {isAdmin && (
-                <div className="space-y-2">
-                  <Label htmlFor="user-filter">Usuário</Label>
-                  <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                    <SelectTrigger id="user-filter" className="w-[200px]">
-                      <SelectValue placeholder="Selecione o usuário" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      {users.map((u) => (
-                        <SelectItem key={u.id} value={u.id}>
-                          {u.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+        {/* Mobile: Cards */}
+        <div className="md:hidden space-y-2">
+          {costs.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">Nenhum custo encontrado</p>
+          ) : (
+            costs.map((cost) => (
+              <div key={cost.id} className="rounded-lg border bg-card p-3 flex items-center justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{cost.descricao}</p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                    <span>{format(new Date(cost.data), 'dd/MM', { locale: ptBR })}</span>
+                    {isAdmin && profiles[cost.user_id]?.name && (
+                      <>
+                        <span>•</span>
+                        <span className="truncate">{profiles[cost.user_id]?.name}</span>
+                      </>
+                    )}
+                  </div>
                 </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="month">Mês</Label>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="font-bold text-sm">R$ {formatCurrency(cost.valor)}</span>
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="icon"
-                    onClick={goToPreviousMonth}
-                    disabled={!canGoPrevious}
+                    className="h-7 w-7"
+                    onClick={() => setDeleteTarget(cost)}
                   >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                    <SelectTrigger id="month" className="w-[200px]">
-                      <SelectValue placeholder="Selecione o mês" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {monthOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label.charAt(0).toUpperCase() + option.label.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={goToNextMonth}
-                    disabled={!canGoNext}
-                  >
-                    <ChevronRight className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Lista de Custos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Descrição</TableHead>
-                    <TableHead>Valor</TableHead>
-                    {isAdmin && <TableHead>Usuário</TableHead>}
-                    <TableHead className="w-[50px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {costs.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={isAdmin ? 5 : 4} className="text-center text-muted-foreground">
-                        Nenhum custo encontrado
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    costs.map((cost) => (
-                      <TableRow key={cost.id}>
-                        <TableCell className="font-medium">
-                          {format(new Date(cost.data), 'dd/MM/yyyy', { locale: ptBR })}
-                        </TableCell>
-                        <TableCell>{cost.descricao}</TableCell>
-                        <TableCell className="font-semibold">
-                          R$ {formatCurrency(cost.valor)}
-                        </TableCell>
-                        {isAdmin && (
-                          <TableCell>
-                            {profiles[cost.user_id]?.name || 'N/A'}
-                          </TableCell>
-                        )}
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setDeleteTarget(cost)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+            ))
+          )}
+        </div>
 
         <ConfirmDeleteDialog
           open={!!deleteTarget}
