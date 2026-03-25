@@ -887,7 +887,40 @@ export default function MinhasArbitragens() {
     }
   }, [user?.id, isAdmin, debouncedFilterUser, debouncedFilterPartnership]);
 
-  // Carregar URLs das casas customizadas
+  // Carregar custos operacionais do mês
+  const loadMonthlyCosts = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const now = new Date();
+      const firstDay = format(new Date(now.getFullYear(), now.getMonth(), 1), 'yyyy-MM-dd');
+      const lastDay = format(new Date(now.getFullYear(), now.getMonth() + 1, 0), 'yyyy-MM-dd');
+
+      const targetUserIds = isAdmin && debouncedFilterUser.length > 0 ? debouncedFilterUser : [user.id];
+
+      let query = supabase
+        .from('operational_costs')
+        .select('valor')
+        .in('user_id', targetUserIds)
+        .gte('data', firstDay)
+        .lte('data', lastDay);
+
+      const { data, error } = await query;
+      if (error) {
+        console.warn('Erro ao carregar custos:', error.message);
+        return;
+      }
+      const total = (data || []).reduce((sum, c) => sum + Number(c.valor), 0);
+      setMonthlyCosts(total);
+    } catch (error) {
+      console.error('Erro ao carregar custos:', error);
+    }
+  }, [user?.id, isAdmin, debouncedFilterUser]);
+
+  useEffect(() => {
+    loadMonthlyCosts();
+  }, [loadMonthlyCosts]);
+
+
   useEffect(() => {
     const loadCustomHousesUrls = async () => {
       const { data } = await supabase.from('custom_betting_houses').select('name, url');
