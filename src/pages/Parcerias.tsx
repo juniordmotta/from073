@@ -378,6 +378,7 @@ const Parcerias = () => {
         cpf: unformatCpf(formData.cpf),
         endereco: formData.endereco,
         valor_banca: parseFloat(formData.valor_banca),
+        saldo_bancario: formData.saldo_bancario ? parseFloat(formData.saldo_bancario) : 0,
         bancos_cadastrados: filteredBanks.length > 0 ? filteredBanks.join(', ') : 'Não informado',
         data_inicio: formData.data_inicio,
         status: formData.status,
