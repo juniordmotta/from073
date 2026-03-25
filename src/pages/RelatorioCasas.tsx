@@ -276,8 +276,8 @@ export default function RelatorioCasas() {
           </Select>
         </div>
 
-        {/* Cards de resumo compactos */}
-        <div className="grid gap-2 grid-cols-3">
+        {/* Cards de resumo - Desktop: grid, Mobile: stacked rows */}
+        <div className="hidden md:grid gap-2 grid-cols-3">
           <div className="rounded-lg border bg-card p-3">
             <p className="text-xs text-muted-foreground">Total Apostado</p>
             <p className="text-lg font-bold">R$ {formatCurrency(totalGeralApostado)}</p>
@@ -296,6 +296,25 @@ export default function RelatorioCasas() {
             <p className="text-xs text-muted-foreground">Casas</p>
             <p className="text-lg font-bold">{casasStats.length}</p>
             <p className="text-xs text-muted-foreground">utilizadas</p>
+          </div>
+        </div>
+        <div className="md:hidden space-y-1.5">
+          <div className="rounded-lg border bg-card px-3 py-2 flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">Total Apostado ({totalApostas} apostas)</span>
+            <span className="text-sm font-bold">R$ {formatCurrency(totalGeralApostado)}</span>
+          </div>
+          <div className="rounded-lg border bg-card px-3 py-2 flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">Lucro Total</span>
+            <div className="flex items-center gap-2">
+              <span className={`text-sm font-bold ${totalGeralLucro >= 0 ? 'text-success' : 'text-destructive'}`}>R$ {formatCurrency(totalGeralLucro)}</span>
+              <span className={`text-xs ${totalGeralLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
+                {totalGeralApostado > 0 ? `${formatCurrency((totalGeralLucro / totalGeralApostado) * 100)}%` : '0%'}
+              </span>
+            </div>
+          </div>
+          <div className="rounded-lg border bg-card px-3 py-2 flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">Casas utilizadas</span>
+            <span className="text-sm font-bold">{casasStats.length}</span>
           </div>
         </div>
 

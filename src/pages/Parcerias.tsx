@@ -1928,7 +1928,8 @@ const Parcerias = () => {
                 ) : partnershipDetails ? (
                   <div className="animate-fade-in">
                     {/* Métricas principais */}
-                    <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+                    {/* Métricas - Desktop: grid, Mobile: thin stacked rows */}
+                    <div className="hidden md:grid gap-3 grid-cols-3 lg:grid-cols-6">
                       <Card className="p-3">
                         <div className="flex items-center gap-2 mb-1">
                           <DollarSign className="h-3 w-3 text-muted-foreground" />
@@ -1999,20 +2000,79 @@ const Parcerias = () => {
                       )}
                     </div>
 
-                    {/* Resumo de Saldos */}
-                    <div className="grid gap-2 grid-cols-3 mt-3">
+                    {/* Mobile: thin stacked rows */}
+                    <div className="md:hidden space-y-1.5">
+                      <div className="rounded-lg border bg-card px-3 py-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Custos do Mês</span>
+                        </div>
+                        <span className="text-sm font-bold text-destructive">R$ {formatCurrency(partnershipDetails.custosMes)}</span>
+                      </div>
+                      <div className="rounded-lg border bg-card px-3 py-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Lucro Bruto</span>
+                        </div>
+                        <span className={`text-sm font-bold ${partnershipDetails.lucroBruto >= 0 ? 'text-success' : 'text-destructive'}`}>R$ {formatCurrency(partnershipDetails.lucroBruto)}</span>
+                      </div>
+                      <div className="rounded-lg border bg-card px-3 py-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Target className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Lucro Líquido</span>
+                        </div>
+                        <span className={`text-sm font-bold ${partnershipDetails.lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>R$ {formatCurrency(partnershipDetails.lucroLiquido)}</span>
+                      </div>
+                      <div className="rounded-lg border bg-card px-3 py-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <LayoutDashboard className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Total Apostas</span>
+                        </div>
+                        <span className="text-sm font-bold">{partnershipDetails.totalArbitragens}</span>
+                      </div>
+                      <div className="rounded-lg border bg-card px-3 py-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">% Lucro/Banca</span>
+                        </div>
+                        <div className="text-right">
+                          <span className={`text-sm font-bold ${
+                            partnershipDetails.partnership.valor_banca > 0 && 
+                            (partnershipDetails.lucroLiquido / partnershipDetails.partnership.valor_banca) * 100 >= 0 
+                              ? 'text-success' 
+                              : 'text-destructive'
+                          }`}>
+                            {partnershipDetails.partnership.valor_banca > 0 
+                              ? formatCurrency((partnershipDetails.lucroLiquido / partnershipDetails.partnership.valor_banca) * 100)
+                              : '0'}%
+                          </span>
+                          <span className="text-[10px] text-muted-foreground ml-1.5">Banca: R$ {formatCurrency(partnershipDetails.partnership.valor_banca)}</span>
+                        </div>
+                      </div>
+                      {user?.id && selectedPartnershipId && (
+                        <MonthlyGoalCard
+                          userId={user.id}
+                          partnershipId={selectedPartnershipId}
+                          currentProfit={partnershipDetails.lucroLiquido}
+                          compact
+                        />
+                      )}
+                    </div>
+
+                    {/* Resumo de Saldos - Desktop: grid-cols-3, Mobile: stacked */}
+                    <div className="hidden md:grid gap-2 grid-cols-3 mt-3">
                       <div className="rounded-lg border bg-card p-2.5">
                         <div className="flex items-center gap-1.5 mb-1">
                           <Building2 className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-[10px] md:text-xs text-muted-foreground">Conta Bancária</span>
+                          <span className="text-xs text-muted-foreground">Conta Bancária</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <span className="text-sm font-bold">R$</span>
                           <Input
-                            key={`bank-${selectedPartnershipId}`}
+                            key={`bank-desktop-${selectedPartnershipId}`}
                             type="text"
                             inputMode="decimal"
-                            className="h-7 text-sm font-bold border-dashed w-[90px] md:w-[120px]"
+                            className="h-7 text-sm font-bold border-dashed w-[120px]"
                             defaultValue={formatCurrency(Math.max(0, partnershipDetails.partnership.saldo_bancario || 0))}
                             onBlur={async (e) => {
                               const numValue = Math.max(0, parseLocalizedNumber(e.target.value));
@@ -2037,7 +2097,7 @@ const Parcerias = () => {
                       <div className="rounded-lg border bg-card p-2.5">
                         <div className="flex items-center gap-1.5 mb-1">
                           <DollarSign className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-[10px] md:text-xs text-muted-foreground">Saldo Casas</span>
+                          <span className="text-xs text-muted-foreground">Saldo Casas</span>
                         </div>
                         <p className="text-sm font-bold">
                           R$ {formatCurrency(partnershipDetails.casas.reduce((sum: number, casa: any) => sum + (casa.saldo || 0), 0))}
@@ -2047,7 +2107,7 @@ const Parcerias = () => {
                       <div className="rounded-lg border bg-card p-2.5">
                         <div className="flex items-center gap-1.5 mb-1">
                           <TrendingUp className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-[10px] md:text-xs text-muted-foreground">Saldo Total</span>
+                          <span className="text-xs text-muted-foreground">Saldo Total</span>
                         </div>
                         <p className="text-sm font-bold text-primary">
                           R$ {formatCurrency(
@@ -2055,6 +2115,59 @@ const Parcerias = () => {
                             partnershipDetails.casas.reduce((sum: number, casa: any) => sum + (casa.saldo || 0), 0)
                           )}
                         </p>
+                      </div>
+                    </div>
+
+                    {/* Mobile: stacked saldo rows */}
+                    <div className="md:hidden space-y-1.5 mt-3">
+                      <div className="rounded-lg border bg-card px-3 py-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Conta Bancária</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-sm font-bold">R$</span>
+                          <Input
+                            key={`bank-mobile-${selectedPartnershipId}`}
+                            type="text"
+                            inputMode="decimal"
+                            className="h-7 text-sm font-bold border-dashed w-[100px] text-right"
+                            defaultValue={formatCurrency(Math.max(0, partnershipDetails.partnership.saldo_bancario || 0))}
+                            onBlur={async (e) => {
+                              const numValue = Math.max(0, parseLocalizedNumber(e.target.value));
+                              if (numValue !== (partnershipDetails.partnership.saldo_bancario || 0)) {
+                                await supabase
+                                  .from('partnerships')
+                                  .update({ saldo_bancario: numValue })
+                                  .eq('id', selectedPartnershipId!);
+                                setPartnershipDetails((prev: any) => ({
+                                  ...prev,
+                                  partnership: { ...prev.partnership, saldo_bancario: numValue },
+                                }));
+                              }
+                              e.target.value = formatCurrency(numValue);
+                            }}
+                            onFocus={(e) => e.target.select()}
+                            onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                          />
+                        </div>
+                      </div>
+                      <div className="rounded-lg border bg-card px-3 py-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Saldo Casas</span>
+                        </div>
+                        <span className="text-sm font-bold">R$ {formatCurrency(partnershipDetails.casas.reduce((sum: number, casa: any) => sum + (casa.saldo || 0), 0))}</span>
+                      </div>
+                      <div className="rounded-lg border bg-card px-3 py-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Saldo Total</span>
+                        </div>
+                        <span className="text-sm font-bold text-primary">R$ {formatCurrency(
+                          Math.max(0, partnershipDetails.partnership.saldo_bancario || 0) + 
+                          partnershipDetails.casas.reduce((sum: number, casa: any) => sum + (casa.saldo || 0), 0)
+                        )}</span>
                       </div>
                     </div>
 
@@ -2107,7 +2220,8 @@ const Parcerias = () => {
                                 )}
                               </div>
                             </div>
-                            <div className="flex flex-wrap gap-2">
+                            {/* Desktop: flex-wrap buttons, Mobile: popover */}
+                            <div className="hidden md:flex flex-wrap gap-2">
                             {(() => {
                               const statusCounts = {
                                 all: partnershipDetails.casas.length,
@@ -2123,8 +2237,8 @@ const Parcerias = () => {
                                 { value: 'ativa', label: 'Ativa', count: statusCounts.ativa, className: 'bg-success text-success-foreground' },
                                 { value: 'bloqueada', label: 'Bloqueada', count: statusCounts.bloqueada, className: 'bg-destructive text-destructive-foreground' },
                                 { value: 'sacar', label: 'Sacar', count: statusCounts.sacar, className: 'bg-warning text-warning-foreground' },
-                                { value: 'aguardando_pagamento', label: 'Aguardando Pagamento', count: statusCounts.aguardando_pagamento, className: 'bg-muted text-muted-foreground' },
-                                { value: 'aguardando_verificacao', label: 'Aguardando Verificação', count: statusCounts.aguardando_verificacao, className: 'bg-blue-500 text-white' },
+                                { value: 'aguardando_pagamento', label: 'Ag. Pagamento', count: statusCounts.aguardando_pagamento, className: 'bg-muted text-muted-foreground' },
+                                { value: 'aguardando_verificacao', label: 'Ag. Verificação', count: statusCounts.aguardando_verificacao, className: 'bg-blue-500 text-white' },
                               ];
                               
                               const toggleStatus = (value: string) => {
@@ -2160,6 +2274,72 @@ const Parcerias = () => {
                                     </Badge>
                                   </Button>
                                 ));
+                            })()}
+                            </div>
+                            {/* Mobile: compact status filter with popover */}
+                            <div className="md:hidden">
+                            {(() => {
+                              const statusCounts = {
+                                all: partnershipDetails.casas.length,
+                                ativa: partnershipDetails.casas.filter((c: any) => c.status === 'ativa').length,
+                                bloqueada: partnershipDetails.casas.filter((c: any) => c.status === 'bloqueada').length,
+                                sacar: partnershipDetails.casas.filter((c: any) => c.status === 'sacar').length,
+                                aguardando_pagamento: partnershipDetails.casas.filter((c: any) => c.status === 'aguardando_pagamento').length,
+                                aguardando_verificacao: partnershipDetails.casas.filter((c: any) => c.status === 'aguardando_verificacao').length,
+                              };
+                              
+                              const statusOptions = [
+                                { value: 'all', label: 'Todas', count: statusCounts.all },
+                                { value: 'ativa', label: 'Ativa', count: statusCounts.ativa },
+                                { value: 'bloqueada', label: 'Bloqueada', count: statusCounts.bloqueada },
+                                { value: 'sacar', label: 'Sacar', count: statusCounts.sacar },
+                                { value: 'aguardando_pagamento', label: 'Ag. Pagamento', count: statusCounts.aguardando_pagamento },
+                                { value: 'aguardando_verificacao', label: 'Ag. Verificação', count: statusCounts.aguardando_verificacao },
+                              ];
+                              
+                              const toggleStatus = (value: string) => {
+                                if (value === 'all') {
+                                  setHouseStatusFilter([]);
+                                } else {
+                                  setHouseStatusFilter(prev => 
+                                    prev.includes(value) 
+                                      ? prev.filter(s => s !== value)
+                                      : [...prev, value]
+                                  );
+                                }
+                              };
+                              
+                              const isSelected = (value: string) => {
+                                if (value === 'all') return houseStatusFilter.length === 0;
+                                return houseStatusFilter.includes(value);
+                              };
+
+                              return (
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
+                                      <Filter className="h-3.5 w-3.5" />
+                                      {houseStatusFilter.length === 0 ? 'Status: Todas' : `Status: ${houseStatusFilter.length}`}
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-56 p-3 bg-background z-50" align="start">
+                                    <div className="space-y-2">
+                                      {statusOptions
+                                        .filter(opt => opt.count > 0 || opt.value === 'all')
+                                        .map(opt => (
+                                          <div key={opt.value} className="flex items-center justify-between">
+                                            <label className="flex items-center gap-2 text-sm cursor-pointer" onClick={() => toggleStatus(opt.value)}>
+                                              <Checkbox checked={isSelected(opt.value)} />
+                                              {opt.label}
+                                            </label>
+                                            <Badge variant="secondary" className="text-xs h-5 min-w-[20px] flex items-center justify-center">{opt.count}</Badge>
+                                          </div>
+                                        ))
+                                      }
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                              );
                             })()}
                             </div>
                           </div>
