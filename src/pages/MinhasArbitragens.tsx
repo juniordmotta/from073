@@ -130,6 +130,7 @@ export default function MinhasArbitragens() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editArbitrage, setEditArbitrage] = useState<Arbitrage | null>(null);
   const [viewGanhosArbitrage, setViewGanhosArbitrage] = useState<Arbitrage | null>(null);
+  const [expandedMobileCard, setExpandedMobileCard] = useState<string | null>(null);
   const [users, setUsers] = useState<Array<{ id: string; name: string }>>([]);
   const [goToHousesOpen, setGoToHousesOpen] = useState(false);
   const [selectedPartnershipForHouses, setSelectedPartnershipForHouses] = useState<string>('');
@@ -2346,8 +2347,8 @@ export default function MinhasArbitragens() {
               </Button>
             </div>
             {isMobile ? (
-            // Visualização Mobile Compacta
-            <div className={`space-y-3 ${debouncedSearchText ? 'animate-fade-in' : ''}`}>
+            // Visualização Mobile - Lista compacta com expansão por clique
+            <div className={`space-y-1.5 ${debouncedSearchText ? 'animate-fade-in' : ''}`}>
               {paginatedArbitragens.map((arb) => {
                 const eventDate = new Date(arb.data_evento);
                 eventDate.setHours(0, 0, 0, 0);
@@ -2355,11 +2356,15 @@ export default function MinhasArbitragens() {
                 today.setHours(0, 0, 0, 0);
                 const isEventPast = eventDate < today;
                 const isEventToday = eventDate.getTime() === today.getTime();
+                const eventDateTime = new Date(arb.data_evento);
+                const isGameStarted = eventDateTime <= new Date();
+                const shouldPulse = isGameStarted && arb.status === 'aguardando';
+                const isExpanded = expandedMobileCard === arb.id;
                 
                 return (
                   <div
                     key={arb.id}
-                    className={`rounded-lg border bg-card p-3 ${debouncedSearchText ? 'animate-fade-in' : ''} ${
+                    className={`rounded-lg border bg-card overflow-hidden ${debouncedSearchText ? 'animate-fade-in' : ''} ${
                       isEventPast && arb.status === 'aguardando'
                         ? 'border-l-4 border-red-500'
                         : isEventToday
@@ -2367,79 +2372,103 @@ export default function MinhasArbitragens() {
                         : ''
                     }`}
                   >
-                    {/* Header Compacto */}
-                    <div className="flex items-center justify-between mb-2">
-                      <Badge variant={getConsolidatedStatus(arb.status, arb.lucro_real).variant} className="text-[10px]">
+                    {/* Linha principal - sempre visível, clicável */}
+                    <div 
+                      className="flex items-center gap-2 px-2.5 py-2 cursor-pointer active:bg-muted/50"
+                      onClick={() => setExpandedMobileCard(isExpanded ? null : arb.id)}
+                    >
+                      {/* Status indicator */}
+                      <Badge variant={getConsolidatedStatus(arb.status, arb.lucro_real).variant} className="text-[9px] h-5 px-1.5 shrink-0">
                         {getConsolidatedStatus(arb.status, arb.lucro_real).label}
                       </Badge>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditArbitrage(arb)}
-                          className="h-7 w-7 p-0"
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDuplicate(arb)}
-                          className="h-7 w-7 p-0"
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
+                      
+                      {/* Descrição (times) */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium truncate">{arb.descricao}</p>
                       </div>
+                      
+                      {/* Data/hora + casas resumidas */}
+                      <div className="text-right shrink-0">
+                        <div className={`text-[10px] ${shouldPulse ? 'text-destructive font-semibold animate-pulse' : 'text-muted-foreground'}`}>
+                          {format(eventDateTime, 'dd/MM HH:mm')}
+                        </div>
+                        <div className="text-[9px] text-muted-foreground truncate max-w-[90px]">
+                          {arb.casa_01_nome} × {arb.casa_02_nome}
+                        </div>
+                      </div>
+                      
+                      <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                     </div>
 
-                    {/* Evento */}
-                    <div className="mb-2">
-                      {(() => {
-                        const eventDateTime = new Date(arb.data_evento);
-                        const now = new Date();
-                        const isGameStarted = eventDateTime <= now;
-                        const shouldPulse = isGameStarted && arb.status === 'aguardando';
-                        return (
-                          <div className={`text-[10px] mb-0.5 ${shouldPulse ? 'text-destructive font-semibold animate-pulse' : isGameStarted ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
-                            <Clock className="inline h-3 w-3 mr-1" />
-                            {format(eventDateTime, 'dd/MM/yy HH:mm')}
+                    {/* Detalhes expandidos */}
+                    {isExpanded && (
+                      <div className="px-2.5 pb-2.5 pt-0 space-y-2 border-t animate-fade-in">
+                        {/* Ações */}
+                        <div className="flex items-center justify-between pt-2">
+                          <div className="flex gap-1">
+                            <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setEditArbitrage(arb); }} className="h-7 text-xs gap-1">
+                              <Pencil className="h-3 w-3" />
+                              Editar
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleDuplicate(arb); }} className="h-7 text-xs gap-1">
+                              <Copy className="h-3 w-3" />
+                              Duplicar
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setViewGanhosArbitrage(arb); }} className="h-7 text-xs gap-1">
+                              <FileText className="h-3 w-3" />
+                              Detalhes
+                            </Button>
                           </div>
-                        );
-                      })()}
-                      <div className="font-medium text-sm line-clamp-2">{highlightText(arb.descricao, debouncedSearchText)}</div>
-                    </div>
+                        </div>
 
-                    {/* Casas - Layout Horizontal Compacto */}
-                    <div className="grid grid-cols-2 gap-2 mb-2">
-                      <div className="text-[10px] space-y-0.5">
-                        <div className="font-medium truncate">{highlightText(arb.casa_01_nome, debouncedSearchText)}</div>
-                        <div className="text-muted-foreground">{Number(arb.casa_01_odd).toFixed(2)}x</div>
-                        <div className="text-muted-foreground">R$ {formatCurrency(arb.casa_01_valor)}</div>
-                      </div>
-                      <div className="text-[10px] space-y-0.5">
-                        <div className="font-medium truncate">{highlightText(arb.casa_02_nome, debouncedSearchText)}</div>
-                        <div className="text-muted-foreground">{Number(arb.casa_02_odd).toFixed(2)}x</div>
-                        <div className="text-muted-foreground">R$ {formatCurrency(arb.casa_02_valor)}</div>
-                      </div>
-                    </div>
+                        {/* Evento completo */}
+                        <div>
+                          <p className="text-xs font-medium">{arb.descricao}</p>
+                          {arb.esporte_liga && <p className="text-[10px] text-muted-foreground">{arb.esporte_liga}</p>}
+                          <p className={`text-[10px] mt-0.5 ${shouldPulse ? 'text-destructive font-semibold animate-pulse' : 'text-muted-foreground'}`}>
+                            <Clock className="inline h-3 w-3 mr-0.5" />
+                            {format(eventDateTime, 'dd/MM/yyyy HH:mm')}
+                          </p>
+                        </div>
 
-                    {/* Lucro - Compacto */}
-                    <div className="flex items-center justify-between pt-2 border-t">
-                      <div className="text-[10px]">
-                        <span className="text-muted-foreground">Lucro: </span>
-                        <span className={`font-semibold ${arb.lucro_real >= 0 ? 'text-success' : 'text-destructive'}`}>
-                          R$ {formatCurrency(arb.lucro_real)}
-                        </span>
+                        {/* Casas detalhadas */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="rounded-md border p-2 text-[10px] space-y-0.5">
+                            <div className="font-medium">{arb.casa_01_nome}</div>
+                            <div className="text-muted-foreground">Odd: {Number(arb.casa_01_odd).toFixed(3)}</div>
+                            <div className="text-muted-foreground">Valor: R$ {formatCurrency(arb.casa_01_valor)}</div>
+                            {arb.casa_01_mercado && <div className="text-muted-foreground">{arb.casa_01_mercado}</div>}
+                          </div>
+                          <div className="rounded-md border p-2 text-[10px] space-y-0.5">
+                            <div className="font-medium">{arb.casa_02_nome}</div>
+                            <div className="text-muted-foreground">Odd: {Number(arb.casa_02_odd).toFixed(3)}</div>
+                            <div className="text-muted-foreground">Valor: R$ {formatCurrency(arb.casa_02_valor)}</div>
+                            {arb.casa_02_mercado && <div className="text-muted-foreground">{arb.casa_02_mercado}</div>}
+                          </div>
+                        </div>
+                        {arb.casa_03_nome && (
+                          <div className="rounded-md border p-2 text-[10px] space-y-0.5">
+                            <div className="font-medium">{arb.casa_03_nome}</div>
+                            <div className="text-muted-foreground">Odd: {Number(arb.casa_03_odd || 0).toFixed(3)} • Valor: R$ {formatCurrency(arb.casa_03_valor || 0)}</div>
+                            {arb.casa_03_mercado && <div className="text-muted-foreground">{arb.casa_03_mercado}</div>}
+                          </div>
+                        )}
+
+                        {/* Resumo financeiro */}
+                        <div className="flex items-center justify-between text-[10px] pt-1 border-t">
+                          <div>
+                            <span className="text-muted-foreground">Investido: </span>
+                            <span className="font-medium">R$ {formatCurrency(Number(arb.casa_01_valor) + Number(arb.casa_02_valor) + Number(arb.casa_03_valor || 0))}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Lucro: </span>
+                            <span className={`font-bold ${(arb.status === 'aguardando' ? arb.lucro_projetado : arb.lucro_real) >= 0 ? 'text-success' : 'text-destructive'}`}>
+                              R$ {formatCurrency(arb.status === 'aguardando' ? arb.lucro_projetado : arb.lucro_real)}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <Button
-                        variant="link"
-                        size="sm"
-                        className="h-auto p-0 text-[10px]"
-                        onClick={() => setViewGanhosArbitrage(arb)}
-                      >
-                        Ver detalhes
-                      </Button>
-                    </div>
+                    )}
                   </div>
                 );
               })}

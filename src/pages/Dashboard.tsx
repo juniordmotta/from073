@@ -6,7 +6,7 @@ import { useCountUp } from '@/hooks/useCountUp';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TrendingUp, TrendingDown, DollarSign, Target, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Target, Calendar, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatCurrency, formatUserName } from '@/lib/utils';
 import { MonthlyGoalCard } from '@/components/MonthlyGoalCard';
@@ -37,6 +37,7 @@ export default function Dashboard() {
   });
   const [openBets, setOpenBets] = useState<any[]>([]);
   const [totalBanca, setTotalBanca] = useState(0);
+  const [expandedDashboardBet, setExpandedDashboardBet] = useState<string | null>(null);
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
@@ -323,7 +324,8 @@ export default function Dashboard() {
               <CardTitle className="text-base">Apostas em Aberto ({openBets.length})</CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4">
-              <div className="overflow-x-auto">
+              {/* Desktop: Table */}
+              <div className="hidden md:block overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -350,11 +352,7 @@ export default function Dashboard() {
                       <TableRow key={bet.id}>
                         <TableCell className="font-medium text-xs break-words whitespace-normal max-w-[200px]">{bet.descricao}</TableCell>
                         <TableCell className={`text-xs relative ${
-                          isEventPast
-                            ? 'border-l-4 border-red-500'
-                            : isEventToday
-                            ? 'border-l-4 border-sky-300'
-                            : ''
+                          isEventPast ? 'border-l-4 border-red-500' : isEventToday ? 'border-l-4 border-sky-300' : ''
                         }`}>
                           {isEventPast ? (
                             <div className="absolute left-0 top-1 bottom-1 w-1 bg-red-500 animate-pulse" />
@@ -376,26 +374,20 @@ export default function Dashboard() {
                         <TableCell className="text-xs">
                           <div>
                             <div className="font-medium break-words whitespace-normal">{bet.casa_01_nome}</div>
-                            <div className="text-muted-foreground">
-                              @{Number(bet.casa_01_odd).toFixed(3)} • R$ {formatCurrency(bet.casa_01_valor)}
-                            </div>
+                            <div className="text-muted-foreground">@{Number(bet.casa_01_odd).toFixed(3)} • R$ {formatCurrency(bet.casa_01_valor)}</div>
                           </div>
                         </TableCell>
                         <TableCell className="text-xs">
                           <div>
                             <div className="font-medium break-words whitespace-normal">{bet.casa_02_nome}</div>
-                            <div className="text-muted-foreground">
-                              @{Number(bet.casa_02_odd).toFixed(3)} • R$ {formatCurrency(bet.casa_02_valor)}
-                            </div>
+                            <div className="text-muted-foreground">@{Number(bet.casa_02_odd).toFixed(3)} • R$ {formatCurrency(bet.casa_02_valor)}</div>
                           </div>
                         </TableCell>
                         <TableCell className="text-xs">
                           {bet.casa_03_nome ? (
                             <div>
                               <div className="font-medium break-words whitespace-normal">{bet.casa_03_nome}</div>
-                              <div className="text-muted-foreground">
-                                @{Number(bet.casa_03_odd).toFixed(3)} • R$ {formatCurrency(bet.casa_03_valor)}
-                              </div>
+                              <div className="text-muted-foreground">@{Number(bet.casa_03_odd).toFixed(3)} • R$ {formatCurrency(bet.casa_03_valor)}</div>
                             </div>
                           ) : (
                             <span className="text-muted-foreground">-</span>
@@ -411,6 +403,86 @@ export default function Dashboard() {
                     )})}
                   </TableBody>
                 </Table>
+              </div>
+
+              {/* Mobile: Compact list with expand on tap */}
+              <div className="md:hidden space-y-1.5">
+                {openBets.map((bet) => {
+                  const eventDate = new Date(bet.data_evento);
+                  eventDate.setHours(0, 0, 0, 0);
+                  const todayDate = new Date();
+                  todayDate.setHours(0, 0, 0, 0);
+                  const isEventPast = eventDate < todayDate;
+                  const isEventToday = eventDate.getTime() === todayDate.getTime();
+                  const eventDateTime = new Date(bet.data_evento);
+                  const isGameStarted = eventDateTime <= new Date();
+                  const isExpanded = expandedDashboardBet === bet.id;
+
+                  return (
+                    <div
+                      key={bet.id}
+                      className={`rounded-lg border bg-card overflow-hidden ${
+                        isEventPast ? 'border-l-4 border-red-500' : isEventToday ? 'border-l-4 border-sky-300' : ''
+                      }`}
+                    >
+                      {/* Summary row - always visible */}
+                      <div
+                        className="flex items-center gap-2 px-2.5 py-2 cursor-pointer active:bg-muted/50"
+                        onClick={() => setExpandedDashboardBet(isExpanded ? null : bet.id)}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate">{bet.descricao}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">
+                            {bet.casa_01_nome} × {bet.casa_02_nome}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className={`text-[10px] ${isGameStarted ? 'text-destructive font-semibold animate-pulse' : 'text-muted-foreground'}`}>
+                            {format(eventDateTime, 'dd/MM HH:mm')}
+                          </div>
+                          <div className="text-[10px] font-medium text-success">
+                            +R$ {formatCurrency(bet.lucro_projetado)}
+                          </div>
+                        </div>
+                        <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                      </div>
+
+                      {/* Expanded details */}
+                      {isExpanded && (
+                        <div className="px-2.5 pb-2.5 space-y-2 border-t animate-fade-in">
+                          <div className="grid grid-cols-2 gap-2 pt-2">
+                            <div className="rounded-md border p-2 text-[10px] space-y-0.5">
+                              <div className="font-medium">{bet.casa_01_nome}</div>
+                              <div className="text-muted-foreground">Odd: {Number(bet.casa_01_odd).toFixed(3)}</div>
+                              <div className="text-muted-foreground">R$ {formatCurrency(bet.casa_01_valor)}</div>
+                            </div>
+                            <div className="rounded-md border p-2 text-[10px] space-y-0.5">
+                              <div className="font-medium">{bet.casa_02_nome}</div>
+                              <div className="text-muted-foreground">Odd: {Number(bet.casa_02_odd).toFixed(3)}</div>
+                              <div className="text-muted-foreground">R$ {formatCurrency(bet.casa_02_valor)}</div>
+                            </div>
+                          </div>
+                          {bet.casa_03_nome && (
+                            <div className="rounded-md border p-2 text-[10px] space-y-0.5">
+                              <div className="font-medium">{bet.casa_03_nome}</div>
+                              <div className="text-muted-foreground">Odd: {Number(bet.casa_03_odd).toFixed(3)} • R$ {formatCurrency(bet.casa_03_valor)}</div>
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between text-[10px] pt-1 border-t">
+                            <div>
+                              <span className="text-muted-foreground">Investido: </span>
+                              <span className="font-medium">R$ {formatCurrency(Number(bet.casa_01_valor) + Number(bet.casa_02_valor) + Number(bet.casa_03_valor || 0))}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Lucro Proj.: </span>
+                              <span className="font-bold text-success">R$ {formatCurrency(bet.lucro_projetado)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
