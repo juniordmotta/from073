@@ -130,6 +130,7 @@ export default function MinhasArbitragens() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editArbitrage, setEditArbitrage] = useState<Arbitrage | null>(null);
   const [viewGanhosArbitrage, setViewGanhosArbitrage] = useState<Arbitrage | null>(null);
+  const [expandedMobileCard, setExpandedMobileCard] = useState<string | null>(null);
   const [users, setUsers] = useState<Array<{ id: string; name: string }>>([]);
   const [goToHousesOpen, setGoToHousesOpen] = useState(false);
   const [selectedPartnershipForHouses, setSelectedPartnershipForHouses] = useState<string>('');
