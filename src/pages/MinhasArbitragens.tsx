@@ -230,6 +230,9 @@ export default function MinhasArbitragens() {
     diasComApostas: 0,
   });
   
+  // Estado para custos operacionais do mês
+  const [monthlyCosts, setMonthlyCosts] = useState(0);
+  
   // Forçar visualização em cards no mobile
   useEffect(() => {
     if (isMobile) {
@@ -299,17 +302,20 @@ export default function MinhasArbitragens() {
   };
 
   // Valores derivados para animação do card de Lucro do Mês
+  const lucroLiquido = useMemo(() => userMonthStats.totalLucro - monthlyCosts, [userMonthStats.totalLucro, monthlyCosts]);
   const mediaDia = useMemo(() => 
-    userMonthStats.diasComApostas > 0 ? userMonthStats.totalLucro / userMonthStats.diasComApostas : 0,
-    [userMonthStats.totalLucro, userMonthStats.diasComApostas]
+    userMonthStats.diasComApostas > 0 ? lucroLiquido / userMonthStats.diasComApostas : 0,
+    [lucroLiquido, userMonthStats.diasComApostas]
   );
   const roiMensal = useMemo(() => 
-    userMonthStats.totalInvestido > 0 ? (userMonthStats.totalLucro / userMonthStats.totalInvestido) * 100 : 0,
-    [userMonthStats.totalLucro, userMonthStats.totalInvestido]
+    userMonthStats.totalInvestido > 0 ? (lucroLiquido / userMonthStats.totalInvestido) * 100 : 0,
+    [lucroLiquido, userMonthStats.totalInvestido]
   );
 
   // Hooks de animação para o card de Lucro do Mês (devem estar no nível superior)
   const animatedMonthLucro = useCountUp(userMonthStats.totalLucro);
+  const animatedLucroLiquido = useCountUp(lucroLiquido);
+  const animatedMonthlyCosts = useCountUp(monthlyCosts);
   const animatedMonthInvestido = useCountUp(userMonthStats.totalInvestido);
   const animatedMediaDia = useCountUp(mediaDia);
   const animatedRoiMensal = useCountUp(roiMensal);
@@ -881,7 +887,40 @@ export default function MinhasArbitragens() {
     }
   }, [user?.id, isAdmin, debouncedFilterUser, debouncedFilterPartnership]);
 
-  // Carregar URLs das casas customizadas
+  // Carregar custos operacionais do mês
+  const loadMonthlyCosts = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const now = new Date();
+      const firstDay = format(new Date(now.getFullYear(), now.getMonth(), 1), 'yyyy-MM-dd');
+      const lastDay = format(new Date(now.getFullYear(), now.getMonth() + 1, 0), 'yyyy-MM-dd');
+
+      const targetUserIds = isAdmin && debouncedFilterUser.length > 0 ? debouncedFilterUser : [user.id];
+
+      let query = supabase
+        .from('operational_costs')
+        .select('valor')
+        .in('user_id', targetUserIds)
+        .gte('data', firstDay)
+        .lte('data', lastDay);
+
+      const { data, error } = await query;
+      if (error) {
+        console.warn('Erro ao carregar custos:', error.message);
+        return;
+      }
+      const total = (data || []).reduce((sum, c) => sum + Number(c.valor), 0);
+      setMonthlyCosts(total);
+    } catch (error) {
+      console.error('Erro ao carregar custos:', error);
+    }
+  }, [user?.id, isAdmin, debouncedFilterUser]);
+
+  useEffect(() => {
+    loadMonthlyCosts();
+  }, [loadMonthlyCosts]);
+
+
   useEffect(() => {
     const loadCustomHousesUrls = async () => {
       const { data } = await supabase.from('custom_betting_houses').select('name, url');
@@ -2280,7 +2319,7 @@ export default function MinhasArbitragens() {
 
         {/* Cards de resumo - Layout igual ao Dashboard */}
         {filteredArbitragens.length > 0 && (
-          <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
+          <div className="grid gap-2 grid-cols-2 md:grid-cols-[1fr_1fr_2fr_1fr]">
             {/* Total Investido */}
             <div className="rounded-lg border bg-card p-2 animate-fade-in">
               <div className="flex items-center gap-1 mb-0.5">
@@ -2300,7 +2339,7 @@ export default function MinhasArbitragens() {
               )}
             </div>
 
-            {/* Quantidade + Lucro + ROI */}
+            {/* Quantidade + Lucro Aberto + ROI */}
             <div className="rounded-lg border bg-card p-2 animate-fade-in" style={{ animationDelay: '50ms', animationFillMode: 'backwards' }}>
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[10px] text-muted-foreground">Total</span>
@@ -2320,34 +2359,58 @@ export default function MinhasArbitragens() {
               </div>
             </div>
 
-            {/* Lucro do Mês + Média/Dia + ROI (responde a filtros de operador e parceria) */}
-            <div className="rounded-lg border bg-card p-2 animate-fade-in" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
+            {/* Lucro do Mês - Expandido com bruto, custos e líquido */}
+            <div className="rounded-lg border bg-card p-2 animate-fade-in col-span-2 md:col-span-1" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
               <div className="flex items-center gap-1 mb-0.5">
-                {userMonthStats.totalLucro >= 0 ? (
+                {lucroLiquido >= 0 ? (
                   <TrendingUp className="h-3 w-3 text-success" />
                 ) : (
                   <TrendingDown className="h-3 w-3 text-destructive" />
                 )}
                 <span className="text-[10px] text-muted-foreground">Lucro do Mês</span>
               </div>
-              <div className={`text-lg font-bold ${userMonthStats.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
-                R$ {formatCurrency(animatedMonthLucro)}
-              </div>
-              <div className="border-t pt-1 mt-1 flex items-center justify-between">
-                <span className="text-[9px] text-muted-foreground">Investido</span>
-                <span className="text-xs font-medium">R$ {formatCurrency(animatedMonthInvestido)}</span>
-              </div>
-              <div className="border-t pt-1 mt-1 flex items-center justify-between">
-                <span className="text-[9px] text-muted-foreground">Média/Dia ({userMonthStats.diasComApostas} dias)</span>
-                <span className={`text-xs font-medium ${mediaDia >= 0 ? 'text-success' : 'text-destructive'}`}>
-                  R$ {formatCurrency(animatedMediaDia)}
-                </span>
-              </div>
-              <div className="border-t pt-1 mt-1 flex items-center justify-between">
-                <span className="text-[9px] text-muted-foreground">ROI Mensal</span>
-                <span className={`text-xs font-medium ${roiMensal >= 0 ? 'text-success' : 'text-destructive'}`}>
-                  {formatCurrency(animatedRoiMensal)}%
-                </span>
+              <div className="grid grid-cols-3 gap-2">
+                {/* Coluna 1: Bruto + Custos + Líquido */}
+                <div className="space-y-1">
+                  <div>
+                    <span className="text-[9px] text-muted-foreground block">Bruto</span>
+                    <span className={`text-sm font-bold ${userMonthStats.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      R$ {formatCurrency(animatedMonthLucro)}
+                    </span>
+                  </div>
+                  <div className="border-t pt-1">
+                    <span className="text-[9px] text-muted-foreground block">Custos</span>
+                    <span className="text-sm font-bold text-destructive">
+                      - R$ {formatCurrency(animatedMonthlyCosts)}
+                    </span>
+                  </div>
+                </div>
+                {/* Coluna 2: Líquido (destaque) */}
+                <div className="flex flex-col items-center justify-center border-l border-r px-2">
+                  <span className="text-[9px] text-muted-foreground">Líquido</span>
+                  <span className={`text-lg font-bold ${lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    R$ {formatCurrency(animatedLucroLiquido)}
+                  </span>
+                </div>
+                {/* Coluna 3: Investido + Média/Dia + ROI */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] text-muted-foreground">Investido</span>
+                    <span className="text-xs font-medium">R$ {formatCurrency(animatedMonthInvestido)}</span>
+                  </div>
+                  <div className="border-t pt-1 flex items-center justify-between">
+                    <span className="text-[9px] text-muted-foreground">Média/Dia</span>
+                    <span className={`text-xs font-medium ${mediaDia >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      R$ {formatCurrency(animatedMediaDia)}
+                    </span>
+                  </div>
+                  <div className="border-t pt-1 flex items-center justify-between">
+                    <span className="text-[9px] text-muted-foreground">ROI</span>
+                    <span className={`text-xs font-medium ${roiMensal >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      {formatCurrency(animatedRoiMensal)}%
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
