@@ -1227,8 +1227,8 @@ const Parcerias = () => {
 
   return (
     <Layout>
-      <div className="p-6 space-y-6">
-        <div className="flex justify-between items-center flex-wrap gap-4">
+      <div className="p-4 md:p-6 space-y-4">
+        <div className="flex justify-between items-center flex-wrap gap-2">
           <div className="flex items-center gap-4">
             <h1 className="text-3xl font-bold">Parcerias</h1>
             {viewMode !== 'list' && (
