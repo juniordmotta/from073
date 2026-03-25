@@ -1207,7 +1207,7 @@ const CasasDeApostas = () => {
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="pb-4">
-                      <div className="space-y-1 md:space-y-2 mt-2">
+                      <div className="space-y-1.5 mt-2">
                         {group.houses.map((house) => {
                           const isHidden = hiddenHouseIds.has(house.id);
                           const isCustom = customHouses.some(h => h.id === house.id);
@@ -1220,25 +1220,26 @@ const CasasDeApostas = () => {
                           const annotationColor = customHouseData?.annotation_color || staticAnnotation?.annotation_color || '#6366f1';
                           
                           return (
+                            <>
+                            {/* Desktop layout */}
                             <div
-                              key={house.id}
-                              className={`flex items-center justify-between px-2 py-1.5 md:p-3 rounded-md md:rounded-lg bg-background border hover:border-primary/50 transition-colors group ${isHidden ? 'opacity-50 border-destructive/50' : ''} ${isUsedByPartnership ? 'border-success/50 bg-success/5' : ''}`}
+                              key={`desktop-${house.id}`}
+                              className={`hidden md:flex items-center justify-between p-3 rounded-lg bg-background border hover:border-primary/50 transition-colors group ${isHidden ? 'opacity-50 border-destructive/50' : ''} ${isUsedByPartnership ? 'border-success/50 bg-success/5' : ''}`}
                             >
-                              <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
-                                {/* Icon - smaller on mobile */}
-                                <div className={`h-6 w-6 md:h-8 md:w-8 rounded-full flex items-center justify-center shrink-0 ${isUsedByPartnership ? 'bg-success/20' : 'bg-secondary'}`}>
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${isUsedByPartnership ? 'bg-success/20' : 'bg-secondary'}`}>
                                   {isUsedByPartnership ? (
-                                    <CheckCircle2 className="h-3 w-3 md:h-4 md:w-4 text-success" />
+                                    <CheckCircle2 className="h-4 w-4 text-success" />
                                   ) : (
-                                    <Building2 className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
+                                    <Building2 className="h-4 w-4 text-muted-foreground" />
                                   )}
                                 </div>
                                 
                                 <div className="flex-1 min-w-0">
-                                  <div className="text-sm md:text-base font-medium truncate flex items-center gap-1 md:gap-2 flex-wrap">
+                                  <div className="font-medium truncate flex items-center gap-2 flex-wrap">
                                     {searchTerm ? highlightText(house.name, searchTerm) : house.name}
                                     {isUsedByPartnership && (
-                                      <span className="hidden md:flex items-center gap-1 flex-wrap">
+                                      <span className="flex items-center gap-1 flex-wrap">
                                         {usedByPartnerships.map((partnershipName, idx) => (
                                           <Badge key={idx} variant="default" className={`text-xs gap-1 text-white ${partnershipColorMap.get(partnershipName) || 'bg-success'}`}>
                                             <CheckCircle2 className="h-3 w-3" />
@@ -1247,107 +1248,48 @@ const CasasDeApostas = () => {
                                         ))}
                                       </span>
                                     )}
-                                    {isHidden && (
-                                      <Badge variant="destructive" className="text-[10px] md:text-xs h-4 md:h-auto">Oculta</Badge>
-                                    )}
-                                    {isCustom && (
-                                      <Badge variant="secondary" className="text-[10px] md:text-xs h-4 md:h-auto">Nova</Badge>
-                                    )}
-                                    {isEdited && !isCustom && (
-                                      <Badge variant="outline" className="text-[10px] md:text-xs h-4 md:h-auto">Editada</Badge>
-                                    )}
+                                    {isHidden && <Badge variant="destructive" className="text-xs">Oculta</Badge>}
+                                    {isCustom && <Badge variant="secondary" className="text-xs">Nova</Badge>}
+                                    {isEdited && !isCustom && <Badge variant="outline" className="text-xs">Editada</Badge>}
                                     {annotation && (
-                                      <span 
-                                        className="inline-flex items-center gap-0.5 text-[10px] md:text-xs font-medium px-1.5 py-0 md:px-2 md:py-0.5 rounded-full text-white shrink-0"
-                                        style={{ backgroundColor: annotationColor }}
-                                      >
-                                        <StickyNote className="h-2.5 w-2.5 md:h-3 md:w-3" />
+                                      <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full text-white shrink-0" style={{ backgroundColor: annotationColor }}>
+                                        <StickyNote className="h-3 w-3" />
                                         {annotation}
                                       </span>
                                     )}
                                   </div>
-                                  {/* Mobile: partnership badges below name */}
-                                  {isUsedByPartnership && (
-                                    <div className="md:hidden flex items-center gap-1 flex-wrap mt-0.5">
-                                      {usedByPartnerships.map((partnershipName, idx) => (
-                                        <Badge key={idx} variant="default" className={`text-[10px] h-4 gap-0.5 text-white ${partnershipColorMap.get(partnershipName) || 'bg-success'}`}>
-                                          <CheckCircle2 className="h-2.5 w-2.5" />
-                                          {partnershipName}
-                                        </Badge>
-                                      ))}
-                                    </div>
-                                  )}
                                   {house.url && (
-                                    <a
-                                      href={house.url.startsWith('http://') || house.url.startsWith('https://') ? house.url : `https://${house.url}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-[10px] md:text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
-                                    >
-                                      <span className="truncate max-w-[150px] md:max-w-none">{house.url}</span>
-                                      <ExternalLink className="h-2.5 w-2.5 md:h-3 md:w-3 shrink-0" />
+                                    <a href={house.url.startsWith('http://') || house.url.startsWith('https://') ? house.url : `https://${house.url}`} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1">
+                                      {house.url}
+                                      <ExternalLink className="h-3 w-3" />
                                     </a>
                                   )}
                                 </div>
                                 
-                                {/* Actions - always visible on mobile via smaller buttons */}
-                                <div className="flex items-center gap-0.5 md:gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0">
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                   {isAdmin && isHidden ? (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="h-7 md:h-8 gap-1 text-green-600 hover:text-green-700 hover:bg-green-50 text-xs px-2"
-                                      onClick={() => handleRestoreHouse(house)}
-                                      title="Restaurar casa"
-                                    >
-                                      <Eye className="h-3.5 w-3.5" />
-                                      <span className="hidden md:inline">Restaurar</span>
+                                    <Button variant="outline" size="sm" className="h-8 gap-1 text-green-600 hover:text-green-700 hover:bg-green-50" onClick={() => handleRestoreHouse(house)} title="Restaurar casa">
+                                      <Eye className="h-4 w-4" />
+                                      Restaurar
                                     </Button>
                                   ) : (
                                     <>
                                       {isAdmin && (
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-7 w-7 md:h-8 md:w-8"
-                                          onClick={() => handleStartEdit(house, group.id)}
-                                          title="Editar casa"
-                                        >
-                                          <Edit3 className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleStartEdit(house, group.id)} title="Editar casa">
+                                          <Edit3 className="h-4 w-4" />
                                         </Button>
                                       )}
                                       {isAdmin && (
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-7 w-7 md:h-8 md:w-8 hidden md:flex"
-                                          onClick={() => {
-                                            setMovingHouse({ house, currentGroupId: group.id });
-                                            setTargetGroupId('');
-                                          }}
-                                          title="Mover para outro grupo"
-                                        >
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setMovingHouse({ house, currentGroupId: group.id }); setTargetGroupId(''); }} title="Mover para outro grupo">
                                           <MoveRight className="h-4 w-4" />
                                         </Button>
                                       )}
-                                      <Button
-                                        variant="default"
-                                        size="icon"
-                                        className="h-7 w-7 md:h-8 md:w-8"
-                                        onClick={() => handleOpenAddDialog(house)}
-                                        title="Adicionar à parceria"
-                                      >
-                                        <Plus className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                                      <Button variant="default" size="icon" className="h-8 w-8" onClick={() => handleOpenAddDialog(house)} title="Adicionar à parceria">
+                                        <Plus className="h-4 w-4" />
                                       </Button>
                                       {isAdmin && (
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-7 w-7 md:h-8 md:w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                          onClick={() => setHouseToDelete({ house, groupId: group.id })}
-                                          title="Remover do catálogo"
-                                        >
-                                          <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setHouseToDelete({ house, groupId: group.id })} title="Remover do catálogo">
+                                          <Trash2 className="h-4 w-4" />
                                         </Button>
                                       )}
                                     </>
@@ -1355,6 +1297,79 @@ const CasasDeApostas = () => {
                                 </div>
                               </div>
                             </div>
+
+                            {/* Mobile layout - compact list style */}
+                            <div
+                              key={`mobile-${house.id}`}
+                              className={`md:hidden rounded-md border bg-background p-2.5 space-y-1.5 ${isHidden ? 'opacity-50 border-destructive/50' : ''} ${isUsedByPartnership ? 'border-success/50 bg-success/5' : ''}`}
+                            >
+                              {/* Row 1: Name */}
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium leading-snug">
+                                    {searchTerm ? highlightText(house.name, searchTerm) : house.name}
+                                  </p>
+                                  {house.url && (
+                                    <a href={house.url.startsWith('http://') || house.url.startsWith('https://') ? house.url : `https://${house.url}`} target="_blank" rel="noopener noreferrer" className="text-[11px] text-muted-foreground hover:text-primary flex items-center gap-1 mt-0.5">
+                                      <span className="truncate">{house.url}</span>
+                                      <ExternalLink className="h-2.5 w-2.5 shrink-0" />
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Row 2: Badges */}
+                              {(isUsedByPartnership || isHidden || isCustom || (isEdited && !isCustom) || annotation) && (
+                                <div className="flex items-center gap-1 flex-wrap">
+                                  {isUsedByPartnership && usedByPartnerships.map((partnershipName, idx) => (
+                                    <Badge key={idx} variant="default" className={`text-[10px] h-[18px] gap-0.5 text-white ${partnershipColorMap.get(partnershipName) || 'bg-success'}`}>
+                                      <CheckCircle2 className="h-2.5 w-2.5" />
+                                      {partnershipName}
+                                    </Badge>
+                                  ))}
+                                  {isHidden && <Badge variant="destructive" className="text-[10px] h-[18px]">Oculta</Badge>}
+                                  {isCustom && <Badge variant="secondary" className="text-[10px] h-[18px]">Nova</Badge>}
+                                  {isEdited && !isCustom && <Badge variant="outline" className="text-[10px] h-[18px]">Editada</Badge>}
+                                  {annotation && (
+                                    <span className="inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 rounded-full text-white" style={{ backgroundColor: annotationColor }}>
+                                      <StickyNote className="h-2.5 w-2.5" />
+                                      {annotation}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Row 3: Actions - grouped in a row */}
+                              <div className="flex items-center gap-1 pt-0.5 border-t border-border/50">
+                                {isAdmin && isHidden ? (
+                                  <Button variant="outline" size="sm" className="h-7 text-xs gap-1 text-green-600" onClick={() => handleRestoreHouse(house)}>
+                                    <Eye className="h-3 w-3" />
+                                    Restaurar
+                                  </Button>
+                                ) : (
+                                  <>
+                                    <Button variant="default" size="sm" className="h-7 text-xs gap-1 flex-1" onClick={() => handleOpenAddDialog(house)}>
+                                      <Plus className="h-3 w-3" />
+                                      Adicionar
+                                    </Button>
+                                    {isAdmin && (
+                                      <>
+                                        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => handleStartEdit(house, group.id)} title="Editar">
+                                          <Edit3 className="h-3 w-3" />
+                                        </Button>
+                                        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => { setMovingHouse({ house, currentGroupId: group.id }); setTargetGroupId(''); }} title="Mover">
+                                          <MoveRight className="h-3 w-3" />
+                                        </Button>
+                                        <Button variant="outline" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setHouseToDelete({ house, groupId: group.id })} title="Excluir">
+                                          <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                      </>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            </>
                           );
                         })}
                         
