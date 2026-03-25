@@ -1948,6 +1948,42 @@ const Parcerias = () => {
                       )}
                     </div>
 
+                    {/* Resumo de Saldos */}
+                    <div className="grid gap-3 grid-cols-3">
+                      <Card className="p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Building2 className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Saldo Conta Bancária</span>
+                        </div>
+                        <p className="text-lg font-bold">
+                          R$ {formatCurrency(Math.max(0, partnershipDetails.partnership.saldo_bancario || 0))}
+                        </p>
+                      </Card>
+
+                      <Card className="p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <DollarSign className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Saldo nas Casas</span>
+                        </div>
+                        <p className="text-lg font-bold">
+                          R$ {formatCurrency(partnershipDetails.casas.reduce((sum: number, casa: any) => sum + (casa.saldo || 0), 0))}
+                        </p>
+                      </Card>
+
+                      <Card className="p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <TrendingUp className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Saldo Total</span>
+                        </div>
+                        <p className="text-lg font-bold text-primary">
+                          R$ {formatCurrency(
+                            Math.max(0, partnershipDetails.partnership.saldo_bancario || 0) + 
+                            partnershipDetails.casas.reduce((sum: number, casa: any) => sum + (casa.saldo || 0), 0)
+                          )}
+                        </p>
+                      </Card>
+                    </div>
+
                     {/* Tabela de casas */}
                     <Card className="p-6">
                       <div className="flex flex-col gap-4 mb-4">
