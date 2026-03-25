@@ -82,7 +82,7 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
         />
       )}
       
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col min-w-0">
         <header className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
           <div className="container flex h-16 items-center justify-between">
             <div className="flex items-center gap-4">
@@ -147,7 +147,7 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
           </div>
         </header>
 
-        <main className="flex-1 container py-6">{children}</main>
+        <main className="flex-1 container py-6 overflow-x-hidden">{children}</main>
         
         <footer className="border-t border-border py-6">
           <div className="container text-center text-sm text-muted-foreground">
