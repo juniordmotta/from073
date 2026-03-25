@@ -42,6 +42,7 @@ interface Partnership {
   cpf: string;
   endereco: string;
   valor_banca: number;
+  saldo_bancario: number;
   bancos_cadastrados: string;
   data_inicio: string;
   status: string;
@@ -201,6 +202,7 @@ const Parcerias = () => {
     cpf: '',
     endereco: '',
     valor_banca: '',
+    saldo_bancario: '',
     bancos_cadastrados: '',
     data_inicio: format(new Date(), 'yyyy-MM-dd'),
     status: 'ativo',
