@@ -1949,371 +1949,188 @@ export default function MinhasArbitragens() {
             })()}
           </div>
           
-          <div className="flex items-end gap-2 flex-wrap">
-            {/* Toggle Adicionado/Jogo */}
-            <div>
-              <Label className="text-xs mb-1 block">Filtrar por</Label>
-              <div className="flex rounded-lg border overflow-hidden">
-                <Button
-                  variant={dateFilterType === 'adicionado' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setDateFilterType('adicionado')}
-                  className="h-10 px-3 rounded-none"
-                >
-                  Adicionado
+          <div className="flex items-center gap-2">
+            <Dialog open={openAdd} onOpenChange={setOpenAdd}>
+              <DialogTrigger asChild>
+                <Button size="icon" className="h-10 w-10 shrink-0">
+                  <Plus className="h-5 w-5" />
                 </Button>
-                <Button
-                  variant={dateFilterType === 'jogo' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setDateFilterType('jogo')}
-                  className="h-10 px-3 rounded-none"
-                >
-                  Jogo
-                </Button>
-              </div>
-            </div>
-            
-            {/* Filtros Rápidos de Período */}
-            <div>
-              <Label className="text-xs mb-1 block">Período Rápido</Label>
-              <div className="flex gap-1">
-                <Button
-                  variant={selectedPeriod === 'hoje' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => applyPeriodFilter('hoje')}
-                  className="h-10 px-3"
-                >
-                  Hoje
-                </Button>
-                <Button
-                  variant={selectedPeriod === 'semana' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => applyPeriodFilter('semana')}
-                  className="h-10 px-3"
-                >
-                  7 dias
-                </Button>
-                <Button
-                  variant={selectedPeriod === 'mes' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => applyPeriodFilter('mes')}
-                  className="h-10 px-3"
-                >
-                  30 dias
-                </Button>
-                <Button
-                  variant={selectedPeriod === 'mes_atual' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => applyPeriodFilter('mes_atual')}
-                  className="h-10 px-3"
-                >
-                  Mês atual
-                </Button>
-                <div className="flex items-center gap-1">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant={selectedPeriod === 'custom' && (filterStartDate || filterEndDate) ? 'default' : 'outline'}
-                        size="sm"
-                        className="h-10 px-3"
-                      >
-                        <Calendar className="h-4 w-4 mr-2" />
-                        {filterStartDate && filterEndDate ? (
-                          <>
-                            {format(new Date(filterStartDate), 'dd/MM')} - {format(new Date(filterEndDate), 'dd/MM')}
-                          </>
-                        ) : filterEndDate ? (
-                          format(new Date(filterEndDate), 'dd/MM')
-                        ) : (
-                          'Selecionar Data'
-                        )}
-                        <Badge variant="secondary" className="ml-2 text-xs">
-                          {dateFilterType === 'jogo' ? 'Jogo' : 'Add'}
-                        </Badge>
-                      </Button>
-                    </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Selecionar Período</DialogTitle>
-                      <DialogDescription>
-                        Selecione a data inicial e final para filtrar as arbitragens {dateFilterType === 'jogo' ? 'com jogos' : 'adicionadas'} nesse período.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="start-date">
-                          Data Início
-                          <span className="text-muted-foreground ml-1">({dateFilterType === 'jogo' ? 'Data do Jogo' : 'Adicionado em'})</span>
-                        </Label>
-                        <Input
-                          id="start-date"
-                          type="date"
-                          value={filterStartDate}
-                          onChange={(e) => {
-                            setFilterStartDate(e.target.value);
-                            setSelectedPeriod('custom');
-                          }}
-                          className="w-full"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="end-date">
-                          Data Fim
-                          <span className="text-muted-foreground ml-1">({dateFilterType === 'jogo' ? 'Data do Jogo' : 'Adicionado em'})</span>
-                        </Label>
-                        <Input
-                          id="end-date"
-                          type="date"
-                          value={filterEndDate}
-                          onChange={(e) => {
-                            setFilterEndDate(e.target.value);
-                            setSelectedPeriod('custom');
-                          }}
-                          className="w-full"
-                        />
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        * Preencha ambas as datas para filtrar um período, ou apenas a data fim para filtrar um dia específico.
-                      </p>
-                    </div>
-                    <div className="flex justify-end gap-2 pt-4 border-t">
-                      <DialogTrigger asChild>
-                        <Button type="button">
-                          OK
-                        </Button>
-                      </DialogTrigger>
-                    </div>
-                  </DialogContent>
-                  </Dialog>
-                  {(filterStartDate || filterEndDate) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-10 px-2"
-                      onClick={() => {
-                        setFilterStartDate('');
-                        setFilterEndDate('');
-                        setSelectedPeriod('custom');
-                      }}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
+              </DialogTrigger>
+            </Dialog>
+          </div>
+        </div>
 
-            <div>
-              <Label className="text-xs mb-1 block">Status</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-40 h-10 justify-between">
-                    <span className="truncate">
-                      {filterStatus.includes('all') ? 'Todos' : `${filterStatus.length} selecionado(s)`}
-                    </span>
-                    <Filter className="h-4 w-4 ml-2 opacity-50" />
+        {/* Filtros agrupados */}
+        <div className="flex flex-col gap-2">
+          {/* Linha 1: Filtros de Data */}
+          <div className="flex items-center gap-1 flex-wrap">
+            <div className="flex rounded-md border overflow-hidden">
+              <Button
+                variant={dateFilterType === 'adicionado' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setDateFilterType('adicionado')}
+                className="h-8 px-2 text-xs rounded-none"
+              >
+                Adicionado
+              </Button>
+              <Button
+                variant={dateFilterType === 'jogo' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setDateFilterType('jogo')}
+                className="h-8 px-2 text-xs rounded-none"
+              >
+                Jogo
+              </Button>
+            </div>
+            <div className="flex gap-1">
+              <Button variant={selectedPeriod === 'hoje' ? 'default' : 'outline'} size="sm" onClick={() => applyPeriodFilter('hoje')} className="h-8 px-2 text-xs">Hoje</Button>
+              <Button variant={selectedPeriod === 'semana' ? 'default' : 'outline'} size="sm" onClick={() => applyPeriodFilter('semana')} className="h-8 px-2 text-xs">7d</Button>
+              <Button variant={selectedPeriod === 'mes' ? 'default' : 'outline'} size="sm" onClick={() => applyPeriodFilter('mes')} className="h-8 px-2 text-xs">30d</Button>
+              <Button variant={selectedPeriod === 'mes_atual' ? 'default' : 'outline'} size="sm" onClick={() => applyPeriodFilter('mes_atual')} className="h-8 px-2 text-xs">Mês</Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant={selectedPeriod === 'custom' && (filterStartDate || filterEndDate) ? 'default' : 'outline'} size="sm" className="h-8 px-2 text-xs">
+                    <Calendar className="h-3.5 w-3.5 mr-1" />
+                    {filterStartDate && filterEndDate ? (
+                      <>{format(new Date(filterStartDate), 'dd/MM')} - {format(new Date(filterEndDate), 'dd/MM')}</>
+                    ) : filterEndDate ? format(new Date(filterEndDate), 'dd/MM') : 'Data'}
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-64 p-3 bg-background z-50" align="start">
-                  <div className="space-y-3">
-                    <div className="font-semibold text-sm">Filtrar por Status</div>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Selecionar Período</DialogTitle>
+                    <DialogDescription>
+                      Selecione a data inicial e final para filtrar as arbitragens {dateFilterType === 'jogo' ? 'com jogos' : 'adicionadas'} nesse período.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
+                      <Label htmlFor="start-date">Data Início <span className="text-muted-foreground ml-1">({dateFilterType === 'jogo' ? 'Data do Jogo' : 'Adicionado em'})</span></Label>
+                      <Input id="start-date" type="date" value={filterStartDate} onChange={(e) => { setFilterStartDate(e.target.value); setSelectedPeriod('custom'); }} className="w-full" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="end-date">Data Fim <span className="text-muted-foreground ml-1">({dateFilterType === 'jogo' ? 'Data do Jogo' : 'Adicionado em'})</span></Label>
+                      <Input id="end-date" type="date" value={filterEndDate} onChange={(e) => { setFilterEndDate(e.target.value); setSelectedPeriod('custom'); }} className="w-full" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">* Preencha ambas as datas para filtrar um período, ou apenas a data fim para filtrar um dia específico.</p>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-4 border-t">
+                    <DialogTrigger asChild><Button type="button">OK</Button></DialogTrigger>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              {(filterStartDate || filterEndDate) && (
+                <Button variant="ghost" size="sm" className="h-8 px-1.5" onClick={() => { setFilterStartDate(''); setFilterEndDate(''); setSelectedPeriod('custom'); }}>
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Linha 2: Status + Operador + Parceria */}
+          <div className="flex items-center gap-1 flex-wrap">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 justify-between text-xs gap-1">
+                  <span className="truncate">{filterStatus.includes('all') ? 'Status: Todos' : `Status: ${filterStatus.length}`}</span>
+                  <Filter className="h-3.5 w-3.5 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-3 bg-background z-50" align="start">
+                <div className="space-y-3">
+                  <div className="font-semibold text-sm">Filtrar por Status</div>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="arb-status-all" checked={filterStatus.includes('all')} onCheckedChange={(checked) => { if (checked) { setFilterStatus(['all']); } else { setFilterStatus([]); } }} />
+                      <label htmlFor="arb-status-all" className="text-sm font-medium cursor-pointer">Todos</label>
+                    </div>
+                    {['aguardando', 'green', 'red'].map((status) => (
+                      <div key={status} className="flex items-center space-x-2">
                         <Checkbox
-                          id="arb-status-all"
-                          checked={filterStatus.includes('all')}
+                          id={`arb-status-${status}`}
+                          checked={!filterStatus.includes('all') && filterStatus.includes(status)}
                           onCheckedChange={(checked) => {
-                            if (checked) {
-                              setFilterStatus(['all']);
-                            } else {
-                              setFilterStatus([]);
+                            if (filterStatus.includes('all')) { setFilterStatus([status]); } else {
+                              if (checked) { setFilterStatus([...filterStatus, status]); } else {
+                                const filtered = filterStatus.filter(s => s !== status);
+                                setFilterStatus(filtered.length === 0 ? ['all'] : filtered);
+                              }
                             }
                           }}
                         />
-                        <label htmlFor="arb-status-all" className="text-sm font-medium cursor-pointer">
-                          Todos
+                        <label htmlFor={`arb-status-${status}`} className="text-sm cursor-pointer capitalize">
+                          {status === 'aguardando' ? 'Aguardando' : status === 'green' ? 'Green' : 'Red'}
                         </label>
                       </div>
-                      {['aguardando', 'green', 'red'].map((status) => (
-                        <div key={status} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`arb-status-${status}`}
-                            checked={!filterStatus.includes('all') && filterStatus.includes(status)}
-                            onCheckedChange={(checked) => {
-                              if (filterStatus.includes('all')) {
-                                setFilterStatus([status]);
-                              } else {
-                                if (checked) {
-                                  const newStatus = [...filterStatus, status];
-                                  setFilterStatus(newStatus);
-                                } else {
-                                  const filtered = filterStatus.filter(s => s !== status);
-                                  setFilterStatus(filtered.length === 0 ? ['all'] : filtered);
-                                }
-                              }
-                            }}
-                          />
-                          <label htmlFor={`arb-status-${status}`} className="text-sm cursor-pointer capitalize">
-                            {status === 'aguardando' ? 'Aguardando' : status === 'green' ? 'Green' : 'Red'}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
+                    ))}
                   </div>
-                </PopoverContent>
-              </Popover>
-            </div>
+                </div>
+              </PopoverContent>
+            </Popover>
 
             {isAdmin && (
-              <div>
-                <Label className="text-xs mb-1 block">Operador</Label>
-                <Popover>
+              <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-52 h-10 justify-between">
+                  <Button variant="outline" size="sm" className="h-8 justify-between text-xs gap-1">
                     <span className="truncate">
-                      {filterUser.length === 0 
-                        ? 'Todos os operadores' 
-                        : filterUser.length === users.length
-                        ? 'Todos os operadores'
-                        : `${filterUser.length} operador(es)`
-                      }
+                      {filterUser.length === 0 ? 'Operador: Todos' : filterUser.length === users.length ? 'Operador: Todos' : `Operador: ${filterUser.length}`}
                     </span>
-                    <Filter className="h-4 w-4 ml-2 opacity-50" />
+                    <Filter className="h-3.5 w-3.5 opacity-50" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-64 p-3 bg-background z-50" align="start">
                   <div className="space-y-3">
                     <div className="font-semibold text-sm">Filtrar por Operador</div>
                     <div className="flex items-center space-x-2 pb-2 border-b">
-                      <Checkbox
-                        id="select-all"
-                        checked={filterUser.length === users.length}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setFilterUser(users.map(u => u.id));
-                          } else {
-                            setFilterUser([]);
-                          }
-                        }}
-                      />
-                      <label
-                        htmlFor="select-all"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                      >
-                        Selecionar Todos
-                      </label>
+                      <Checkbox id="select-all" checked={filterUser.length === users.length} onCheckedChange={(checked) => { if (checked) { setFilterUser(users.map(u => u.id)); } else { setFilterUser([]); } }} />
+                      <label htmlFor="select-all" className="text-sm font-medium leading-none cursor-pointer">Selecionar Todos</label>
                     </div>
                     <div className="space-y-2 max-h-60 overflow-y-auto">
                       {users.map((u) => (
                         <div key={u.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={u.id}
-                            checked={filterUser.includes(u.id)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setFilterUser([...filterUser, u.id]);
-                              } else {
-                                setFilterUser(filterUser.filter(id => id !== u.id));
-                              }
-                            }}
-                          />
-                          <label
-                            htmlFor={u.id}
-                            className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                          >
-                            {u.name}
-                          </label>
+                          <Checkbox id={u.id} checked={filterUser.includes(u.id)} onCheckedChange={(checked) => { if (checked) { setFilterUser([...filterUser, u.id]); } else { setFilterUser(filterUser.filter(id => id !== u.id)); } }} />
+                          <label htmlFor={u.id} className="text-sm leading-none cursor-pointer">{u.name}</label>
                         </div>
                       ))}
                     </div>
                   </div>
                 </PopoverContent>
-                </Popover>
-              </div>
+              </Popover>
             )}
 
-            <div>
-              <Label className="text-xs mb-1 block">Parceria</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-52 h-10 justify-between">
-                    <span className="truncate">
-                      {filterPartnership.length === 0 
-                        ? 'Todas as parcerias' 
-                        : filterPartnership.length === filterablePartnerships.length
-                        ? 'Todas as parcerias'
-                        : `${filterPartnership.length} parceria${filterPartnership.length > 1 ? 's' : ''}`
-                      }
-                    </span>
-                    <Filter className="h-4 w-4 ml-2 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-64 p-3 bg-background z-50" align="start">
-                  <div className="space-y-3">
-                    <div className="font-semibold text-sm">Filtrar por Parceria</div>
-                    {filterablePartnerships.length === 0 ? (
-                      <div className="text-sm text-muted-foreground py-2">
-                        Nenhuma parceria ativa encontrada para o(s) operador(es) selecionado(s).
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex items-center space-x-2 pb-2 border-b">
-                          <Checkbox
-                            id="select-all-partnerships"
-                            checked={filterPartnership.length === filterablePartnerships.length && filterablePartnerships.length > 0}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setFilterPartnership(filterablePartnerships.map(p => p.id));
-                              } else {
-                                setFilterPartnership([]);
-                              }
-                            }}
-                          />
-                          <label
-                            htmlFor="select-all-partnerships"
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                          >
-                            Selecionar Todas
-                          </label>
-                        </div>
-                        <div className="space-y-2 max-h-60 overflow-y-auto">
-                          {filterablePartnerships.map((p) => (
-                            <div key={p.id} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`partnership-${p.id}`}
-                                checked={filterPartnership.includes(p.id)}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    setFilterPartnership([...filterPartnership, p.id]);
-                                  } else {
-                                    setFilterPartnership(filterPartnership.filter(id => id !== p.id));
-                                  }
-                                }}
-                              />
-                              <label
-                                htmlFor={`partnership-${p.id}`}
-                                className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                              >
-                                {formatUserName(p.nome_completo)}
-                              </label>
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </PopoverContent>
-            </Popover>
-            </div>
-
-            <Dialog open={openAdd} onOpenChange={setOpenAdd}>
-              <DialogTrigger asChild>
-                <Button className="gap-2 h-10">
-                  <Plus className="h-4 w-4" />
-                  Adicionar Arbitragem
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 justify-between text-xs gap-1">
+                  <span className="truncate">
+                    {filterPartnership.length === 0 ? 'Parceria: Todas' : filterPartnership.length === filterablePartnerships.length ? 'Parceria: Todas' : `Parceria: ${filterPartnership.length}`}
+                  </span>
+                  <Filter className="h-3.5 w-3.5 opacity-50" />
                 </Button>
-              </DialogTrigger>
-            </Dialog>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-3 bg-background z-50" align="start">
+                <div className="space-y-3">
+                  <div className="font-semibold text-sm">Filtrar por Parceria</div>
+                  {filterablePartnerships.length === 0 ? (
+                    <div className="text-sm text-muted-foreground py-2">Nenhuma parceria ativa encontrada para o(s) operador(es) selecionado(s).</div>
+                  ) : (
+                    <>
+                      <div className="flex items-center space-x-2 pb-2 border-b">
+                        <Checkbox id="select-all-partnerships" checked={filterPartnership.length === filterablePartnerships.length && filterablePartnerships.length > 0} onCheckedChange={(checked) => { if (checked) { setFilterPartnership(filterablePartnerships.map(p => p.id)); } else { setFilterPartnership([]); } }} />
+                        <label htmlFor="select-all-partnerships" className="text-sm font-medium leading-none cursor-pointer">Selecionar Todas</label>
+                      </div>
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {filterablePartnerships.map((p) => (
+                          <div key={p.id} className="flex items-center space-x-2">
+                            <Checkbox id={`partnership-${p.id}`} checked={filterPartnership.includes(p.id)} onCheckedChange={(checked) => { if (checked) { setFilterPartnership([...filterPartnership, p.id]); } else { setFilterPartnership(filterPartnership.filter(id => id !== p.id)); } }} />
+                            <label htmlFor={`partnership-${p.id}`} className="text-sm leading-none cursor-pointer">{formatUserName(p.nome_completo)}</label>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
