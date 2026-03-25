@@ -1871,27 +1871,37 @@ export default function MinhasArbitragens() {
               </Button>
             )}
 
-            {/* Botão Ir para Casas */}
+            {/* Botão Ir para Casas + Adicionar */}
             {(() => {
               const activePartnerships = partnerships.filter(p => p.status === 'ativo');
               
+              const addButton = (
+                <Button size="icon" className="h-8 w-8 shrink-0" onClick={() => setOpenAdd(true)}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              );
+
               // Se só tem 1 parceria ativa, vai direto
               if (activePartnerships.length === 1) {
                 return (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="gap-2 h-8"
-                    onClick={() => navigate(`/parcerias?partnership=${activePartnerships[0].id}&view=report`)}
-                  >
-                    <Building2 className="h-4 w-4" />
-                    Ir para Casas
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="gap-2 h-8"
+                      onClick={() => navigate(`/parcerias?partnership=${activePartnerships[0].id}&view=report`)}
+                    >
+                      <Building2 className="h-4 w-4" />
+                      Ir para Casas
+                    </Button>
+                    {addButton}
+                  </div>
                 );
               }
               
               // Múltiplas parcerias: mostra dialog
               return (
+                <div className="flex items-center gap-1">
                 <Dialog open={goToHousesOpen} onOpenChange={setGoToHousesOpen}>
                   <DialogTrigger asChild>
                     <Button variant="outline" size="sm" className="gap-2 h-8">
@@ -1945,20 +1955,11 @@ export default function MinhasArbitragens() {
                     </form>
                   </DialogContent>
                 </Dialog>
+                {addButton}
+                </div>
               );
             })()}
           </div>
-          
-          <div className="flex items-center gap-2">
-            <Dialog open={openAdd} onOpenChange={setOpenAdd}>
-              <DialogTrigger asChild>
-                <Button size="icon" className="h-10 w-10 shrink-0">
-                  <Plus className="h-5 w-5" />
-                </Button>
-              </DialogTrigger>
-            </Dialog>
-          </div>
-        </div>
 
         {/* Filtros agrupados */}
         <div className="flex flex-col gap-2">
@@ -3177,7 +3178,7 @@ export default function MinhasArbitragens() {
             )}
           </DialogContent>
         </Dialog>
-      
+      </div>
 
       {/* Dialog de Ganhos por Casa */}
       {viewGanhosArbitrage && (
