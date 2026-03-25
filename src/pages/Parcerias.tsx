@@ -2000,19 +2000,19 @@ const Parcerias = () => {
                     </div>
 
                     {/* Resumo de Saldos */}
-                    <div className="grid gap-3 grid-cols-3">
-                      <Card className="p-3">
-                        <div className="flex items-center gap-2 mb-1">
+                    <div className="grid gap-2 grid-cols-3 mt-3">
+                      <div className="rounded-lg border bg-card p-2.5">
+                        <div className="flex items-center gap-1.5 mb-1">
                           <Building2 className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">Saldo Conta Bancária</span>
+                          <span className="text-[10px] md:text-xs text-muted-foreground">Conta Bancária</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <span className="text-lg font-bold">R$</span>
+                          <span className="text-sm font-bold">R$</span>
                           <Input
                             key={`bank-${selectedPartnershipId}`}
                             type="text"
                             inputMode="decimal"
-                            className="h-8 text-lg font-bold border-dashed w-[120px]"
+                            className="h-7 text-sm font-bold border-dashed w-[90px] md:w-[120px]"
                             defaultValue={formatCurrency(Math.max(0, partnershipDetails.partnership.saldo_bancario || 0))}
                             onBlur={async (e) => {
                               const numValue = Math.max(0, parseLocalizedNumber(e.target.value));
@@ -2032,30 +2032,30 @@ const Parcerias = () => {
                             onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
                           />
                         </div>
-                      </Card>
+                      </div>
 
-                      <Card className="p-3">
-                        <div className="flex items-center gap-2 mb-1">
+                      <div className="rounded-lg border bg-card p-2.5">
+                        <div className="flex items-center gap-1.5 mb-1">
                           <DollarSign className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">Saldo nas Casas</span>
+                          <span className="text-[10px] md:text-xs text-muted-foreground">Saldo Casas</span>
                         </div>
-                        <p className="text-lg font-bold">
+                        <p className="text-sm font-bold">
                           R$ {formatCurrency(partnershipDetails.casas.reduce((sum: number, casa: any) => sum + (casa.saldo || 0), 0))}
                         </p>
-                      </Card>
+                      </div>
 
-                      <Card className="p-3">
-                        <div className="flex items-center gap-2 mb-1">
+                      <div className="rounded-lg border bg-card p-2.5">
+                        <div className="flex items-center gap-1.5 mb-1">
                           <TrendingUp className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">Saldo Total</span>
+                          <span className="text-[10px] md:text-xs text-muted-foreground">Saldo Total</span>
                         </div>
-                        <p className="text-lg font-bold text-primary">
+                        <p className="text-sm font-bold text-primary">
                           R$ {formatCurrency(
                             Math.max(0, partnershipDetails.partnership.saldo_bancario || 0) + 
                             partnershipDetails.casas.reduce((sum: number, casa: any) => sum + (casa.saldo || 0), 0)
                           )}
                         </p>
-                      </Card>
+                      </div>
                     </div>
 
                     {/* Tabela de casas */}
