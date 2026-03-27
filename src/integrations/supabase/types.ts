@@ -223,6 +223,45 @@ export type Database = {
           },
         ]
       }
+      balance_movements: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          id: string
+          partnership_id: string
+          referencia_id: string | null
+          saldo_anterior: number
+          saldo_novo: number
+          tipo: string
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          partnership_id: string
+          referencia_id?: string | null
+          saldo_anterior?: number
+          saldo_novo?: number
+          tipo: string
+          user_id: string
+          valor: number
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          partnership_id?: string
+          referencia_id?: string | null
+          saldo_anterior?: number
+          saldo_novo?: number
+          tipo?: string
+          user_id?: string
+          valor?: number
+        }
+        Relationships: []
+      }
       banks: {
         Row: {
           created_at: string
