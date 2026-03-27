@@ -35,6 +35,7 @@ import { highlightText } from '@/lib/utils/highlightText';
 import { AddHouseAutocomplete } from '@/components/AddHouseAutocomplete';
 import { bettingHouseGroups } from '@/data/bettingHousesData';
 import { Skeleton } from '@/components/ui/skeleton';
+import { BalanceMovements } from '@/components/BalanceMovements';
 
 interface Partnership {
   id: string;
@@ -2077,10 +2078,13 @@ const Parcerias = () => {
 
                     {/* Resumo de Saldos - Desktop: grid-cols-3, Mobile: stacked */}
                     <div className="hidden md:grid gap-2 grid-cols-3 mt-3">
-                      <div className="rounded-lg border bg-card p-2.5">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <Building2 className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">Conta Bancária</span>
+                       <div className="rounded-lg border bg-card p-2.5">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-1.5">
+                            <Building2 className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">Conta Bancária</span>
+                          </div>
+                          {selectedPartnershipId && <BalanceMovements partnershipId={selectedPartnershipId} />}
                         </div>
                         <div className="flex items-center gap-1">
                           <span className="text-sm font-bold">R$</span>
@@ -2092,11 +2096,22 @@ const Parcerias = () => {
                             defaultValue={formatCurrency(Math.max(0, partnershipDetails.partnership.saldo_bancario || 0))}
                             onBlur={async (e) => {
                               const numValue = Math.max(0, parseLocalizedNumber(e.target.value));
-                              if (numValue !== (partnershipDetails.partnership.saldo_bancario || 0)) {
+                              const oldValue = partnershipDetails.partnership.saldo_bancario || 0;
+                              if (numValue !== oldValue) {
                                 await supabase
                                   .from('partnerships')
                                   .update({ saldo_bancario: numValue })
                                   .eq('id', selectedPartnershipId!);
+                                // Registrar movimentação
+                                await supabase.from('balance_movements' as any).insert({
+                                  partnership_id: selectedPartnershipId!,
+                                  user_id: user?.id,
+                                  tipo: 'ajuste_manual',
+                                  valor: numValue - oldValue,
+                                  saldo_anterior: oldValue,
+                                  saldo_novo: numValue,
+                                  descricao: `Ajuste manual: R$ ${formatCurrency(oldValue)} → R$ ${formatCurrency(numValue)}`,
+                                });
                                 setPartnershipDetails((prev: any) => ({
                                   ...prev,
                                   partnership: { ...prev.partnership, saldo_bancario: numValue },
@@ -2136,12 +2151,15 @@ const Parcerias = () => {
 
                     {/* Mobile: stacked saldo rows */}
                     <div className="md:hidden space-y-1.5 mt-3">
-                      <div className="rounded-lg border bg-card px-3 py-2 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">Conta Bancária</span>
+                      <div className="rounded-lg border bg-card px-3 py-2">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">Conta Bancária</span>
+                          </div>
+                          {selectedPartnershipId && <BalanceMovements partnershipId={selectedPartnershipId} />}
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center justify-end gap-1">
                           <span className="text-sm font-bold">R$</span>
                           <Input
                             key={`bank-mobile-${selectedPartnershipId}`}
@@ -2151,11 +2169,22 @@ const Parcerias = () => {
                             defaultValue={formatCurrency(Math.max(0, partnershipDetails.partnership.saldo_bancario || 0))}
                             onBlur={async (e) => {
                               const numValue = Math.max(0, parseLocalizedNumber(e.target.value));
-                              if (numValue !== (partnershipDetails.partnership.saldo_bancario || 0)) {
+                              const oldValue = partnershipDetails.partnership.saldo_bancario || 0;
+                              if (numValue !== oldValue) {
                                 await supabase
                                   .from('partnerships')
                                   .update({ saldo_bancario: numValue })
                                   .eq('id', selectedPartnershipId!);
+                                // Registrar movimentação
+                                await supabase.from('balance_movements' as any).insert({
+                                  partnership_id: selectedPartnershipId!,
+                                  user_id: user?.id,
+                                  tipo: 'ajuste_manual',
+                                  valor: numValue - oldValue,
+                                  saldo_anterior: oldValue,
+                                  saldo_novo: numValue,
+                                  descricao: `Ajuste manual: R$ ${formatCurrency(oldValue)} → R$ ${formatCurrency(numValue)}`,
+                                });
                                 setPartnershipDetails((prev: any) => ({
                                   ...prev,
                                   partnership: { ...prev.partnership, saldo_bancario: numValue },

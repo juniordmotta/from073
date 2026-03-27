@@ -1159,6 +1159,17 @@ export default function MinhasArbitragens() {
             .from('partnerships')
             .update({ saldo_bancario: novoSaldoBancario })
             .eq('id', partnershipId);
+          
+          // Registrar movimentação no extrato
+          await supabase.from('balance_movements' as any).insert({
+            partnership_id: partnershipId,
+            user_id: user?.id,
+            tipo: 'debito',
+            valor: totalDepositado,
+            saldo_anterior: saldoBancario,
+            saldo_novo: novoSaldoBancario,
+            descricao: `Depósito automático em ${houseBets.map(b => b.houseName).join(', ')}`,
+          });
         }
       } catch (error) {
         console.error('Erro ao debitar saldos:', error);
