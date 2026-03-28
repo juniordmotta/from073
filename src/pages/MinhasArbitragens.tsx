@@ -1887,9 +1887,14 @@ export default function MinhasArbitragens() {
             {(() => {
               const activePartnerships = partnerships.filter(p => p.status === 'ativo');
               
-              const addButton = (
+              const addButton = isMobile ? (
                 <Button size="icon" className="h-8 w-8 shrink-0" onClick={() => setOpenAdd(true)}>
                   <Plus className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button size="sm" className="h-8 gap-1.5 shrink-0" onClick={() => setOpenAdd(true)}>
+                  <Plus className="h-4 w-4" />
+                  Adicionar Arbitragem
                 </Button>
               );
 
