@@ -1979,8 +1979,8 @@ export default function MinhasArbitragens() {
           </div>
 
         {/* Filtros agrupados */}
-        <div className="flex flex-col gap-2">
-          {/* Linha 1: Filtros de Data */}
+        <div className="flex flex-col md:flex-row gap-2">
+          {/* Filtros de Data */}
           <div className="flex items-center gap-1 flex-wrap">
             <div className="flex rounded-md border overflow-hidden">
               <Button
@@ -2045,8 +2045,8 @@ export default function MinhasArbitragens() {
             </div>
           </div>
 
-          {/* Linha 2: Status + Operador + Parceria */}
-          <div className="flex items-center gap-1 flex-wrap">
+          {/* Status + Operador + Parceria - same line on desktop */}
+          <div className="flex items-center gap-1 flex-wrap md:border-l md:pl-2">
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className="h-8 justify-between text-xs gap-1">
@@ -2156,7 +2156,7 @@ export default function MinhasArbitragens() {
         {filteredArbitragens.length > 0 && (
           <div className="space-y-2">
             {/* Row 1: Investido + Total/Lucro/ROI side by side */}
-            <div className="grid gap-2 grid-cols-2 md:grid-cols-[1fr_1fr_2fr_1fr]">
+            <div className="grid gap-2 grid-cols-2 md:grid-cols-[1fr_1fr_2.5fr_1.5fr]">
               {/* Total Investido */}
               <div className="rounded-lg border bg-card p-2 animate-fade-in">
                 <div className="flex items-center gap-1 mb-0.5">
