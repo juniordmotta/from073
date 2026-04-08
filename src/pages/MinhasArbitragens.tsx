@@ -2322,6 +2322,36 @@ export default function MinhasArbitragens() {
                   />
                 </div>
               )}
+
+              {/* Saldos das Parcerias - desktop only */}
+              {partnershipBalances.length > 0 && (
+                <div className="rounded-lg border bg-card p-2 animate-fade-in hidden md:flex md:flex-col" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
+                  <div className="flex items-center gap-1 mb-1">
+                    <Building2 className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-[10px] text-muted-foreground">Saldos</span>
+                  </div>
+                  <div className="flex-1 space-y-0.5 overflow-auto max-h-[80px]">
+                    {partnershipBalances.map((p) => (
+                      <div key={p.id} className="flex items-center justify-between text-[9px] leading-tight">
+                        <span className="text-muted-foreground truncate mr-1">{p.nome}</span>
+                        <span className="font-medium whitespace-nowrap">
+                          <span className="text-muted-foreground">{formatCurrency(p.saldoBancario)}</span>
+                          <span className="text-muted-foreground mx-0.5">+</span>
+                          <span className="text-muted-foreground">{formatCurrency(p.saldoCasas)}</span>
+                          <span className="mx-0.5">=</span>
+                          <span className="font-bold">{formatCurrency(p.total)}</span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="border-t mt-1 pt-1 flex items-center justify-between">
+                    <span className="text-[10px] text-muted-foreground font-medium">Total</span>
+                    <span className="text-sm font-bold">
+                      R$ {formatCurrency(partnershipBalances.reduce((s, p) => s + p.total, 0))}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Mobile only: Lucro do Mês full width */}
