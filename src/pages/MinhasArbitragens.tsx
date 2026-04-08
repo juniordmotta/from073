@@ -2219,7 +2219,7 @@ export default function MinhasArbitragens() {
         {filteredArbitragens.length > 0 && (
           <div className="space-y-2">
             {/* Row 1: Investido + Total/Lucro/ROI side by side */}
-            <div className="grid gap-2 grid-cols-2 md:grid-cols-[1.2fr_1.2fr_3fr_1.5fr_1.5fr]">
+            <div className="grid gap-2 grid-cols-2 md:grid-cols-[1.5fr_1.2fr_3fr_1.5fr_1.5fr]">
               {/* Total Investido */}
               <div className="rounded-lg border bg-card p-2 animate-fade-in">
                 <div className="flex items-center gap-1 mb-0.5">
