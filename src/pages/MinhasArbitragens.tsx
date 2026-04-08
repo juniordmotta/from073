@@ -234,6 +234,15 @@ export default function MinhasArbitragens() {
   // Estado para custos operacionais do mês
   const [monthlyCosts, setMonthlyCosts] = useState(0);
   
+  // Estado para saldos das parcerias (banco + casas)
+  const [partnershipBalances, setPartnershipBalances] = useState<Array<{
+    id: string;
+    nome: string;
+    saldoBancario: number;
+    saldoCasas: number;
+    total: number;
+  }>>([]);
+  
   // Forçar visualização em cards no mobile
   useEffect(() => {
     if (isMobile) {
