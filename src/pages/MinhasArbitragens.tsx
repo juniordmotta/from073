@@ -930,6 +930,60 @@ export default function MinhasArbitragens() {
     loadMonthlyCosts();
   }, [loadMonthlyCosts]);
 
+  // Carregar saldos das parcerias (banco + casas)
+  const loadPartnershipBalances = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      let query = supabase
+        .from('partnerships')
+        .select('id, nome_completo, saldo_bancario')
+        .eq('status', 'ativo');
+      
+      if (!isAdmin) {
+        query = query.eq('user_id', user.id);
+      } else if (debouncedFilterUser.length > 0) {
+        query = query.in('user_id', debouncedFilterUser);
+      }
+
+      const { data: partnershipsData } = await query;
+      if (!partnershipsData || partnershipsData.length === 0) {
+        setPartnershipBalances([]);
+        return;
+      }
+
+      const ids = partnershipsData.map(p => p.id);
+      const { data: housesData } = await supabase
+        .from('partnership_houses')
+        .select('partnership_id, saldo')
+        .in('partnership_id', ids);
+
+      const houseSumMap = new Map<string, number>();
+      (housesData || []).forEach(h => {
+        const prev = houseSumMap.get(h.partnership_id) || 0;
+        houseSumMap.set(h.partnership_id, prev + Number(h.saldo || 0));
+      });
+
+      const balances = partnershipsData.map(p => {
+        const saldoBancario = Number(p.saldo_bancario || 0);
+        const saldoCasas = houseSumMap.get(p.id) || 0;
+        return {
+          id: p.id,
+          nome: formatUserName(p.nome_completo),
+          saldoBancario,
+          saldoCasas,
+          total: saldoBancario + saldoCasas,
+        };
+      });
+
+      setPartnershipBalances(balances);
+    } catch (error) {
+      console.error('Erro ao carregar saldos das parcerias:', error);
+    }
+  }, [user?.id, isAdmin, debouncedFilterUser]);
+
+  useEffect(() => {
+    loadPartnershipBalances();
+  }, [loadPartnershipBalances]);
 
   useEffect(() => {
     const loadCustomHousesUrls = async () => {
