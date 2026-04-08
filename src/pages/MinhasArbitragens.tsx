@@ -234,6 +234,15 @@ export default function MinhasArbitragens() {
   // Estado para custos operacionais do mês
   const [monthlyCosts, setMonthlyCosts] = useState(0);
   
+  // Estado para saldos das parcerias (banco + casas)
+  const [partnershipBalances, setPartnershipBalances] = useState<Array<{
+    id: string;
+    nome: string;
+    saldoBancario: number;
+    saldoCasas: number;
+    total: number;
+  }>>([]);
+  
   // Forçar visualização em cards no mobile
   useEffect(() => {
     if (isMobile) {
@@ -921,6 +930,60 @@ export default function MinhasArbitragens() {
     loadMonthlyCosts();
   }, [loadMonthlyCosts]);
 
+  // Carregar saldos das parcerias (banco + casas)
+  const loadPartnershipBalances = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      let query = supabase
+        .from('partnerships')
+        .select('id, nome_completo, saldo_bancario')
+        .eq('status', 'ativo');
+      
+      if (!isAdmin) {
+        query = query.eq('user_id', user.id);
+      } else if (debouncedFilterUser.length > 0) {
+        query = query.in('user_id', debouncedFilterUser);
+      }
+
+      const { data: partnershipsData } = await query;
+      if (!partnershipsData || partnershipsData.length === 0) {
+        setPartnershipBalances([]);
+        return;
+      }
+
+      const ids = partnershipsData.map(p => p.id);
+      const { data: housesData } = await supabase
+        .from('partnership_houses')
+        .select('partnership_id, saldo')
+        .in('partnership_id', ids);
+
+      const houseSumMap = new Map<string, number>();
+      (housesData || []).forEach(h => {
+        const prev = houseSumMap.get(h.partnership_id) || 0;
+        houseSumMap.set(h.partnership_id, prev + Number(h.saldo || 0));
+      });
+
+      const balances = partnershipsData.map(p => {
+        const saldoBancario = Number(p.saldo_bancario || 0);
+        const saldoCasas = houseSumMap.get(p.id) || 0;
+        return {
+          id: p.id,
+          nome: formatUserName(p.nome_completo),
+          saldoBancario,
+          saldoCasas,
+          total: saldoBancario + saldoCasas,
+        };
+      });
+
+      setPartnershipBalances(balances);
+    } catch (error) {
+      console.error('Erro ao carregar saldos das parcerias:', error);
+    }
+  }, [user?.id, isAdmin, debouncedFilterUser]);
+
+  useEffect(() => {
+    loadPartnershipBalances();
+  }, [loadPartnershipBalances]);
 
   useEffect(() => {
     const loadCustomHousesUrls = async () => {
@@ -2156,7 +2219,7 @@ export default function MinhasArbitragens() {
         {filteredArbitragens.length > 0 && (
           <div className="space-y-2">
             {/* Row 1: Investido + Total/Lucro/ROI side by side */}
-            <div className="grid gap-2 grid-cols-2 md:grid-cols-[1fr_1fr_3fr_2fr]">
+            <div className="grid gap-2 grid-cols-2 md:grid-cols-[1fr_1fr_2.5fr_1.5fr_1.5fr]">
               {/* Total Investido */}
               <div className="rounded-lg border bg-card p-2 animate-fade-in">
                 <div className="flex items-center gap-1 mb-0.5">
@@ -2257,6 +2320,36 @@ export default function MinhasArbitragens() {
                     currentProfit={goalProfit}
                     compact
                   />
+                </div>
+              )}
+
+              {/* Saldos das Parcerias - desktop only */}
+              {partnershipBalances.length > 0 && (
+                <div className="rounded-lg border bg-card p-2 animate-fade-in hidden md:flex md:flex-col" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
+                  <div className="flex items-center gap-1 mb-1">
+                    <Building2 className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-[10px] text-muted-foreground">Saldos</span>
+                  </div>
+                  <div className="flex-1 space-y-0.5 overflow-auto max-h-[80px]">
+                    {partnershipBalances.map((p) => (
+                      <div key={p.id} className="flex items-center justify-between text-[9px] leading-tight">
+                        <span className="text-muted-foreground truncate mr-1">{p.nome}</span>
+                        <span className="font-medium whitespace-nowrap">
+                          <span className="text-muted-foreground">{formatCurrency(p.saldoBancario)}</span>
+                          <span className="text-muted-foreground mx-0.5">+</span>
+                          <span className="text-muted-foreground">{formatCurrency(p.saldoCasas)}</span>
+                          <span className="mx-0.5">=</span>
+                          <span className="font-bold">{formatCurrency(p.total)}</span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="border-t mt-1 pt-1 flex items-center justify-between">
+                    <span className="text-[10px] text-muted-foreground font-medium">Total</span>
+                    <span className="text-sm font-bold">
+                      R$ {formatCurrency(partnershipBalances.reduce((s, p) => s + p.total, 0))}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
