@@ -401,9 +401,8 @@ export default function MinhasArbitragens() {
     return (totais.totalInvestido / totalBanca) * 100;
   }, [totais.totalInvestido, totalBanca]);
 
-  // Calcular lucro para meta (sempre mês atual, apenas filtro de operador)
+  // Calcular lucro para meta (sempre mês atual, sempre do usuário logado, sem filtros)
   const goalProfit = useMemo(() => {
-    // Definir período do mês atual
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
     const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
@@ -416,9 +415,9 @@ export default function MinhasArbitragens() {
       return arbDate >= firstDayOfMonth && arbDate <= lastDayOfMonth;
     });
 
-    // Aplicar apenas filtro de operador
-    if (debouncedFilterUser.length > 0) {
-      filtered = filtered.filter((arb) => debouncedFilterUser.includes(arb.user_id));
+    // Sempre filtrar pelo usuário logado, independente dos filtros
+    if (user?.id) {
+      filtered = filtered.filter((arb) => arb.user_id === user.id);
     }
 
     // Calcular lucro total (incluindo aguardando e fechados)
@@ -426,7 +425,7 @@ export default function MinhasArbitragens() {
       const lucro = arb.status === 'aguardando' ? Number(arb.lucro_projetado) : Number(arb.lucro_real);
       return sum + lucro;
     }, 0);
-  }, [arbitragens, debouncedFilterUser]);
+  }, [arbitragens, user?.id]);
 
   const applyFilters = useCallback(() => {
     let filtered = [...arbitragens];
@@ -930,24 +929,21 @@ export default function MinhasArbitragens() {
     loadMonthlyCosts();
   }, [loadMonthlyCosts]);
 
-  // Carregar saldos das parcerias (banco + casas)
+  // Carregar saldos das parcerias (banco + casas) - sempre do usuário logado
+  const [isLoadingBalances, setIsLoadingBalances] = useState(true);
   const loadPartnershipBalances = useCallback(async () => {
     if (!user?.id) return;
     try {
-      let query = supabase
+      // Sempre buscar parcerias do usuário logado, independente dos filtros
+      const { data: partnershipsData } = await supabase
         .from('partnerships')
         .select('id, nome_completo, saldo_bancario')
-        .eq('status', 'ativo');
-      
-      if (!isAdmin) {
-        query = query.eq('user_id', user.id);
-      } else if (debouncedFilterUser.length > 0) {
-        query = query.in('user_id', debouncedFilterUser);
-      }
+        .eq('status', 'ativo')
+        .eq('user_id', user.id);
 
-      const { data: partnershipsData } = await query;
       if (!partnershipsData || partnershipsData.length === 0) {
         setPartnershipBalances([]);
+        setIsLoadingBalances(false);
         return;
       }
 
@@ -978,8 +974,10 @@ export default function MinhasArbitragens() {
       setPartnershipBalances(balances);
     } catch (error) {
       console.error('Erro ao carregar saldos das parcerias:', error);
+    } finally {
+      setIsLoadingBalances(false);
     }
-  }, [user?.id, isAdmin, debouncedFilterUser]);
+  }, [user?.id]);
 
   useEffect(() => {
     loadPartnershipBalances();
@@ -1362,8 +1360,9 @@ export default function MinhasArbitragens() {
         ...(useTresCasas && formData.casa_03_nome ? [{ partnershipId: selectedPartnership03, houseName: formData.casa_03_nome, valor: parseFloat(formData.casa_03_valor) }] : []),
       ]);
 
-      // Recarregar stats do mês para atualizar o card de lucro
+      // Recarregar stats do mês e saldos para atualizar os cards
       loadUserMonthStats();
+      loadPartnershipBalances();
       
       toast({
         title: 'Arbitragem criada!',
@@ -1491,6 +1490,7 @@ export default function MinhasArbitragens() {
       }
 
       loadUserMonthStats();
+      loadPartnershipBalances();
       
       toast({
         title: isLucro ? 'Lucro registrado' : 'Prejuízo registrado',
@@ -1638,8 +1638,9 @@ export default function MinhasArbitragens() {
         description: error.message,
       });
     } else {
-      // Recarregar stats do mês para atualizar o card de lucro
+      // Recarregar stats do mês e saldos para atualizar os cards
       loadUserMonthStats();
+      loadPartnershipBalances();
       toast({
         title: 'Resultado atualizado!',
         description: 'O resultado foi registrado com sucesso.',
@@ -1672,6 +1673,7 @@ export default function MinhasArbitragens() {
     } else {
       // Recarregar stats do mês para atualizar o card de lucro
       loadUserMonthStats();
+      loadPartnershipBalances();
       toast({
         title: 'Arbitragem excluída!',
         description: 'A arbitragem foi removida com sucesso.',
@@ -2316,7 +2318,6 @@ export default function MinhasArbitragens() {
                 <div className="animate-fade-in hidden md:block" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
                   <MonthlyGoalCard
                     userId={user.id}
-                    selectedUserIds={isAdmin && filterUser.length > 0 ? filterUser : undefined}
                     currentProfit={goalProfit}
                     compact
                   />
@@ -2324,32 +2325,44 @@ export default function MinhasArbitragens() {
               )}
 
               {/* Saldos das Parcerias - desktop only */}
-              {partnershipBalances.length > 0 && (
+              {(isLoadingBalances || partnershipBalances.length > 0) && (
                 <div className="rounded-lg border bg-card p-2 animate-fade-in hidden md:flex md:flex-col" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
                   <div className="flex items-center gap-1 mb-1">
                     <Building2 className="h-3 w-3 text-muted-foreground" />
                     <span className="text-[10px] text-muted-foreground">Saldos</span>
                   </div>
-                  <div className="flex-1 space-y-0.5 overflow-auto max-h-[80px]">
-                    {partnershipBalances.map((p) => (
-                      <div key={p.id} className="flex items-center justify-between text-[9px] leading-tight">
-                        <span className="text-muted-foreground truncate mr-1">{p.nome}</span>
-                        <span className="font-medium whitespace-nowrap">
-                          <span className="text-muted-foreground">{formatCurrency(p.saldoBancario)}</span>
-                          <span className="text-muted-foreground mx-0.5">+</span>
-                          <span className="text-muted-foreground">{formatCurrency(p.saldoCasas)}</span>
-                          <span className="mx-0.5">=</span>
-                          <span className="font-bold">{formatCurrency(p.total)}</span>
+                  {isLoadingBalances ? (
+                    <div className="flex-1 space-y-1.5">
+                      <div className="h-3 w-full rounded bg-muted animate-pulse" />
+                      <div className="h-3 w-3/4 rounded bg-muted animate-pulse" />
+                      <div className="border-t mt-1 pt-1">
+                        <div className="h-4 w-1/2 rounded bg-muted animate-pulse ml-auto" />
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex-1 space-y-0.5 overflow-auto max-h-[80px]">
+                        {partnershipBalances.map((p) => (
+                          <div key={p.id} className="flex items-center justify-between text-[9px] leading-tight">
+                            <span className="text-muted-foreground truncate mr-1">{p.nome}</span>
+                            <span className="font-medium whitespace-nowrap">
+                              <span className="text-muted-foreground">{formatCurrency(p.saldoBancario)}</span>
+                              <span className="text-muted-foreground mx-0.5">+</span>
+                              <span className="text-muted-foreground">{formatCurrency(p.saldoCasas)}</span>
+                              <span className="mx-0.5">=</span>
+                              <span className="font-bold">{formatCurrency(p.total)}</span>
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="border-t mt-1 pt-1 flex items-center justify-between">
+                        <span className="text-[10px] text-muted-foreground font-medium">Total</span>
+                        <span className="text-sm font-bold">
+                          R$ {formatCurrency(partnershipBalances.reduce((s, p) => s + p.total, 0))}
                         </span>
                       </div>
-                    ))}
-                  </div>
-                  <div className="border-t mt-1 pt-1 flex items-center justify-between">
-                    <span className="text-[10px] text-muted-foreground font-medium">Total</span>
-                    <span className="text-sm font-bold">
-                      R$ {formatCurrency(partnershipBalances.reduce((s, p) => s + p.total, 0))}
-                    </span>
-                  </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -2407,7 +2420,6 @@ export default function MinhasArbitragens() {
               <div className="animate-fade-in md:hidden" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
                 <MonthlyGoalCard
                   userId={user.id}
-                  selectedUserIds={isAdmin && filterUser.length > 0 ? filterUser : undefined}
                   currentProfit={goalProfit}
                   compact
                 />
