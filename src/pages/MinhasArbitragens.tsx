@@ -401,9 +401,8 @@ export default function MinhasArbitragens() {
     return (totais.totalInvestido / totalBanca) * 100;
   }, [totais.totalInvestido, totalBanca]);
 
-  // Calcular lucro para meta (sempre mês atual, apenas filtro de operador)
+  // Calcular lucro para meta (sempre mês atual, sempre do usuário logado, sem filtros)
   const goalProfit = useMemo(() => {
-    // Definir período do mês atual
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
     const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
@@ -416,9 +415,9 @@ export default function MinhasArbitragens() {
       return arbDate >= firstDayOfMonth && arbDate <= lastDayOfMonth;
     });
 
-    // Aplicar apenas filtro de operador
-    if (debouncedFilterUser.length > 0) {
-      filtered = filtered.filter((arb) => debouncedFilterUser.includes(arb.user_id));
+    // Sempre filtrar pelo usuário logado, independente dos filtros
+    if (user?.id) {
+      filtered = filtered.filter((arb) => arb.user_id === user.id);
     }
 
     // Calcular lucro total (incluindo aguardando e fechados)
@@ -426,7 +425,7 @@ export default function MinhasArbitragens() {
       const lucro = arb.status === 'aguardando' ? Number(arb.lucro_projetado) : Number(arb.lucro_real);
       return sum + lucro;
     }, 0);
-  }, [arbitragens, debouncedFilterUser]);
+  }, [arbitragens, user?.id]);
 
   const applyFilters = useCallback(() => {
     let filtered = [...arbitragens];
