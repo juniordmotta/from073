@@ -1908,45 +1908,7 @@ export default function MinhasArbitragens() {
               )}
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setViewMode(viewMode === 'table' ? 'cards' : 'table')}
-              className="gap-2 h-8 hidden md:flex"
-            >
-              {viewMode === 'table' ? (
-                <>
-                  <LayoutGrid className="h-4 w-4" />
-                  Cards
-                </>
-              ) : (
-                <>
-                  <TableIcon className="h-4 w-4" />
-                  Tabela
-                </>
-              )}
-            </Button>
 
-            {viewMode === 'table' && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsExpandedView(!isExpandedView)}
-                className="gap-2 h-8"
-              >
-                {isExpandedView ? (
-                  <>
-                    <Minimize2 className="h-4 w-4" />
-                    Compacto
-                  </>
-                ) : (
-                  <>
-                    <Maximize2 className="h-4 w-4" />
-                    Expandido
-                  </>
-                )}
-              </Button>
-            )}
 
             {/* Botão Ir para Casas + Adicionar */}
             {(() => {
