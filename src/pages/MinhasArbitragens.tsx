@@ -1361,8 +1361,9 @@ export default function MinhasArbitragens() {
         ...(useTresCasas && formData.casa_03_nome ? [{ partnershipId: selectedPartnership03, houseName: formData.casa_03_nome, valor: parseFloat(formData.casa_03_valor) }] : []),
       ]);
 
-      // Recarregar stats do mês para atualizar o card de lucro
+      // Recarregar stats do mês e saldos para atualizar os cards
       loadUserMonthStats();
+      loadPartnershipBalances();
       
       toast({
         title: 'Arbitragem criada!',
@@ -1490,6 +1491,7 @@ export default function MinhasArbitragens() {
       }
 
       loadUserMonthStats();
+      loadPartnershipBalances();
       
       toast({
         title: isLucro ? 'Lucro registrado' : 'Prejuízo registrado',
@@ -1637,8 +1639,9 @@ export default function MinhasArbitragens() {
         description: error.message,
       });
     } else {
-      // Recarregar stats do mês para atualizar o card de lucro
+      // Recarregar stats do mês e saldos para atualizar os cards
       loadUserMonthStats();
+      loadPartnershipBalances();
       toast({
         title: 'Resultado atualizado!',
         description: 'O resultado foi registrado com sucesso.',
@@ -1671,6 +1674,7 @@ export default function MinhasArbitragens() {
     } else {
       // Recarregar stats do mês para atualizar o card de lucro
       loadUserMonthStats();
+      loadPartnershipBalances();
       toast({
         title: 'Arbitragem excluída!',
         description: 'A arbitragem foi removida com sucesso.',
