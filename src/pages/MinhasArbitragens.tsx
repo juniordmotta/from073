@@ -929,24 +929,21 @@ export default function MinhasArbitragens() {
     loadMonthlyCosts();
   }, [loadMonthlyCosts]);
 
-  // Carregar saldos das parcerias (banco + casas)
+  // Carregar saldos das parcerias (banco + casas) - sempre do usuário logado
+  const [isLoadingBalances, setIsLoadingBalances] = useState(true);
   const loadPartnershipBalances = useCallback(async () => {
     if (!user?.id) return;
     try {
-      let query = supabase
+      // Sempre buscar parcerias do usuário logado, independente dos filtros
+      const { data: partnershipsData } = await supabase
         .from('partnerships')
         .select('id, nome_completo, saldo_bancario')
-        .eq('status', 'ativo');
-      
-      if (!isAdmin) {
-        query = query.eq('user_id', user.id);
-      } else if (debouncedFilterUser.length > 0) {
-        query = query.in('user_id', debouncedFilterUser);
-      }
+        .eq('status', 'ativo')
+        .eq('user_id', user.id);
 
-      const { data: partnershipsData } = await query;
       if (!partnershipsData || partnershipsData.length === 0) {
         setPartnershipBalances([]);
+        setIsLoadingBalances(false);
         return;
       }
 
@@ -977,8 +974,10 @@ export default function MinhasArbitragens() {
       setPartnershipBalances(balances);
     } catch (error) {
       console.error('Erro ao carregar saldos das parcerias:', error);
+    } finally {
+      setIsLoadingBalances(false);
     }
-  }, [user?.id, isAdmin, debouncedFilterUser]);
+  }, [user?.id]);
 
   useEffect(() => {
     loadPartnershipBalances();
