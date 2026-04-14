@@ -2315,7 +2315,6 @@ export default function MinhasArbitragens() {
                 <div className="animate-fade-in hidden md:block" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
                   <MonthlyGoalCard
                     userId={user.id}
-                    selectedUserIds={isAdmin && filterUser.length > 0 ? filterUser : undefined}
                     currentProfit={goalProfit}
                     compact
                   />
@@ -2406,7 +2405,6 @@ export default function MinhasArbitragens() {
               <div className="animate-fade-in md:hidden" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
                 <MonthlyGoalCard
                   userId={user.id}
-                  selectedUserIds={isAdmin && filterUser.length > 0 ? filterUser : undefined}
                   currentProfit={goalProfit}
                   compact
                 />
