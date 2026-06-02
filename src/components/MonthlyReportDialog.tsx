@@ -108,16 +108,16 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
             .select(
               'id, status, lucro_real, lucro_projetado, casa_01_nome, casa_02_nome, casa_03_nome, casa_01_valor, casa_02_valor, casa_03_valor, casa_01_parceria_id, casa_02_parceria_id, casa_03_parceria_id, created_at'
             )
-            .eq('user_id', userId)
+            .eq('user_id', selectedUserId)
             .gte('created_at', first.toISOString())
             .lte('created_at', last.toISOString()),
           supabase
             .from('operational_costs')
             .select('valor')
-            .eq('user_id', userId)
+            .eq('user_id', selectedUserId)
             .gte('data', format(first, 'yyyy-MM-dd'))
             .lte('data', format(last, 'yyyy-MM-dd')),
-          supabase.from('partnerships').select('id, nome_completo').eq('user_id', userId),
+          supabase.from('partnerships').select('id, nome_completo').eq('user_id', selectedUserId),
         ]);
 
         const arbs = arbsRes.data || [];
