@@ -8,6 +8,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import {
   TrendingUp,
   TrendingDown,
@@ -20,13 +22,22 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
+  Download,
+  User,
 } from 'lucide-react';
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   userId: string;
+  isAdmin?: boolean;
 }
+
+interface ProfileOption {
+  id: string;
+  name: string;
+}
+
 
 interface ReportData {
   lucroBruto: number;
@@ -55,14 +66,34 @@ function buildMonthOptions(): { value: string; label: string }[] {
   return opts;
 }
 
-export function MonthlyReportDialog({ open, onOpenChange, userId }: Props) {
+export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = false }: Props) {
   const monthOptions = useMemo(buildMonthOptions, []);
   const [selectedMonth, setSelectedMonth] = useState(monthOptions[0].value);
+  const [selectedUserId, setSelectedUserId] = useState(userId);
+  const [profiles, setProfiles] = useState<ProfileOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ReportData | null>(null);
 
+  // Carregar lista de usuários para admins
   useEffect(() => {
-    if (!open || !userId) return;
+    if (!open || !isAdmin) return;
+    supabase
+      .from('profiles')
+      .select('id, name')
+      .order('name')
+      .then(({ data, error }) => {
+        if (!error && data) setProfiles(data as ProfileOption[]);
+      });
+  }, [open, isAdmin]);
+
+  // Resetar usuário ao abrir
+  useEffect(() => {
+    if (open) setSelectedUserId(userId);
+  }, [open, userId]);
+
+  useEffect(() => {
+    if (!open || !selectedUserId) return;
+
 
     const load = async () => {
       setLoading(true);
@@ -77,16 +108,16 @@ export function MonthlyReportDialog({ open, onOpenChange, userId }: Props) {
             .select(
               'id, status, lucro_real, lucro_projetado, casa_01_nome, casa_02_nome, casa_03_nome, casa_01_valor, casa_02_valor, casa_03_valor, casa_01_parceria_id, casa_02_parceria_id, casa_03_parceria_id, created_at'
             )
-            .eq('user_id', userId)
+            .eq('user_id', selectedUserId)
             .gte('created_at', first.toISOString())
             .lte('created_at', last.toISOString()),
           supabase
             .from('operational_costs')
             .select('valor')
-            .eq('user_id', userId)
+            .eq('user_id', selectedUserId)
             .gte('data', format(first, 'yyyy-MM-dd'))
             .lte('data', format(last, 'yyyy-MM-dd')),
-          supabase.from('partnerships').select('id, nome_completo').eq('user_id', userId),
+          supabase.from('partnerships').select('id, nome_completo').eq('user_id', selectedUserId),
         ]);
 
         const arbs = arbsRes.data || [];
@@ -162,9 +193,72 @@ export function MonthlyReportDialog({ open, onOpenChange, userId }: Props) {
     };
 
     load();
-  }, [open, userId, selectedMonth]);
+  }, [open, selectedUserId, selectedMonth]);
 
   const monthLabel = monthOptions.find((o) => o.value === selectedMonth)?.label || '';
+  const selectedUserName =
+    profiles.find((p) => p.id === selectedUserId)?.name ||
+    (selectedUserId === userId ? 'Meu relatório' : '');
+
+  const exportPdf = () => {
+    if (!data) return;
+    const doc = new jsPDF();
+    const fc = (v: number) => `R$ ${formatCurrency(v)}`;
+
+    doc.setFontSize(16);
+    doc.text('Relatório Mensal', 14, 18);
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Período: ${monthLabel}`, 14, 26);
+    if (selectedUserName) doc.text(`Usuário: ${selectedUserName}`, 14, 32);
+    doc.setTextColor(0);
+
+    autoTable(doc, {
+      startY: 38,
+      head: [['Indicador', 'Valor']],
+      body: [
+        ['Lucro Bruto', fc(data.lucroBruto)],
+        ['Despesas', fc(data.despesas)],
+        ['Lucro Líquido', fc(data.lucroLiquido)],
+        ['ROI', `${formatCurrency(data.roi)}%`],
+        ['Total Investido', fc(data.totalInvestido)],
+        ['Quantidade de Apostas', String(data.totalApostas)],
+        ['Apostas em Aberto', String(data.apostasAbertas)],
+        ['Apostas Fechadas', String(data.apostasFechadas)],
+        ['Dias Trabalhados', String(data.diasTrabalhados)],
+        ['Média por Dia', fc(data.mediaPorDia)],
+      ],
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [30, 41, 59] },
+    });
+
+    const afterFinancials = (doc as any).lastAutoTable.finalY + 8;
+    autoTable(doc, {
+      startY: afterFinancials,
+      head: [['Parcerias Usadas', 'Usos']],
+      body:
+        data.parcerias.length > 0
+          ? data.parcerias.map((p) => [p.nome, String(p.usos)])
+          : [['Nenhuma parceria usada', '-']],
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [30, 41, 59] },
+    });
+
+    const afterParts = (doc as any).lastAutoTable.finalY + 8;
+    autoTable(doc, {
+      startY: afterParts,
+      head: [['Casas mais usadas', 'Usos']],
+      body:
+        data.casas.length > 0
+          ? data.casas.map((c) => [c.nome, String(c.usos)])
+          : [['Nenhuma casa registrada', '-']],
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [30, 41, 59] },
+    });
+
+    const fileName = `relatorio-${selectedMonth}${selectedUserName ? '-' + selectedUserName.replace(/\s+/g, '_') : ''}.pdf`;
+    doc.save(fileName);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -173,21 +267,52 @@ export function MonthlyReportDialog({ open, onOpenChange, userId }: Props) {
           <DialogTitle>Relatório Mensal</DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-          <span className="text-sm text-muted-foreground">Selecione o mês:</span>
-          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-full sm:w-[240px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="max-h-[300px]">
-              {monthOptions.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <span className="text-sm text-muted-foreground sm:w-24">Mês:</span>
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-full sm:w-[240px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                {monthOptions.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {isAdmin && (
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <span className="text-sm text-muted-foreground sm:w-24 flex items-center gap-1">
+                <User className="h-3.5 w-3.5" /> Usuário:
+              </span>
+              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                <SelectTrigger className="w-full sm:w-[240px]">
+                  <SelectValue placeholder="Selecione um usuário" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  {profiles.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                      {p.id === userId ? ' (você)' : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <Button size="sm" variant="outline" onClick={exportPdf} disabled={!data || loading}>
+              <Download className="h-4 w-4" />
+              Exportar PDF
+            </Button>
+          </div>
         </div>
+
 
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
