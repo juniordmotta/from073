@@ -240,7 +240,17 @@ export default function Dashboard() {
   return (
     <Layout>
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <Button size="sm" variant="outline" onClick={() => setReportOpen(true)}>
+            <FileBarChart className="h-4 w-4" />
+            Relatório Mensal
+          </Button>
+        </div>
+
+        {user?.id && (
+          <MonthlyReportDialog open={reportOpen} onOpenChange={setReportOpen} userId={user.id} />
+        )}
 
         {/* Cards compactos */}
         <div className="grid gap-2 grid-cols-2 md:grid-cols-5">
