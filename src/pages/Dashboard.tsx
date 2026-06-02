@@ -6,10 +6,12 @@ import { useCountUp } from '@/hooks/useCountUp';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TrendingUp, TrendingDown, DollarSign, Target, Calendar, ChevronDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Target, Calendar, ChevronDown, FileBarChart } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatCurrency, formatUserName } from '@/lib/utils';
 import { MonthlyGoalCard } from '@/components/MonthlyGoalCard';
+import { MonthlyReportDialog } from '@/components/MonthlyReportDialog';
+import { Button } from '@/components/ui/button';
 
 interface OpenBetsStats {
   totalArbitragens: number;
@@ -38,6 +40,7 @@ export default function Dashboard() {
   const [openBets, setOpenBets] = useState<any[]>([]);
   const [totalBanca, setTotalBanca] = useState(0);
   const [expandedDashboardBet, setExpandedDashboardBet] = useState<string | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
@@ -237,7 +240,17 @@ export default function Dashboard() {
   return (
     <Layout>
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <Button size="sm" variant="outline" onClick={() => setReportOpen(true)}>
+            <FileBarChart className="h-4 w-4" />
+            Relatório Mensal
+          </Button>
+        </div>
+
+        {user?.id && (
+          <MonthlyReportDialog open={reportOpen} onOpenChange={setReportOpen} userId={user.id} />
+        )}
 
         {/* Cards compactos */}
         <div className="grid gap-2 grid-cols-2 md:grid-cols-5">
