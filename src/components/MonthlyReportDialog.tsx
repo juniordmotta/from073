@@ -8,6 +8,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import {
   TrendingUp,
   TrendingDown,
@@ -20,13 +22,22 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
+  Download,
+  User,
 } from 'lucide-react';
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   userId: string;
+  isAdmin?: boolean;
 }
+
+interface ProfileOption {
+  id: string;
+  name: string;
+}
+
 
 interface ReportData {
   lucroBruto: number;
