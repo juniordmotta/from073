@@ -6,10 +6,12 @@ import { useCountUp } from '@/hooks/useCountUp';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TrendingUp, TrendingDown, DollarSign, Target, Calendar, ChevronDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Target, Calendar, ChevronDown, FileBarChart } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatCurrency, formatUserName } from '@/lib/utils';
 import { MonthlyGoalCard } from '@/components/MonthlyGoalCard';
+import { MonthlyReportDialog } from '@/components/MonthlyReportDialog';
+import { Button } from '@/components/ui/button';
 
 interface OpenBetsStats {
   totalArbitragens: number;
