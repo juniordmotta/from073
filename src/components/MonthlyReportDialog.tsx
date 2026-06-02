@@ -196,6 +196,69 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
   }, [open, selectedUserId, selectedMonth]);
 
   const monthLabel = monthOptions.find((o) => o.value === selectedMonth)?.label || '';
+  const selectedUserName =
+    profiles.find((p) => p.id === selectedUserId)?.name ||
+    (selectedUserId === userId ? 'Meu relatório' : '');
+
+  const exportPdf = () => {
+    if (!data) return;
+    const doc = new jsPDF();
+    const fc = (v: number) => `R$ ${formatCurrency(v)}`;
+
+    doc.setFontSize(16);
+    doc.text('Relatório Mensal', 14, 18);
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Período: ${monthLabel}`, 14, 26);
+    if (selectedUserName) doc.text(`Usuário: ${selectedUserName}`, 14, 32);
+    doc.setTextColor(0);
+
+    autoTable(doc, {
+      startY: 38,
+      head: [['Indicador', 'Valor']],
+      body: [
+        ['Lucro Bruto', fc(data.lucroBruto)],
+        ['Despesas', fc(data.despesas)],
+        ['Lucro Líquido', fc(data.lucroLiquido)],
+        ['ROI', `${formatCurrency(data.roi)}%`],
+        ['Total Investido', fc(data.totalInvestido)],
+        ['Quantidade de Apostas', String(data.totalApostas)],
+        ['Apostas em Aberto', String(data.apostasAbertas)],
+        ['Apostas Fechadas', String(data.apostasFechadas)],
+        ['Dias Trabalhados', String(data.diasTrabalhados)],
+        ['Média por Dia', fc(data.mediaPorDia)],
+      ],
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [30, 41, 59] },
+    });
+
+    const afterFinancials = (doc as any).lastAutoTable.finalY + 8;
+    autoTable(doc, {
+      startY: afterFinancials,
+      head: [['Parcerias Usadas', 'Usos']],
+      body:
+        data.parcerias.length > 0
+          ? data.parcerias.map((p) => [p.nome, String(p.usos)])
+          : [['Nenhuma parceria usada', '-']],
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [30, 41, 59] },
+    });
+
+    const afterParts = (doc as any).lastAutoTable.finalY + 8;
+    autoTable(doc, {
+      startY: afterParts,
+      head: [['Casas mais usadas', 'Usos']],
+      body:
+        data.casas.length > 0
+          ? data.casas.map((c) => [c.nome, String(c.usos)])
+          : [['Nenhuma casa registrada', '-']],
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [30, 41, 59] },
+    });
+
+    const fileName = `relatorio-${selectedMonth}${selectedUserName ? '-' + selectedUserName.replace(/\s+/g, '_') : ''}.pdf`;
+    doc.save(fileName);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -204,21 +267,52 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
           <DialogTitle>Relatório Mensal</DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-          <span className="text-sm text-muted-foreground">Selecione o mês:</span>
-          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-full sm:w-[240px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="max-h-[300px]">
-              {monthOptions.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <span className="text-sm text-muted-foreground sm:w-24">Mês:</span>
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-full sm:w-[240px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                {monthOptions.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {isAdmin && (
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <span className="text-sm text-muted-foreground sm:w-24 flex items-center gap-1">
+                <User className="h-3.5 w-3.5" /> Usuário:
+              </span>
+              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                <SelectTrigger className="w-full sm:w-[240px]">
+                  <SelectValue placeholder="Selecione um usuário" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  {profiles.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                      {p.id === userId ? ' (você)' : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <Button size="sm" variant="outline" onClick={exportPdf} disabled={!data || loading}>
+              <Download className="h-4 w-4" />
+              Exportar PDF
+            </Button>
+          </div>
         </div>
+
 
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
