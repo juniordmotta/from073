@@ -40,6 +40,7 @@ export default function Dashboard() {
   const [openBets, setOpenBets] = useState<any[]>([]);
   const [totalBanca, setTotalBanca] = useState(0);
   const [expandedDashboardBet, setExpandedDashboardBet] = useState<string | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
