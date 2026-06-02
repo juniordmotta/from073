@@ -249,7 +249,7 @@ export default function Dashboard() {
         </div>
 
         {user?.id && (
-          <MonthlyReportDialog open={reportOpen} onOpenChange={setReportOpen} userId={user.id} />
+          <MonthlyReportDialog open={reportOpen} onOpenChange={setReportOpen} userId={user.id} isAdmin={isAdmin} />
         )}
 
         {/* Cards compactos */}
