@@ -193,7 +193,7 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
     };
 
     load();
-  }, [open, userId, selectedMonth]);
+  }, [open, selectedUserId, selectedMonth]);
 
   const monthLabel = monthOptions.find((o) => o.value === selectedMonth)?.label || '';
 
