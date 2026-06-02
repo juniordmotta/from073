@@ -66,14 +66,34 @@ function buildMonthOptions(): { value: string; label: string }[] {
   return opts;
 }
 
-export function MonthlyReportDialog({ open, onOpenChange, userId }: Props) {
+export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = false }: Props) {
   const monthOptions = useMemo(buildMonthOptions, []);
   const [selectedMonth, setSelectedMonth] = useState(monthOptions[0].value);
+  const [selectedUserId, setSelectedUserId] = useState(userId);
+  const [profiles, setProfiles] = useState<ProfileOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ReportData | null>(null);
 
+  // Carregar lista de usuários para admins
   useEffect(() => {
-    if (!open || !userId) return;
+    if (!open || !isAdmin) return;
+    supabase
+      .from('profiles')
+      .select('id, name')
+      .order('name')
+      .then(({ data, error }) => {
+        if (!error && data) setProfiles(data as ProfileOption[]);
+      });
+  }, [open, isAdmin]);
+
+  // Resetar usuário ao abrir
+  useEffect(() => {
+    if (open) setSelectedUserId(userId);
+  }, [open, userId]);
+
+  useEffect(() => {
+    if (!open || !selectedUserId) return;
+
 
     const load = async () => {
       setLoading(true);
