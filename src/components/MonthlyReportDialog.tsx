@@ -101,6 +101,8 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
   useEffect(() => {
     if (!open || !selectedUserId) return;
 
+    // Proteção dupla: operadores só consultam o próprio userId, ignorando qualquer manipulação de estado
+    const effectiveUserId = isAdmin ? selectedUserId : userId;
 
     const load = async () => {
       setLoading(true);
