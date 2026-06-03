@@ -91,6 +91,13 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
     if (open) setSelectedUserId(userId);
   }, [open, userId]);
 
+  // Proteção: operadores SEMPRE forçados ao próprio userId
+  useEffect(() => {
+    if (!isAdmin && selectedUserId !== userId) {
+      setSelectedUserId(userId);
+    }
+  }, [isAdmin, selectedUserId, userId]);
+
   useEffect(() => {
     if (!open || !selectedUserId) return;
 
