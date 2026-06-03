@@ -202,7 +202,7 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
     };
 
     load();
-  }, [open, selectedUserId, selectedMonth]);
+  }, [open, selectedUserId, selectedMonth, isAdmin, userId]);
 
   const monthLabel = monthOptions.find((o) => o.value === selectedMonth)?.label || '';
   const selectedUserName =
