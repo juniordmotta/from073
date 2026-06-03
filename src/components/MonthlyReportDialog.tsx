@@ -91,9 +91,18 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
     if (open) setSelectedUserId(userId);
   }, [open, userId]);
 
+  // Proteção: operadores SEMPRE forçados ao próprio userId
+  useEffect(() => {
+    if (!isAdmin && selectedUserId !== userId) {
+      setSelectedUserId(userId);
+    }
+  }, [isAdmin, selectedUserId, userId]);
+
   useEffect(() => {
     if (!open || !selectedUserId) return;
 
+    // Proteção dupla: operadores só consultam o próprio userId, ignorando qualquer manipulação de estado
+    const effectiveUserId = isAdmin ? selectedUserId : userId;
 
     const load = async () => {
       setLoading(true);
@@ -108,16 +117,16 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
             .select(
               'id, status, lucro_real, lucro_projetado, casa_01_nome, casa_02_nome, casa_03_nome, casa_01_valor, casa_02_valor, casa_03_valor, casa_01_parceria_id, casa_02_parceria_id, casa_03_parceria_id, created_at'
             )
-            .eq('user_id', selectedUserId)
+            .eq("user_id", effectiveUserId)
             .gte('created_at', first.toISOString())
             .lte('created_at', last.toISOString()),
           supabase
             .from('operational_costs')
             .select('valor')
-            .eq('user_id', selectedUserId)
+            .eq("user_id", effectiveUserId)
             .gte('data', format(first, 'yyyy-MM-dd'))
             .lte('data', format(last, 'yyyy-MM-dd')),
-          supabase.from('partnerships').select('id, nome_completo').eq('user_id', selectedUserId),
+          supabase.from('partnerships').select('id, nome_completo').eq("user_id", effectiveUserId),
         ]);
 
         const arbs = arbsRes.data || [];
@@ -193,7 +202,7 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
     };
 
     load();
-  }, [open, selectedUserId, selectedMonth]);
+  }, [open, selectedUserId, selectedMonth, isAdmin, userId]);
 
   const monthLabel = monthOptions.find((o) => o.value === selectedMonth)?.label || '';
   const selectedUserName =
