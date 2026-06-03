@@ -101,99 +101,27 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
   useEffect(() => {
     if (!open || !selectedUserId) return;
 
-    // Proteção dupla: operadores só consultam o próprio userId, ignorando qualquer manipulação de estado
-    const effectiveUserId = isAdmin ? selectedUserId : userId;
+    // Proteção front-end: operadores só pedem o próprio userId
+    const requestedUserId = isAdmin ? selectedUserId : userId;
 
     const load = async () => {
       setLoading(true);
       try {
-        const [y, m] = selectedMonth.split('-').map(Number);
-        const first = new Date(y, m - 1, 1, 0, 0, 0, 0);
-        const last = new Date(y, m, 0, 23, 59, 59, 999);
-
-        const [arbsRes, costsRes, partsRes] = await Promise.all([
-          supabase
-            .from('arbitrages')
-            .select(
-              'id, status, lucro_real, lucro_projetado, casa_01_nome, casa_02_nome, casa_03_nome, casa_01_valor, casa_02_valor, casa_03_valor, casa_01_parceria_id, casa_02_parceria_id, casa_03_parceria_id, created_at'
-            )
-            .eq("user_id", effectiveUserId)
-            .gte('created_at', first.toISOString())
-            .lte('created_at', last.toISOString()),
-          supabase
-            .from('operational_costs')
-            .select('valor')
-            .eq("user_id", effectiveUserId)
-            .gte('data', format(first, 'yyyy-MM-dd'))
-            .lte('data', format(last, 'yyyy-MM-dd')),
-          supabase.from('partnerships').select('id, nome_completo').eq("user_id", effectiveUserId),
-        ]);
-
-        const arbs = arbsRes.data || [];
-        const costs = costsRes.data || [];
-        const partsMap = new Map((partsRes.data || []).map((p: any) => [p.id, p.nome_completo]));
-
-        let lucroBruto = 0;
-        let totalInvestido = 0;
-        let apostasAbertas = 0;
-        let apostasFechadas = 0;
-        const dias = new Set<string>();
-        const casasMap = new Map<string, number>();
-        const parceriasMap = new Map<string, number>();
-
-        for (const a of arbs) {
-          const invest =
-            Number(a.casa_01_valor || 0) +
-            Number(a.casa_02_valor || 0) +
-            Number(a.casa_03_valor || 0);
-          totalInvestido += invest;
-
-          if (a.status === 'aguardando') {
-            apostasAbertas++;
-          } else {
-            apostasFechadas++;
-            lucroBruto += Number(a.lucro_real || 0);
+        // Chamada via edge function — o backend revalida o papel pelo JWT
+        // e força effectiveUserId = callerId quando o papel for operador,
+        // ignorando qualquer targetUserId manipulado no body.
+        const { data: resp, error } = await supabase.functions.invoke(
+          'monthly-report',
+          {
+            body: {
+              month: selectedMonth,
+              targetUserId: requestedUserId,
+            },
           }
+        );
 
-          dias.add(format(new Date(a.created_at), 'yyyy-MM-dd'));
-
-          [a.casa_01_nome, a.casa_02_nome, a.casa_03_nome].forEach((n) => {
-            if (n) casasMap.set(n, (casasMap.get(n) || 0) + 1);
-          });
-          [a.casa_01_parceria_id, a.casa_02_parceria_id, a.casa_03_parceria_id].forEach((pid) => {
-            if (pid) parceriasMap.set(pid, (parceriasMap.get(pid) || 0) + 1);
-          });
-        }
-
-        const despesas = costs.reduce((s: number, c: any) => s + Number(c.valor || 0), 0);
-        const lucroLiquido = lucroBruto - despesas;
-        const roi = totalInvestido > 0 ? (lucroBruto / totalInvestido) * 100 : 0;
-        const diasTrabalhados = dias.size;
-        const mediaPorDia = diasTrabalhados > 0 ? lucroBruto / diasTrabalhados : 0;
-
-        const casas = Array.from(casasMap.entries())
-          .map(([nome, usos]) => ({ nome, usos }))
-          .sort((a, b) => b.usos - a.usos)
-          .slice(0, 8);
-
-        const parcerias = Array.from(parceriasMap.entries())
-          .map(([id, usos]) => ({ id, nome: partsMap.get(id) || 'Parceria', usos }))
-          .sort((a, b) => b.usos - a.usos);
-
-        setData({
-          lucroBruto,
-          despesas,
-          lucroLiquido,
-          totalInvestido,
-          roi,
-          totalApostas: arbs.length,
-          apostasAbertas,
-          apostasFechadas,
-          diasTrabalhados,
-          mediaPorDia,
-          parcerias,
-          casas,
-        });
+        if (error) throw error;
+        if (resp?.data) setData(resp.data as ReportData);
       } catch (e) {
         console.error('Erro ao gerar relatório:', e);
       } finally {
