@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
         .lte("data", lastDate),
       admin
         .from("partnerships")
-        .select("id, nome_completo")
+        .select("id, nome_completo, status, saldo_bancario")
         .eq("user_id", effectiveUserId),
     ]);
 
