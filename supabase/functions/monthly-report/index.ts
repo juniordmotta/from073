@@ -77,15 +77,40 @@ Deno.serve(async (req) => {
         .lte("data", lastDate),
       admin
         .from("partnerships")
-        .select("id, nome_completo")
+        .select("id, nome_completo, status, saldo_bancario")
         .eq("user_id", effectiveUserId),
     ]);
 
     const arbs = arbsRes.data || [];
     const costs = costsRes.data || [];
-    const partsMap = new Map(
-      (partsRes.data || []).map((p: any) => [p.id, p.nome_completo])
-    );
+    const allParts = (partsRes.data || []) as any[];
+    const partsMap = new Map(allParts.map((p) => [p.id, p.nome_completo]));
+    const activeParts = allParts.filter((p) => p.status === "ativa");
+
+    // Buscar saldos das casas das parcerias ativas
+    const activeIds = activeParts.map((p) => p.id);
+    let housesByPart = new Map<string, number>();
+    if (activeIds.length > 0) {
+      const { data: housesRows } = await admin
+        .from("partnership_houses")
+        .select("partnership_id, saldo")
+        .in("partnership_id", activeIds);
+      for (const h of (housesRows || []) as any[]) {
+        housesByPart.set(
+          h.partnership_id,
+          (housesByPart.get(h.partnership_id) || 0) + Number(h.saldo || 0)
+        );
+      }
+    }
+
+    const saldosParceriasAtivas = activeParts
+      .map((p) => ({
+        id: p.id,
+        nome: p.nome_completo,
+        total:
+          Number(p.saldo_bancario || 0) + (housesByPart.get(p.id) || 0),
+      }))
+      .sort((a, b) => b.total - a.total);
 
     let lucroBruto = 0;
     let totalInvestido = 0;
@@ -158,6 +183,7 @@ Deno.serve(async (req) => {
         mediaPorDia,
         parcerias,
         casas,
+        saldosParceriasAtivas,
       },
     });
   } catch (e) {

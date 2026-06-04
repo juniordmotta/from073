@@ -52,6 +52,7 @@ interface ReportData {
   mediaPorDia: number;
   parcerias: { id: string; nome: string; usos: number }[];
   casas: { nome: string; usos: number }[];
+  saldosParceriasAtivas?: { id: string; nome: string; total: number }[];
 }
 
 function buildMonthOptions(): { value: string; label: string }[] {
@@ -260,6 +261,41 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
         ) : data ? (
           <div className="space-y-4 animate-fade-in">
             <h3 className="text-base font-semibold">{monthLabel}</h3>
+
+            {/* Saldo total das parcerias ativas (banco + casas) */}
+            {data.saldosParceriasAtivas && data.saldosParceriasAtivas.length > 0 && (
+              <Card className="p-2.5 bg-muted/30">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-[11px] text-muted-foreground">
+                    Saldo total das parcerias ativas (banco + casas)
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {data.saldosParceriasAtivas.map((p) => (
+                    <span
+                      key={p.id}
+                      className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2 py-0.5 text-[11px]"
+                    >
+                      <span className="font-medium">{p.nome}</span>
+                      <span
+                        className={`font-semibold ${p.total >= 0 ? 'text-success' : 'text-destructive'}`}
+                      >
+                        R$ {formatCurrency(p.total)}
+                      </span>
+                    </span>
+                  ))}
+                  <span className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/5 px-2 py-0.5 text-[11px]">
+                    <span className="font-medium text-muted-foreground">Total</span>
+                    <span className="font-bold text-primary">
+                      R$ {formatCurrency(
+                        data.saldosParceriasAtivas.reduce((s, p) => s + p.total, 0)
+                      )}
+                    </span>
+                  </span>
+                </div>
+              </Card>
+            )}
 
             {/* Métricas financeiras */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
