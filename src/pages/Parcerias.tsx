@@ -2007,14 +2007,27 @@ const Parcerias = () => {
                         </p>
                       </Card>
 
-                      {user?.id && selectedPartnershipId && (
-                        <MonthlyGoalCard
-                          userId={user.id}
-                          partnershipId={selectedPartnershipId}
-                          currentProfit={partnershipDetails.lucroLiquido}
-                          compact
-                        />
-                      )}
+                      {(() => {
+                        const somaLucroCasas = partnershipDetails.casas.reduce(
+                          (sum: number, c: any) => sum + (c.lucroLiquido || 0),
+                          0
+                        );
+                        const positivo = somaLucroCasas >= 0;
+                        return (
+                          <Card className="p-3">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Target className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-xs text-muted-foreground">Lucro Líquido (Casas)</span>
+                            </div>
+                            <p className={`text-xl font-bold ${positivo ? 'text-success' : 'text-destructive'}`}>
+                              R$ {formatCurrency(somaLucroCasas)}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {positivo ? 'Parceria ativa no geral' : 'Parceria negativa no geral'}
+                            </p>
+                          </Card>
+                        );
+                      })()}
                     </div>
 
                     {/* Mobile: thin stacked rows */}
