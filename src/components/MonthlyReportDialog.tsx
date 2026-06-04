@@ -52,6 +52,7 @@ interface ReportData {
   mediaPorDia: number;
   parcerias: { id: string; nome: string; usos: number }[];
   casas: { nome: string; usos: number }[];
+  saldosParceriasAtivas?: { id: string; nome: string; total: number }[];
 }
 
 function buildMonthOptions(): { value: string; label: string }[] {
