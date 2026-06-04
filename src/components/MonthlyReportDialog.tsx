@@ -273,19 +273,32 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
             <h3 className="text-base font-semibold">{monthLabel}</h3>
 
             {/* Saldo total das parcerias ativas (banco + casas) */}
-            {data.saldosParceriasAtivas && data.saldosParceriasAtivas.length > 0 && (
-              <Card className="p-2.5 bg-muted/30">
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="text-[11px] text-muted-foreground">
-                    Saldo total das parcerias ativas (banco + casas)
-                  </span>
+            <Card className="p-2.5 bg-muted/30">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-[11px] text-muted-foreground">
+                  Saldo total das parcerias ativas (banco + casas)
+                </span>
+              </div>
+              {loading ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-5 w-28" />
+                  ))}
                 </div>
+              ) : !data.saldosParceriasAtivas || data.saldosParceriasAtivas.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground italic">
+                  Nenhuma parceria ativa no momento.
+                </p>
+              ) : (
                 <div className="flex flex-wrap gap-1.5">
                   {data.saldosParceriasAtivas.map((p) => (
-                    <span
+                    <button
+                      type="button"
                       key={p.id}
-                      className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2 py-0.5 text-[11px]"
+                      onClick={() => setDetailPart(p)}
+                      className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2 py-0.5 text-[11px] hover:bg-accent hover:border-primary/40 transition-colors cursor-pointer"
+                      title="Ver detalhamento"
                     >
                       <span className="font-medium">{p.nome}</span>
                       <span
@@ -293,7 +306,7 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
                       >
                         R$ {formatCurrency(p.total)}
                       </span>
-                    </span>
+                    </button>
                   ))}
                   <span className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/5 px-2 py-0.5 text-[11px]">
                     <span className="font-medium text-muted-foreground">Total</span>
@@ -304,8 +317,9 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
                     </span>
                   </span>
                 </div>
-              </Card>
-            )}
+              )}
+            </Card>
+
 
             {/* Métricas financeiras */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
