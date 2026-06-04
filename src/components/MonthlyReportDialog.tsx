@@ -441,6 +441,83 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
           </Button>
         </div>
       </DialogContent>
+
+      {/* Modal de detalhamento da parceria */}
+      <Dialog open={!!detailPart} onOpenChange={(o) => !o && setDetailPart(null)}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" />
+              {detailPart?.nome}
+            </DialogTitle>
+          </DialogHeader>
+          {detailPart && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-2">
+                <Card className="p-2">
+                  <div className="text-[10px] text-muted-foreground">Banco</div>
+                  <div className={`text-sm font-bold ${detailPart.saldoBancario >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    R$ {formatCurrency(detailPart.saldoBancario)}
+                  </div>
+                </Card>
+                <Card className="p-2">
+                  <div className="text-[10px] text-muted-foreground">Casas</div>
+                  <div className={`text-sm font-bold ${detailPart.saldoCasas >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    R$ {formatCurrency(detailPart.saldoCasas)}
+                  </div>
+                </Card>
+                <Card className="p-2 border-primary/40 bg-primary/5">
+                  <div className="text-[10px] text-muted-foreground">Total</div>
+                  <div className={`text-sm font-bold ${detailPart.total >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    R$ {formatCurrency(detailPart.total)}
+                  </div>
+                </Card>
+              </div>
+
+              <Card className="p-3">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                  <h4 className="text-sm font-semibold">
+                    Lucro líquido por casa ({monthLabel})
+                  </h4>
+                </div>
+                {detailPart.casas.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">
+                    Nenhuma casa cadastrada nesta parceria.
+                  </p>
+                ) : (
+                  <div className="space-y-1">
+                    <div className="grid grid-cols-[1fr_auto_auto] gap-3 text-[10px] uppercase text-muted-foreground px-1">
+                      <span>Casa</span>
+                      <span className="text-right w-20">Saldo</span>
+                      <span className="text-right w-20">Lucro Líq.</span>
+                    </div>
+                    {detailPart.casas.map((c) => (
+                      <div
+                        key={c.nome}
+                        className="grid grid-cols-[1fr_auto_auto] gap-3 items-center text-xs px-1 py-1 rounded hover:bg-muted/40"
+                      >
+                        <span className="truncate font-medium">{c.nome}</span>
+                        <span className={`text-right w-20 font-semibold ${c.saldo >= 0 ? 'text-success' : 'text-destructive'}`}>
+                          R$ {formatCurrency(c.saldo)}
+                        </span>
+                        <span className={`text-right w-20 font-semibold ${c.lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
+                          R$ {formatCurrency(c.lucroLiquido)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            </div>
+          )}
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={() => setDetailPart(null)}>
+              Fechar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
