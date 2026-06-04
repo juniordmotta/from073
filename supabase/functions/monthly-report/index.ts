@@ -183,6 +183,7 @@ Deno.serve(async (req) => {
         mediaPorDia,
         parcerias,
         casas,
+        saldosParceriasAtivas,
       },
     });
   } catch (e) {
