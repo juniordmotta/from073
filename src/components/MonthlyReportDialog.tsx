@@ -52,8 +52,17 @@ interface ReportData {
   mediaPorDia: number;
   parcerias: { id: string; nome: string; usos: number }[];
   casas: { nome: string; usos: number }[];
-  saldosParceriasAtivas?: { id: string; nome: string; total: number }[];
+  saldosParceriasAtivas?: {
+    id: string;
+    nome: string;
+    total: number;
+    saldoBancario: number;
+    saldoCasas: number;
+    casas: { nome: string; saldo: number; lucroLiquido: number }[];
+  }[];
 }
+
+type PartnershipDetail = NonNullable<ReportData['saldosParceriasAtivas']>[number];
 
 function buildMonthOptions(): { value: string; label: string }[] {
   const opts: { value: string; label: string }[] = [];
