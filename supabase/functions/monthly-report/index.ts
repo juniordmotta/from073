@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
       admin
         .from("arbitrages")
         .select(
-          "id, status, lucro_real, casa_01_nome, casa_02_nome, casa_03_nome, casa_01_valor, casa_02_valor, casa_03_valor, casa_01_parceria_id, casa_02_parceria_id, casa_03_parceria_id, created_at"
+          "id, status, lucro_real, casa_01_nome, casa_02_nome, casa_03_nome, casa_01_valor, casa_02_valor, casa_03_valor, casa_01_valor_resultado, casa_02_valor_resultado, casa_03_valor_resultado, casa_01_resultado, casa_02_resultado, casa_03_resultado, casa_01_parceria_id, casa_02_parceria_id, casa_03_parceria_id, created_at"
         )
         .eq("user_id", effectiveUserId)
         .gte("created_at", first.toISOString())
@@ -87,29 +87,66 @@ Deno.serve(async (req) => {
     const partsMap = new Map(allParts.map((p) => [p.id, p.nome_completo]));
     const activeParts = allParts.filter((p) => p.status === "ativa");
 
-    // Buscar saldos das casas das parcerias ativas
+    // Buscar casas das parcerias ativas (saldo por casa)
     const activeIds = activeParts.map((p) => p.id);
-    let housesByPart = new Map<string, number>();
+    const housesByPart = new Map<
+      string,
+      Map<string, { saldo: number; lucroLiquido: number }>
+    >();
     if (activeIds.length > 0) {
       const { data: housesRows } = await admin
         .from("partnership_houses")
-        .select("partnership_id, saldo")
+        .select("partnership_id, house_name, saldo")
         .in("partnership_id", activeIds);
       for (const h of (housesRows || []) as any[]) {
-        housesByPart.set(
-          h.partnership_id,
-          (housesByPart.get(h.partnership_id) || 0) + Number(h.saldo || 0)
-        );
+        if (!housesByPart.has(h.partnership_id)) {
+          housesByPart.set(h.partnership_id, new Map());
+        }
+        housesByPart.get(h.partnership_id)!.set(h.house_name, {
+          saldo: Number(h.saldo || 0),
+          lucroLiquido: 0,
+        });
+      }
+    }
+
+    // Lucro líquido por casa (apostas fechadas do mês) para parcerias ativas
+    for (const a of arbs as any[]) {
+      const slots = [
+        { pid: a.casa_01_parceria_id, nome: a.casa_01_nome, valor: Number(a.casa_01_valor || 0), ret: Number(a.casa_01_valor_resultado || 0), res: a.casa_01_resultado },
+        { pid: a.casa_02_parceria_id, nome: a.casa_02_nome, valor: Number(a.casa_02_valor || 0), ret: Number(a.casa_02_valor_resultado || 0), res: a.casa_02_resultado },
+        { pid: a.casa_03_parceria_id, nome: a.casa_03_nome, valor: Number(a.casa_03_valor || 0), ret: Number(a.casa_03_valor_resultado || 0), res: a.casa_03_resultado },
+      ];
+      for (const s of slots) {
+        if (!s.pid || !s.nome) continue;
+        if (s.res === "aguardando" || !s.res) continue;
+        const partHouses = housesByPart.get(s.pid);
+        if (!partHouses) continue;
+        const entry = partHouses.get(s.nome) || { saldo: 0, lucroLiquido: 0 };
+        entry.lucroLiquido += s.ret - s.valor;
+        partHouses.set(s.nome, entry);
       }
     }
 
     const saldosParceriasAtivas = activeParts
-      .map((p) => ({
-        id: p.id,
-        nome: p.nome_completo,
-        total:
-          Number(p.saldo_bancario || 0) + (housesByPart.get(p.id) || 0),
-      }))
+      .map((p) => {
+        const housesEntries = Array.from(
+          (housesByPart.get(p.id) || new Map()).entries()
+        ).map(([nome, v]: any) => ({
+          nome,
+          saldo: v.saldo,
+          lucroLiquido: v.lucroLiquido,
+        }));
+        const saldoCasas = housesEntries.reduce((s, h) => s + h.saldo, 0);
+        const saldoBancario = Number(p.saldo_bancario || 0);
+        return {
+          id: p.id,
+          nome: p.nome_completo,
+          saldoBancario,
+          saldoCasas,
+          total: saldoBancario + saldoCasas,
+          casas: housesEntries.sort((a, b) => a.nome.localeCompare(b.nome)),
+        };
+      })
       .sort((a, b) => b.total - a.total);
 
     let lucroBruto = 0;

@@ -52,8 +52,17 @@ interface ReportData {
   mediaPorDia: number;
   parcerias: { id: string; nome: string; usos: number }[];
   casas: { nome: string; usos: number }[];
-  saldosParceriasAtivas?: { id: string; nome: string; total: number }[];
+  saldosParceriasAtivas?: {
+    id: string;
+    nome: string;
+    total: number;
+    saldoBancario: number;
+    saldoCasas: number;
+    casas: { nome: string; saldo: number; lucroLiquido: number }[];
+  }[];
 }
+
+type PartnershipDetail = NonNullable<ReportData['saldosParceriasAtivas']>[number];
 
 function buildMonthOptions(): { value: string; label: string }[] {
   const opts: { value: string; label: string }[] = [];
@@ -74,6 +83,7 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
   const [profiles, setProfiles] = useState<ProfileOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ReportData | null>(null);
+  const [detailPart, setDetailPart] = useState<PartnershipDetail | null>(null);
 
   // Carregar lista de usuários para admins
   useEffect(() => {
@@ -263,19 +273,32 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
             <h3 className="text-base font-semibold">{monthLabel}</h3>
 
             {/* Saldo total das parcerias ativas (banco + casas) */}
-            {data.saldosParceriasAtivas && data.saldosParceriasAtivas.length > 0 && (
-              <Card className="p-2.5 bg-muted/30">
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="text-[11px] text-muted-foreground">
-                    Saldo total das parcerias ativas (banco + casas)
-                  </span>
+            <Card className="p-2.5 bg-muted/30">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-[11px] text-muted-foreground">
+                  Saldo total das parcerias ativas (banco + casas)
+                </span>
+              </div>
+              {loading ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-5 w-28" />
+                  ))}
                 </div>
+              ) : !data.saldosParceriasAtivas || data.saldosParceriasAtivas.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground italic">
+                  Nenhuma parceria ativa no momento.
+                </p>
+              ) : (
                 <div className="flex flex-wrap gap-1.5">
                   {data.saldosParceriasAtivas.map((p) => (
-                    <span
+                    <button
+                      type="button"
                       key={p.id}
-                      className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2 py-0.5 text-[11px]"
+                      onClick={() => setDetailPart(p)}
+                      className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2 py-0.5 text-[11px] hover:bg-accent hover:border-primary/40 transition-colors cursor-pointer"
+                      title="Ver detalhamento"
                     >
                       <span className="font-medium">{p.nome}</span>
                       <span
@@ -283,7 +306,7 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
                       >
                         R$ {formatCurrency(p.total)}
                       </span>
-                    </span>
+                    </button>
                   ))}
                   <span className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/5 px-2 py-0.5 text-[11px]">
                     <span className="font-medium text-muted-foreground">Total</span>
@@ -294,8 +317,9 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
                     </span>
                   </span>
                 </div>
-              </Card>
-            )}
+              )}
+            </Card>
+
 
             {/* Métricas financeiras */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -417,6 +441,83 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
           </Button>
         </div>
       </DialogContent>
+
+      {/* Modal de detalhamento da parceria */}
+      <Dialog open={!!detailPart} onOpenChange={(o) => !o && setDetailPart(null)}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" />
+              {detailPart?.nome}
+            </DialogTitle>
+          </DialogHeader>
+          {detailPart && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-2">
+                <Card className="p-2">
+                  <div className="text-[10px] text-muted-foreground">Banco</div>
+                  <div className={`text-sm font-bold ${detailPart.saldoBancario >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    R$ {formatCurrency(detailPart.saldoBancario)}
+                  </div>
+                </Card>
+                <Card className="p-2">
+                  <div className="text-[10px] text-muted-foreground">Casas</div>
+                  <div className={`text-sm font-bold ${detailPart.saldoCasas >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    R$ {formatCurrency(detailPart.saldoCasas)}
+                  </div>
+                </Card>
+                <Card className="p-2 border-primary/40 bg-primary/5">
+                  <div className="text-[10px] text-muted-foreground">Total</div>
+                  <div className={`text-sm font-bold ${detailPart.total >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    R$ {formatCurrency(detailPart.total)}
+                  </div>
+                </Card>
+              </div>
+
+              <Card className="p-3">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                  <h4 className="text-sm font-semibold">
+                    Lucro líquido por casa ({monthLabel})
+                  </h4>
+                </div>
+                {detailPart.casas.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">
+                    Nenhuma casa cadastrada nesta parceria.
+                  </p>
+                ) : (
+                  <div className="space-y-1">
+                    <div className="grid grid-cols-[1fr_auto_auto] gap-3 text-[10px] uppercase text-muted-foreground px-1">
+                      <span>Casa</span>
+                      <span className="text-right w-20">Saldo</span>
+                      <span className="text-right w-20">Lucro Líq.</span>
+                    </div>
+                    {detailPart.casas.map((c) => (
+                      <div
+                        key={c.nome}
+                        className="grid grid-cols-[1fr_auto_auto] gap-3 items-center text-xs px-1 py-1 rounded hover:bg-muted/40"
+                      >
+                        <span className="truncate font-medium">{c.nome}</span>
+                        <span className={`text-right w-20 font-semibold ${c.saldo >= 0 ? 'text-success' : 'text-destructive'}`}>
+                          R$ {formatCurrency(c.saldo)}
+                        </span>
+                        <span className={`text-right w-20 font-semibold ${c.lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
+                          R$ {formatCurrency(c.lucroLiquido)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            </div>
+          )}
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={() => setDetailPart(null)}>
+              Fechar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
