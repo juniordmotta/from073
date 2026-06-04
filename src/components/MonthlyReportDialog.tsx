@@ -83,6 +83,7 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
   const [profiles, setProfiles] = useState<ProfileOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ReportData | null>(null);
+  const [detailPart, setDetailPart] = useState<PartnershipDetail | null>(null);
 
   // Carregar lista de usuários para admins
   useEffect(() => {
