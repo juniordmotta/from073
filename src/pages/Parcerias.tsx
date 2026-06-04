@@ -2079,14 +2079,29 @@ const Parcerias = () => {
                           <span className="text-[10px] text-muted-foreground ml-1.5">Banca: R$ {formatCurrency(partnershipDetails.partnership.valor_banca)}</span>
                         </div>
                       </div>
-                      {user?.id && selectedPartnershipId && (
-                        <MonthlyGoalCard
-                          userId={user.id}
-                          partnershipId={selectedPartnershipId}
-                          currentProfit={partnershipDetails.lucroLiquido}
-                          compact
-                        />
-                      )}
+                      {(() => {
+                        const somaLucroCasas = partnershipDetails.casas.reduce(
+                          (sum: number, c: any) => sum + (c.lucroLiquido || 0),
+                          0
+                        );
+                        const positivo = somaLucroCasas >= 0;
+                        return (
+                          <div className="rounded-lg border bg-card px-3 py-2 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Target className="h-3.5 w-3.5 text-muted-foreground" />
+                              <span className="text-xs text-muted-foreground">Lucro Líquido (Casas)</span>
+                            </div>
+                            <div className="text-right">
+                              <span className={`text-sm font-bold ${positivo ? 'text-success' : 'text-destructive'}`}>
+                                R$ {formatCurrency(somaLucroCasas)}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground ml-1.5">
+                                {positivo ? 'ativa' : 'negativa'}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     {/* Resumo de Saldos - Desktop: grid-cols-3, Mobile: stacked */}
