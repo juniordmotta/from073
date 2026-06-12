@@ -102,6 +102,8 @@ const CasasDeApostas = () => {
   const navigate = useNavigate();
   
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
+  const [isNotifCenterOpen, setIsNotifCenterOpen] = useState(false);
+  
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedHouse, setSelectedHouse] = useState<BettingHouse | null>(null);
