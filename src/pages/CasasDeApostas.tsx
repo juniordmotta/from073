@@ -1078,6 +1078,17 @@ const CasasDeApostas = () => {
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => setIsNotifCenterOpen(true)}
+                className="gap-2"
+              >
+                <Bell className="h-4 w-4" />
+                Central de Notificações
+              </Button>
+            )}
+            {isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setIsAddGroupDialogOpen(true)}
                 className="gap-2"
               >
