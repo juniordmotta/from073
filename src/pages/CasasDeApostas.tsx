@@ -13,6 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { NotificationCenterDialog } from '@/components/NotificationCenterDialog';
+import { Bell } from 'lucide-react';
 import { 
   Search, 
   Plus, 
