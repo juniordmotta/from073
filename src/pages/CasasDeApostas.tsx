@@ -1925,6 +1925,7 @@ const CasasDeApostas = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        <NotificationCenterDialog open={isNotifCenterOpen} onOpenChange={setIsNotifCenterOpen} />
       </div>
     </Layout>
   );
