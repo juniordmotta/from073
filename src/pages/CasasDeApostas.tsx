@@ -13,6 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { NotificationCenterDialog } from '@/components/NotificationCenterDialog';
+import { Bell } from 'lucide-react';
 import { 
   Search, 
   Plus, 
@@ -100,6 +102,8 @@ const CasasDeApostas = () => {
   const navigate = useNavigate();
   
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
+  const [isNotifCenterOpen, setIsNotifCenterOpen] = useState(false);
+  
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedHouse, setSelectedHouse] = useState<BettingHouse | null>(null);
@@ -1074,6 +1078,17 @@ const CasasDeApostas = () => {
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => setIsNotifCenterOpen(true)}
+                className="gap-2"
+              >
+                <Bell className="h-4 w-4" />
+                Central de Notificações
+              </Button>
+            )}
+            {isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setIsAddGroupDialogOpen(true)}
                 className="gap-2"
               >
@@ -1910,6 +1925,7 @@ const CasasDeApostas = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        <NotificationCenterDialog open={isNotifCenterOpen} onOpenChange={setIsNotifCenterOpen} />
       </div>
     </Layout>
   );

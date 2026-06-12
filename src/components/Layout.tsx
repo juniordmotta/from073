@@ -16,6 +16,7 @@ import {
 import { SidebarProvider, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { LayoutDashboard, DollarSign, List, Users, LogOut, User, Handshake, Building2, StickyNote } from 'lucide-react';
+import { NotificationBell } from '@/components/NotificationBell';
 import { cn, formatUserName } from '@/lib/utils';
 
 interface LayoutProps {
@@ -118,6 +119,7 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
             </div>
 
             <div className="flex items-center gap-2">
+              <NotificationBell />
               <ThemeToggle />
               
               <DropdownMenu>
