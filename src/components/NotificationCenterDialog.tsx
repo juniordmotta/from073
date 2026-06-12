@@ -11,12 +11,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Send } from "lucide-react";
+import { Send, Megaphone } from "lucide-react";
 
 interface EventRow {
   id: string;
@@ -74,6 +75,11 @@ export function NotificationCenterDialog({ open, onOpenChange }: Props) {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
 
+  // Avulsa
+  const [customTitle, setCustomTitle] = useState("");
+  const [customMessage, setCustomMessage] = useState("");
+  const [sendingCustom, setSendingCustom] = useState(false);
+
   useEffect(() => {
     if (!open) return;
     (async () => {
@@ -121,81 +127,157 @@ export function NotificationCenterDialog({ open, onOpenChange }: Props) {
     onOpenChange(false);
   };
 
+  const dispatchCustom = async () => {
+    if (!user?.id) return;
+    if (!customTitle.trim() || !customMessage.trim()) {
+      toast.error("Preencha título e mensagem");
+      return;
+    }
+    setSendingCustom(true);
+    const { error } = await supabase.from("notifications" as any).insert({
+      type: "custom",
+      title: customTitle.trim(),
+      message: customMessage.trim(),
+      metadata: {},
+      created_by: user.id,
+    });
+    setSendingCustom(false);
+    if (error) {
+      toast.error("Erro ao disparar notificação");
+      return;
+    }
+    toast.success("Notificação enviada a todos os usuários");
+    setCustomTitle("");
+    setCustomMessage("");
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Central de Notificações</DialogTitle>
           <DialogDescription>
-            Selecione um evento recente do catálogo para disparar uma notificação a todos os usuários.
+            Dispare uma notificação para todos os usuários a partir de um evento do catálogo ou crie uma mensagem avulsa.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="border rounded-md">
-            <div className="p-2 border-b text-xs font-medium text-muted-foreground">
-              Últimos eventos
-            </div>
-            <ScrollArea className="h-[400px]">
-              {loading ? (
-                <div className="p-4 text-sm text-muted-foreground">Carregando...</div>
-              ) : events.length === 0 ? (
-                <div className="p-4 text-sm text-muted-foreground">Sem eventos registrados.</div>
-              ) : (
-                <ul className="divide-y">
-                  {events.map((ev) => (
-                    <li
-                      key={ev.id}
-                      className={`p-2 cursor-pointer hover:bg-accent/40 ${
-                        selected?.id === ev.id ? "bg-accent" : ""
-                      }`}
-                      onClick={() => pick(ev)}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <Badge variant="outline" className="text-[10px]">
-                          {EVENT_LABELS[ev.event_type] || ev.event_type}
-                        </Badge>
-                      </div>
-                      <p className="text-sm font-medium truncate">{ev.entity_name}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {formatDistanceToNow(new Date(ev.created_at), {
-                          addSuffix: true,
-                          locale: ptBR,
-                        })}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </ScrollArea>
-          </div>
+        <Tabs defaultValue="event" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="event">Por evento</TabsTrigger>
+            <TabsTrigger value="custom" className="gap-2">
+              <Megaphone className="h-4 w-4" />
+              Avulsa
+            </TabsTrigger>
+          </TabsList>
 
-          <div className="space-y-3">
+          <TabsContent value="event" className="mt-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="border rounded-md">
+                <div className="p-2 border-b text-xs font-medium text-muted-foreground">
+                  Últimos eventos
+                </div>
+                <ScrollArea className="h-[400px]">
+                  {loading ? (
+                    <div className="p-4 text-sm text-muted-foreground">Carregando...</div>
+                  ) : events.length === 0 ? (
+                    <div className="p-4 text-sm text-muted-foreground">
+                      Sem eventos registrados.
+                    </div>
+                  ) : (
+                    <ul className="divide-y">
+                      {events.map((ev) => (
+                        <li
+                          key={ev.id}
+                          className={`p-2 cursor-pointer hover:bg-accent/40 ${
+                            selected?.id === ev.id ? "bg-accent" : ""
+                          }`}
+                          onClick={() => pick(ev)}
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline" className="text-[10px]">
+                              {EVENT_LABELS[ev.event_type] || ev.event_type}
+                            </Badge>
+                          </div>
+                          <p className="text-sm font-medium truncate">{ev.entity_name}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {formatDistanceToNow(new Date(ev.created_at), {
+                              addSuffix: true,
+                              locale: ptBR,
+                            })}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </ScrollArea>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium">Título</label>
+                  <Input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    disabled={!selected}
+                    placeholder="Selecione um evento à esquerda"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium">Mensagem</label>
+                  <Textarea
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    disabled={!selected}
+                    rows={6}
+                    placeholder="Mensagem que todos os usuários verão"
+                  />
+                </div>
+                <Button
+                  onClick={dispatch}
+                  disabled={!selected || sending}
+                  className="w-full gap-2"
+                >
+                  <Send className="h-4 w-4" />
+                  {sending ? "Disparando..." : "Disparar notificação"}
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="custom" className="mt-4 space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Crie uma notificação livre para alertar os usuários sobre qualquer assunto do sistema.
+            </p>
             <div>
               <label className="text-xs font-medium">Título</label>
               <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                disabled={!selected}
-                placeholder="Selecione um evento à esquerda"
+                value={customTitle}
+                onChange={(e) => setCustomTitle(e.target.value)}
+                placeholder="Ex: Manutenção programada"
+                maxLength={120}
               />
             </div>
             <div>
               <label className="text-xs font-medium">Mensagem</label>
               <Textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                disabled={!selected}
+                value={customMessage}
+                onChange={(e) => setCustomMessage(e.target.value)}
                 rows={6}
-                placeholder="Mensagem que todos os usuários verão"
+                placeholder="Descreva o aviso..."
+                maxLength={1000}
               />
             </div>
-            <Button onClick={dispatch} disabled={!selected || sending} className="w-full gap-2">
+            <Button
+              onClick={dispatchCustom}
+              disabled={sendingCustom || !customTitle.trim() || !customMessage.trim()}
+              className="w-full gap-2"
+            >
               <Send className="h-4 w-4" />
-              {sending ? "Disparando..." : "Disparar notificação"}
+              {sendingCustom ? "Disparando..." : "Disparar notificação avulsa"}
             </Button>
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
