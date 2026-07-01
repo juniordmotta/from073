@@ -3576,53 +3576,8 @@ export default function MinhasArbitragens() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="data_registro_add">Data do Registro da Aposta</Label>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 px-2 gap-1"
-                      onClick={() => {
-                        setDataRegistroLocked((prev) => {
-                          const next = !prev;
-                          if (!next && !dataRegistroCustom) {
-                            // ao desbloquear, pré-preencher com data/hora atual
-                            const now = new Date();
-                            const tzOffset = now.getTimezoneOffset() * 60000;
-                            setDataRegistroCustom(new Date(now.getTime() - tzOffset).toISOString().slice(0, 16));
-                          }
-                          return next;
-                        });
-                      }}
-                    >
-                      {dataRegistroLocked ? (
-                        <>
-                          <Lock className="h-3.5 w-3.5" />
-                          <span className="text-xs">Bloqueado</span>
-                        </>
-                      ) : (
-                        <>
-                          <Unlock className="h-3.5 w-3.5" />
-                          <span className="text-xs">Desbloqueado</span>
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                  <Input
-                    id="data_registro_add"
-                    type="datetime-local"
-                    value={dataRegistroCustom}
-                    onChange={(e) => setDataRegistroCustom(e.target.value)}
-                    disabled={dataRegistroLocked}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {dataRegistroLocked
-                      ? 'Por padrão, a aposta é registrada com a data e hora atuais. Clique no cadeado para alterar (somente no momento da criação — não é possível editar depois).'
-                      : 'A aposta será registrada no relatório com a data escolhida acima (fuso do seu dispositivo). Só pode ser definida agora, no cadastro.'}
-                  </p>
-                </div>
+
+
 
                 <div className="space-y-2">
                   <Label htmlFor="descricao_add">Descrição do Evento</Label>
