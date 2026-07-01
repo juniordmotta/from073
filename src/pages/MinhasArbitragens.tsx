@@ -289,6 +289,10 @@ export default function MinhasArbitragens() {
     lucro_projetado: '',
   });
 
+  // Data personalizada de registro (created_at) — bloqueada por padrão
+  const [dataRegistroLocked, setDataRegistroLocked] = useState(true);
+  const [dataRegistroCustom, setDataRegistroCustom] = useState('');
+
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
   // Mapa de URLs das casas para links
