@@ -1302,9 +1302,46 @@ export default function MinhasArbitragens() {
       };
 
       // Data personalizada de registro (created_at) quando o usuário desbloqueou
+      // Conversão de fuso: datetime-local é interpretado como horário LOCAL do usuário
+      // e convertido para UTC via toISOString(). Ao exibir, `new Date(created_at)`
+      // volta para o fuso local, garantindo que o dia bata no relatório.
       if (!dataRegistroLocked && dataRegistroCustom) {
-        arbitrageData.created_at = new Date(dataRegistroCustom).toISOString();
+        const parsed = new Date(dataRegistroCustom);
+        if (isNaN(parsed.getTime())) {
+          toast({
+            variant: 'destructive',
+            title: 'Data inválida',
+            description: 'A data do registro informada não é válida.',
+          });
+          setIsLoadingAdd(false);
+          return;
+        }
+        const now = new Date();
+        // Não permitir datas futuras (tolerância de 5 min para relógio dessincronizado)
+        if (parsed.getTime() > now.getTime() + 5 * 60 * 1000) {
+          toast({
+            variant: 'destructive',
+            title: 'Data futura não permitida',
+            description: 'A data do registro não pode ser posterior ao momento atual.',
+          });
+          setIsLoadingAdd(false);
+          return;
+        }
+        // Limite máximo de 5 anos no passado
+        const fiveYearsAgo = new Date();
+        fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
+        if (parsed.getTime() < fiveYearsAgo.getTime()) {
+          toast({
+            variant: 'destructive',
+            title: 'Data muito antiga',
+            description: 'A data do registro não pode ser anterior a 5 anos.',
+          });
+          setIsLoadingAdd(false);
+          return;
+        }
+        arbitrageData.created_at = parsed.toISOString();
       }
+
 
       if (useTresCasas) {
         arbitrageData.casa_03_nome = formData.casa_03_nome;
