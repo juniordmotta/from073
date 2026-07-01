@@ -85,7 +85,9 @@ Deno.serve(async (req) => {
     const costs = costsRes.data || [];
     const allParts = (partsRes.data || []) as any[];
     const partsMap = new Map(allParts.map((p) => [p.id, p.nome_completo]));
-    const activeParts = allParts.filter((p) => p.status === "ativa");
+    const activeParts = allParts.filter(
+      (p) => p.status === "ativo" || p.status === "ativa"
+    );
 
     // Buscar casas das parcerias ativas (saldo por casa)
     const activeIds = activeParts.map((p) => p.id);
