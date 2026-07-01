@@ -1301,6 +1301,11 @@ export default function MinhasArbitragens() {
         lucro_projetado: parseLocalizedNumber(formData.lucro_projetado),
       };
 
+      // Data personalizada de registro (created_at) quando o usuário desbloqueou
+      if (!dataRegistroLocked && dataRegistroCustom) {
+        arbitrageData.created_at = new Date(dataRegistroCustom).toISOString();
+      }
+
       if (useTresCasas) {
         arbitrageData.casa_03_nome = formData.casa_03_nome;
         arbitrageData.casa_03_odd = parseFloat(formData.casa_03_odd);
