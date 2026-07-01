@@ -3619,8 +3619,8 @@ export default function MinhasArbitragens() {
                   />
                   <p className="text-xs text-muted-foreground">
                     {dataRegistroLocked
-                      ? 'Por padrão, a aposta é registrada com a data e hora atuais. Clique no cadeado para alterar (apenas para esta aposta).'
-                      : 'A aposta será registrada no relatório com a data escolhida acima.'}
+                      ? 'Por padrão, a aposta é registrada com a data e hora atuais. Clique no cadeado para alterar (somente no momento da criação — não é possível editar depois).'
+                      : 'A aposta será registrada no relatório com a data escolhida acima (fuso do seu dispositivo). Só pode ser definida agora, no cadastro.'}
                   </p>
                 </div>
 
