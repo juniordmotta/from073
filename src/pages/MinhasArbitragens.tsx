@@ -1534,7 +1534,7 @@ export default function MinhasArbitragens() {
       const valorApostadoNum = parseLocalizedNumber(prejuizoData.valor_apostado);
       if (prejuizoData.casa_nome && valorApostadoNum > 0) {
         await autoDebitHouseBalances([
-          { partnershipId: selectedPartnership01, houseName: prejuizoData.casa_nome, valor: valorApostadoNum },
+          { partnershipId: prejuizoData.partnership_id || selectedPartnership01, houseName: prejuizoData.casa_nome, valor: valorApostadoNum },
         ]);
       }
 
