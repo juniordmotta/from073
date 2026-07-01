@@ -3525,7 +3525,55 @@ export default function MinhasArbitragens() {
             </Button>
           </div>
 
+          <div className="space-y-2 rounded-md border p-3">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="data_registro_add">Data do Registro da Aposta</Label>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2 gap-1"
+                onClick={() => {
+                  setDataRegistroLocked((prev) => {
+                    const next = !prev;
+                    if (!next && !dataRegistroCustom) {
+                      const now = new Date();
+                      const tzOffset = now.getTimezoneOffset() * 60000;
+                      setDataRegistroCustom(new Date(now.getTime() - tzOffset).toISOString().slice(0, 16));
+                    }
+                    return next;
+                  });
+                }}
+              >
+                {dataRegistroLocked ? (
+                  <>
+                    <Lock className="h-3.5 w-3.5" />
+                    <span className="text-xs">Bloqueado</span>
+                  </>
+                ) : (
+                  <>
+                    <Unlock className="h-3.5 w-3.5" />
+                    <span className="text-xs">Desbloqueado</span>
+                  </>
+                )}
+              </Button>
+            </div>
+            <Input
+              id="data_registro_add"
+              type="datetime-local"
+              value={dataRegistroCustom}
+              onChange={(e) => setDataRegistroCustom(e.target.value)}
+              disabled={dataRegistroLocked}
+            />
+            <p className="text-xs text-muted-foreground">
+              {dataRegistroLocked
+                ? 'Por padrão, a aposta é registrada com a data e hora atuais. Clique no cadeado para alterar (somente no momento da criação).'
+                : 'A aposta será registrada no relatório com a data escolhida acima. Só pode ser definida agora, no cadastro.'}
+            </p>
+          </div>
+
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="paste">
                 <FileText className="h-4 w-4 mr-2" />
