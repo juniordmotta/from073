@@ -265,6 +265,7 @@ export default function MinhasArbitragens() {
     valor_apostado: '',
     valor_encerrado: '', // Valor que recebeu de volta (cashout/encerramento)
     data_evento: '',
+    partnership_id: '',
   });
   const [isLoadingPrejuizo, setIsLoadingPrejuizo] = useState(false);
   
