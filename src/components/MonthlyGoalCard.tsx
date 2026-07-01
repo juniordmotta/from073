@@ -11,6 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { useGoalNotifications } from '@/hooks/useGoalNotifications';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { withSupabaseRetry } from '@/lib/supabaseRetry';
 
 interface MonthlyGoalCardProps {
   userId: string;
@@ -78,7 +79,7 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
         query = query.is('partnership_id', null);
       }
 
-      const { data, error } = await query;
+      const { data, error } = await withSupabaseRetry(() => query);
 
       if (error) {
         console.warn('Erro ao buscar meta:', error.message);

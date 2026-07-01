@@ -12,6 +12,7 @@ import { formatCurrency, formatUserName } from '@/lib/utils';
 import { MonthlyGoalCard } from '@/components/MonthlyGoalCard';
 import { MonthlyReportDialog } from '@/components/MonthlyReportDialog';
 import { Button } from '@/components/ui/button';
+import { withSupabaseRetry } from '@/lib/supabaseRetry';
 
 interface OpenBetsStats {
   totalArbitragens: number;
@@ -50,11 +51,13 @@ export default function Dashboard() {
     if (!user?.id) return;
     
     try {
-      const { data, error } = await supabase
-        .from('arbitrages')
-        .select('lucro_projetado, casa_01_valor, casa_02_valor, casa_03_valor')
-        .eq('user_id', user.id)
-        .eq('status', 'aguardando');
+      const { data, error } = await withSupabaseRetry(() =>
+        supabase
+          .from('arbitrages')
+          .select('lucro_projetado, casa_01_valor, casa_02_valor, casa_03_valor')
+          .eq('user_id', user.id)
+          .eq('status', 'aguardando')
+      );
 
       if (error) {
         console.warn('Erro ao carregar stats:', error.message);
@@ -88,12 +91,14 @@ export default function Dashboard() {
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
       const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-      const { data, error } = await supabase
-        .from('arbitrages')
-        .select('status, lucro_projetado, lucro_real, casa_01_valor, casa_02_valor, casa_03_valor, created_at')
-        .eq('user_id', user.id)
-        .gte('created_at', firstDayOfMonth.toISOString())
-        .lte('created_at', lastDayOfMonth.toISOString());
+      const { data, error } = await withSupabaseRetry(() =>
+        supabase
+          .from('arbitrages')
+          .select('status, lucro_projetado, lucro_real, casa_01_valor, casa_02_valor, casa_03_valor, created_at')
+          .eq('user_id', user.id)
+          .gte('created_at', firstDayOfMonth.toISOString())
+          .lte('created_at', lastDayOfMonth.toISOString())
+      );
 
       if (error) {
         console.warn('Erro ao carregar stats do mês:', error.message);
@@ -131,31 +136,33 @@ export default function Dashboard() {
     if (!user?.id) return;
     
     try {
-      const { data, error } = await supabase
-        .from('arbitrages')
-        .select(`
-          id,
-          descricao,
-          data_evento,
-          casa_01_nome,
-          casa_01_odd,
-          casa_01_valor,
-          casa_02_nome,
-          casa_02_odd,
-          casa_02_valor,
-          casa_03_nome,
-          casa_03_odd,
-          casa_03_valor,
-          casa_01_mercado,
-          casa_02_mercado,
-          casa_03_mercado,
-          lucro_projetado,
-          profiles:user_id (name)
-        `)
-        .eq('status', 'aguardando')
-        .eq('user_id', user.id)
-        .order('data_evento', { ascending: true })
-        .limit(50);
+      const { data, error } = await withSupabaseRetry(() =>
+        supabase
+          .from('arbitrages')
+          .select(`
+            id,
+            descricao,
+            data_evento,
+            casa_01_nome,
+            casa_01_odd,
+            casa_01_valor,
+            casa_02_nome,
+            casa_02_odd,
+            casa_02_valor,
+            casa_03_nome,
+            casa_03_odd,
+            casa_03_valor,
+            casa_01_mercado,
+            casa_02_mercado,
+            casa_03_mercado,
+            lucro_projetado,
+            profiles:user_id (name)
+          `)
+          .eq('status', 'aguardando')
+          .eq('user_id', user.id)
+          .order('data_evento', { ascending: true })
+          .limit(50)
+      );
 
       if (error) {
         console.warn('Erro ao carregar apostas abertas:', error.message);
@@ -174,11 +181,13 @@ export default function Dashboard() {
     if (!user?.id) return;
     
     try {
-      const { data, error } = await supabase
-        .from('partnerships')
-        .select('valor_banca')
-        .eq('status', 'ativo')
-        .eq('user_id', user.id);
+      const { data, error } = await withSupabaseRetry(() =>
+        supabase
+          .from('partnerships')
+          .select('valor_banca')
+          .eq('status', 'ativo')
+          .eq('user_id', user.id)
+      );
 
       if (error) {
         console.warn('Erro ao carregar banca:', error.message);
