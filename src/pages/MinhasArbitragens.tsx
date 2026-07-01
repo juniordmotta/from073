@@ -4152,6 +4152,25 @@ export default function MinhasArbitragens() {
                     />
                   </div>
                   
+                  {partnerships.length > 0 && (
+                    <div className="space-y-2">
+                      <Label htmlFor="prejuizo_parceria">Parceria</Label>
+                      <Select
+                        value={prejuizoData.partnership_id || selectedPartnership01}
+                        onValueChange={(v) => setPrejuizoData({ ...prejuizoData, partnership_id: v })}
+                      >
+                        <SelectTrigger id="prejuizo_parceria">
+                          <SelectValue placeholder="Selecione a parceria" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          {partnerships.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>{p.nome_completo}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label htmlFor="prejuizo_casa">Casa de Aposta</Label>
                     <BettingHouseInput
