@@ -3247,6 +3247,22 @@ export default function MinhasArbitragens() {
                   <div>
                     <h3 className="font-semibold mb-2">Casa 02</h3>
                     <div className="space-y-2">
+                      {partnerships.length > 0 && (
+                        <div>
+                          <Label>Parceria</Label>
+                          <Select
+                            value={editArbitrage.casa_02_parceria_id || ''}
+                            onValueChange={(v) => setEditArbitrage({ ...editArbitrage, casa_02_parceria_id: v })}
+                          >
+                            <SelectTrigger><SelectValue placeholder="Selecione a parceria" /></SelectTrigger>
+                            <SelectContent className="bg-background z-50">
+                              {partnerships.map((p) => (
+                                <SelectItem key={p.id} value={p.id}>{p.nome_completo}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
                       <div>
                         <Label>Nome</Label>
                         <Input
