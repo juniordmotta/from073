@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { withSupabaseRetry } from "@/lib/supabaseRetry";
 
 export interface Notification {
   id: string;
@@ -18,23 +19,42 @@ export function useNotifications() {
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setNotifications([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    const [{ data: notifs }, { data: reads }] = await Promise.all([
-      supabase
-        .from("notifications" as any)
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(10),
-      supabase
-        .from("notification_reads" as any)
-        .select("notification_id")
-        .eq("user_id", user.id),
-    ]);
-    const readSet = new Set((reads as any[] | null)?.map((r) => r.notification_id) || []);
-    const list = ((notifs as any[]) || []).map((n) => ({ ...n, read: readSet.has(n.id) }));
-    setNotifications(list);
-    setLoading(false);
+    try {
+      const [{ data: notifs, error: notifsError }, { data: reads, error: readsError }] = await Promise.all([
+        withSupabaseRetry(() =>
+          supabase
+            .from("notifications" as any)
+            .select("*")
+            .order("created_at", { ascending: false })
+            .limit(10)
+        ),
+        withSupabaseRetry(() =>
+          supabase
+            .from("notification_reads" as any)
+            .select("notification_id")
+            .eq("user_id", user.id)
+        ),
+      ]);
+
+      if (notifsError || readsError) {
+        console.warn("Erro ao carregar notificações:", notifsError?.message || readsError?.message);
+      }
+
+      const readSet = new Set((reads as any[] | null)?.map((r) => r.notification_id) || []);
+      const list = ((notifs as any[]) || []).map((n) => ({ ...n, read: readSet.has(n.id) }));
+      setNotifications(list);
+    } catch (error) {
+      console.warn("Erro ao carregar notificações:", error);
+      setNotifications([]);
+    } finally {
+      setLoading(false);
+    }
   }, [user?.id]);
 
   useEffect(() => {

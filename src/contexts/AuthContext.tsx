@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { withSupabaseRetry } from '@/lib/supabaseRetry';
 
 interface UserRole {
   role: 'admin_master' | 'admin' | 'operador';
@@ -29,27 +30,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     let isMounted = true;
-    let roleLoaded = false; // Flag para evitar chamadas duplicadas
+    let loadRequestId = 0;
     
     const loadUserRole = async (userId: string) => {
-      if (roleLoaded || !isMounted) return;
-      roleLoaded = true;
+      if (!isMounted) return;
+      const requestId = ++loadRequestId;
+      setIsLoading(true);
       
       try {
         const [roleResult, profileResult] = await Promise.all([
-          supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', userId)
-            .maybeSingle(),
-          supabase
-            .from('profiles')
-            .select('expires_at')
-            .eq('id', userId)
-            .maybeSingle(),
+          withSupabaseRetry(() =>
+            supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', userId)
+              .maybeSingle()
+          ),
+          withSupabaseRetry(() =>
+            supabase
+              .from('profiles')
+              .select('expires_at')
+              .eq('id', userId)
+              .maybeSingle()
+          ),
         ]);
         
-        if (!isMounted) return;
+        if (!isMounted || requestId !== loadRequestId) return;
         
         if (roleResult.error) {
           console.error('Error fetching user role:', roleResult.error);
@@ -67,9 +73,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       } catch (err) {
         console.error('Unexpected error loading role:', err);
-        if (isMounted) setUserRole(null);
+        if (isMounted && requestId === loadRequestId) {
+          setUserRole(null);
+          setExpiresAt(null);
+        }
       } finally {
-        if (isMounted) setIsLoading(false);
+        if (isMounted && requestId === loadRequestId) setIsLoading(false);
       }
     };
     
@@ -84,9 +93,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         if (session?.user) {
           // Usar setTimeout para evitar deadlock com Supabase
-          setTimeout(() => loadUserRole(session.user.id), 0);
+          setTimeout(() => void loadUserRole(session.user.id), 0);
         } else {
+          loadRequestId += 1;
           setUserRole(null);
+          setExpiresAt(null);
           setIsLoading(false);
         }
       }
@@ -100,8 +111,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        setTimeout(() => loadUserRole(session.user.id), 0);
+        setTimeout(() => void loadUserRole(session.user.id), 0);
       } else {
+        setExpiresAt(null);
         setIsLoading(false);
       }
     });
