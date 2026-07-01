@@ -1555,6 +1555,7 @@ export default function MinhasArbitragens() {
         valor_apostado: '',
         valor_encerrado: '',
         data_evento: '',
+        partnership_id: '',
       });
     } catch (error: any) {
       console.error('Erro ao registrar prejuízo:', error);
