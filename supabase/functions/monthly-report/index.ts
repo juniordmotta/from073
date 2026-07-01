@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
         )
         .eq("user_id", effectiveUserId)
         .gte("created_at", first.toISOString())
-        .lte("created_at", last.toISOString()),
+        .lt("created_at", last.toISOString()),
       admin
         .from("operational_costs")
         .select("valor")
