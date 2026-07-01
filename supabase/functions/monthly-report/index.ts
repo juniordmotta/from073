@@ -55,10 +55,18 @@ Deno.serve(async (req) => {
       isAdmin && body.targetUserId ? body.targetUserId : callerId;
 
     const [y, m] = body.month.split("-").map(Number);
-    const first = new Date(Date.UTC(y, m - 1, 1, 0, 0, 0, 0));
-    const last = new Date(Date.UTC(y, m, 0, 23, 59, 59, 999));
-    const firstDate = first.toISOString().slice(0, 10);
-    const lastDate = last.toISOString().slice(0, 10);
+    // Janela em horário de Brasília (UTC-3): início do mês local até início do mês seguinte
+    const mm = String(m).padStart(2, "0");
+    const nextY = m === 12 ? y + 1 : y;
+    const nextM = m === 12 ? 1 : m + 1;
+    const nmm = String(nextM).padStart(2, "0");
+    const firstIso = `${y}-${mm}-01T00:00:00-03:00`;
+    const lastIso = `${nextY}-${nmm}-01T00:00:00-03:00`;
+    const first = new Date(firstIso);
+    const last = new Date(lastIso);
+    const firstDate = `${y}-${mm}-01`;
+    const lastDay = new Date(Date.UTC(nextY, nextM - 1, 0)).getUTCDate();
+    const lastDate = `${y}-${mm}-${String(lastDay).padStart(2, "0")}`;
 
     const [arbsRes, costsRes, partsRes] = await Promise.all([
       admin
@@ -68,7 +76,7 @@ Deno.serve(async (req) => {
         )
         .eq("user_id", effectiveUserId)
         .gte("created_at", first.toISOString())
-        .lte("created_at", last.toISOString()),
+        .lt("created_at", last.toISOString()),
       admin
         .from("operational_costs")
         .select("valor")
@@ -172,7 +180,9 @@ Deno.serve(async (req) => {
         lucroBruto += Number(a.lucro_real || 0);
       }
 
-      dias.add(new Date(a.created_at).toISOString().slice(0, 10));
+      // Agrupar por dia em horário de Brasília (UTC-3)
+      const localMs = new Date(a.created_at).getTime() - 3 * 60 * 60 * 1000;
+      dias.add(new Date(localMs).toISOString().slice(0, 10));
 
       [a.casa_01_nome, a.casa_02_nome, a.casa_03_nome].forEach((n: string | null) => {
         if (n) casasMap.set(n, (casasMap.get(n) || 0) + 1);
