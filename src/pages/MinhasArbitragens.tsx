@@ -39,7 +39,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter, X, Maximize2, Minimize2, Search, LayoutGrid, Table as TableIcon, Star, Calendar, Building2, ArrowUpDown, ArrowUp, ArrowDown, TrendingUp, TrendingDown, ExternalLink } from 'lucide-react';
+import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter, X, Maximize2, Minimize2, Search, LayoutGrid, Table as TableIcon, Star, Calendar, Building2, ArrowUpDown, ArrowUp, ArrowDown, TrendingUp, TrendingDown, ExternalLink, Lock, Unlock } from 'lucide-react';
 import { format, differenceInMilliseconds } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -288,6 +288,10 @@ export default function MinhasArbitragens() {
     retorno_previsto: '',
     lucro_projetado: '',
   });
+
+  // Data personalizada de registro (created_at) — bloqueada por padrão
+  const [dataRegistroLocked, setDataRegistroLocked] = useState(true);
+  const [dataRegistroCustom, setDataRegistroCustom] = useState('');
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
@@ -1297,6 +1301,11 @@ export default function MinhasArbitragens() {
         lucro_projetado: parseLocalizedNumber(formData.lucro_projetado),
       };
 
+      // Data personalizada de registro (created_at) quando o usuário desbloqueou
+      if (!dataRegistroLocked && dataRegistroCustom) {
+        arbitrageData.created_at = new Date(dataRegistroCustom).toISOString();
+      }
+
       if (useTresCasas) {
         arbitrageData.casa_03_nome = formData.casa_03_nome;
         arbitrageData.casa_03_odd = parseFloat(formData.casa_03_odd);
@@ -1390,6 +1399,8 @@ export default function MinhasArbitragens() {
         retorno_previsto: '',
         lucro_projetado: '',
       });
+      setDataRegistroLocked(true);
+      setDataRegistroCustom('');
     } catch (error: any) {
       console.error('Erro ao criar arbitragem:', error);
       toast({
@@ -3526,6 +3537,54 @@ export default function MinhasArbitragens() {
                     value={formData.data_evento}
                     onChange={(e) => setFormData({ ...formData, data_evento: e.target.value })}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="data_registro_add">Data do Registro da Aposta</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2 gap-1"
+                      onClick={() => {
+                        setDataRegistroLocked((prev) => {
+                          const next = !prev;
+                          if (!next && !dataRegistroCustom) {
+                            // ao desbloquear, pré-preencher com data/hora atual
+                            const now = new Date();
+                            const tzOffset = now.getTimezoneOffset() * 60000;
+                            setDataRegistroCustom(new Date(now.getTime() - tzOffset).toISOString().slice(0, 16));
+                          }
+                          return next;
+                        });
+                      }}
+                    >
+                      {dataRegistroLocked ? (
+                        <>
+                          <Lock className="h-3.5 w-3.5" />
+                          <span className="text-xs">Bloqueado</span>
+                        </>
+                      ) : (
+                        <>
+                          <Unlock className="h-3.5 w-3.5" />
+                          <span className="text-xs">Desbloqueado</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  <Input
+                    id="data_registro_add"
+                    type="datetime-local"
+                    value={dataRegistroCustom}
+                    onChange={(e) => setDataRegistroCustom(e.target.value)}
+                    disabled={dataRegistroLocked}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {dataRegistroLocked
+                      ? 'Por padrão, a aposta é registrada com a data e hora atuais. Clique no cadeado para alterar (apenas para esta aposta).'
+                      : 'A aposta será registrada no relatório com a data escolhida acima.'}
+                  </p>
                 </div>
 
                 <div className="space-y-2">
