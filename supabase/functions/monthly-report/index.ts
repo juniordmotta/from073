@@ -180,7 +180,9 @@ Deno.serve(async (req) => {
         lucroBruto += Number(a.lucro_real || 0);
       }
 
-      dias.add(new Date(a.created_at).toISOString().slice(0, 10));
+      // Agrupar por dia em horário de Brasília (UTC-3)
+      const localMs = new Date(a.created_at).getTime() - 3 * 60 * 60 * 1000;
+      dias.add(new Date(localMs).toISOString().slice(0, 10));
 
       [a.casa_01_nome, a.casa_02_nome, a.casa_03_nome].forEach((n: string | null) => {
         if (n) casasMap.set(n, (casasMap.get(n) || 0) + 1);
