@@ -55,10 +55,18 @@ Deno.serve(async (req) => {
       isAdmin && body.targetUserId ? body.targetUserId : callerId;
 
     const [y, m] = body.month.split("-").map(Number);
-    const first = new Date(Date.UTC(y, m - 1, 1, 0, 0, 0, 0));
-    const last = new Date(Date.UTC(y, m, 0, 23, 59, 59, 999));
-    const firstDate = first.toISOString().slice(0, 10);
-    const lastDate = last.toISOString().slice(0, 10);
+    // Janela em horário de Brasília (UTC-3): início do mês local até início do mês seguinte
+    const mm = String(m).padStart(2, "0");
+    const nextY = m === 12 ? y + 1 : y;
+    const nextM = m === 12 ? 1 : m + 1;
+    const nmm = String(nextM).padStart(2, "0");
+    const firstIso = `${y}-${mm}-01T00:00:00-03:00`;
+    const lastIso = `${nextY}-${nmm}-01T00:00:00-03:00`;
+    const first = new Date(firstIso);
+    const last = new Date(lastIso);
+    const firstDate = `${y}-${mm}-01`;
+    const lastDay = new Date(Date.UTC(nextY, nextM - 1, 0)).getUTCDate();
+    const lastDate = `${y}-${mm}-${String(lastDay).padStart(2, "0")}`;
 
     const [arbsRes, costsRes, partsRes] = await Promise.all([
       admin
