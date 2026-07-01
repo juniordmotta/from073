@@ -265,6 +265,7 @@ export default function MinhasArbitragens() {
     valor_apostado: '',
     valor_encerrado: '', // Valor que recebeu de volta (cashout/encerramento)
     data_evento: '',
+    partnership_id: '',
   });
   const [isLoadingPrejuizo, setIsLoadingPrejuizo] = useState(false);
   
@@ -1500,14 +1501,14 @@ export default function MinhasArbitragens() {
         casa_01_odd: 1.0,
         casa_01_valor: valorApostado,
         casa_01_mercado: 'Aposta encerrada',
-        casa_01_parceria_id: selectedPartnership01,
+        casa_01_parceria_id: prejuizoData.partnership_id || selectedPartnership01,
         casa_01_resultado: resultadoCasa as 'green' | 'red',
         casa_01_valor_resultado: valorEncerrado,
         casa_02_nome: '-',
         casa_02_odd: 1.0,
         casa_02_valor: 0,
         casa_02_mercado: 'N/A',
-        casa_02_parceria_id: selectedPartnership01,
+        casa_02_parceria_id: prejuizoData.partnership_id || selectedPartnership01,
         casa_02_resultado: 'devolvido' as const,
         porcentagem: 0,
         retorno_previsto: 0,
@@ -1533,7 +1534,7 @@ export default function MinhasArbitragens() {
       const valorApostadoNum = parseLocalizedNumber(prejuizoData.valor_apostado);
       if (prejuizoData.casa_nome && valorApostadoNum > 0) {
         await autoDebitHouseBalances([
-          { partnershipId: selectedPartnership01, houseName: prejuizoData.casa_nome, valor: valorApostadoNum },
+          { partnershipId: prejuizoData.partnership_id || selectedPartnership01, houseName: prejuizoData.casa_nome, valor: valorApostadoNum },
         ]);
       }
 
@@ -1554,6 +1555,7 @@ export default function MinhasArbitragens() {
         valor_apostado: '',
         valor_encerrado: '',
         data_evento: '',
+        partnership_id: '',
       });
     } catch (error: any) {
       console.error('Erro ao registrar prejuízo:', error);
@@ -1761,10 +1763,12 @@ export default function MinhasArbitragens() {
       casa_01_odd: editArbitrage.casa_01_odd,
       casa_01_valor: editArbitrage.casa_01_valor,
       casa_01_mercado: editArbitrage.casa_01_mercado || 'Mercado não especificado',
+      casa_01_parceria_id: editArbitrage.casa_01_parceria_id || null,
       casa_02_nome: editArbitrage.casa_02_nome,
       casa_02_odd: editArbitrage.casa_02_odd,
       casa_02_valor: editArbitrage.casa_02_valor,
       casa_02_mercado: editArbitrage.casa_02_mercado || 'Mercado não especificado',
+      casa_02_parceria_id: editArbitrage.casa_02_parceria_id || null,
       porcentagem: porcentagem,
       retorno_previsto: retornoPrevisto,
       lucro_projetado: lucroProjetado,
@@ -1776,6 +1780,7 @@ export default function MinhasArbitragens() {
       updateData.casa_03_odd = editArbitrage.casa_03_odd;
       updateData.casa_03_valor = editArbitrage.casa_03_valor;
       updateData.casa_03_mercado = editArbitrage.casa_03_mercado || 'Mercado não especificado';
+      updateData.casa_03_parceria_id = editArbitrage.casa_03_parceria_id || null;
     }
 
     // Atualização otimística - atualizar estado local imediatamente
@@ -3191,6 +3196,22 @@ export default function MinhasArbitragens() {
                   <div>
                     <h3 className="font-semibold mb-2">Casa 01</h3>
                     <div className="space-y-2">
+                      {partnerships.length > 0 && (
+                        <div>
+                          <Label>Parceria</Label>
+                          <Select
+                            value={editArbitrage.casa_01_parceria_id || ''}
+                            onValueChange={(v) => setEditArbitrage({ ...editArbitrage, casa_01_parceria_id: v })}
+                          >
+                            <SelectTrigger><SelectValue placeholder="Selecione a parceria" /></SelectTrigger>
+                            <SelectContent className="bg-background z-50">
+                              {partnerships.map((p) => (
+                                <SelectItem key={p.id} value={p.id}>{p.nome_completo}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
                       <div>
                         <Label>Nome</Label>
                         <Input
@@ -3228,6 +3249,22 @@ export default function MinhasArbitragens() {
                   <div>
                     <h3 className="font-semibold mb-2">Casa 02</h3>
                     <div className="space-y-2">
+                      {partnerships.length > 0 && (
+                        <div>
+                          <Label>Parceria</Label>
+                          <Select
+                            value={editArbitrage.casa_02_parceria_id || ''}
+                            onValueChange={(v) => setEditArbitrage({ ...editArbitrage, casa_02_parceria_id: v })}
+                          >
+                            <SelectTrigger><SelectValue placeholder="Selecione a parceria" /></SelectTrigger>
+                            <SelectContent className="bg-background z-50">
+                              {partnerships.map((p) => (
+                                <SelectItem key={p.id} value={p.id}>{p.nome_completo}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
                       <div>
                         <Label>Nome</Label>
                         <Input
@@ -3266,6 +3303,22 @@ export default function MinhasArbitragens() {
                     <div>
                       <h3 className="font-semibold mb-2">Casa 03</h3>
                       <div className="space-y-2">
+                        {partnerships.length > 0 && (
+                          <div>
+                            <Label>Parceria</Label>
+                            <Select
+                              value={editArbitrage.casa_03_parceria_id || ''}
+                              onValueChange={(v) => setEditArbitrage({ ...editArbitrage, casa_03_parceria_id: v })}
+                            >
+                              <SelectTrigger><SelectValue placeholder="Selecione a parceria" /></SelectTrigger>
+                              <SelectContent className="bg-background z-50">
+                                {partnerships.map((p) => (
+                                  <SelectItem key={p.id} value={p.id}>{p.nome_completo}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
                         <div>
                           <Label>Nome</Label>
                           <Input
@@ -4099,6 +4152,25 @@ export default function MinhasArbitragens() {
                     />
                   </div>
                   
+                  {partnerships.length > 0 && (
+                    <div className="space-y-2">
+                      <Label htmlFor="prejuizo_parceria">Parceria</Label>
+                      <Select
+                        value={prejuizoData.partnership_id || selectedPartnership01}
+                        onValueChange={(v) => setPrejuizoData({ ...prejuizoData, partnership_id: v })}
+                      >
+                        <SelectTrigger id="prejuizo_parceria">
+                          <SelectValue placeholder="Selecione a parceria" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          {partnerships.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>{p.nome_completo}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label htmlFor="prejuizo_casa">Casa de Aposta</Label>
                     <BettingHouseInput
