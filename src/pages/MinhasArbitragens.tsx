@@ -39,7 +39,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter, X, Maximize2, Minimize2, Search, LayoutGrid, Table as TableIcon, Star, Calendar, Building2, ArrowUpDown, ArrowUp, ArrowDown, TrendingUp, TrendingDown, ExternalLink } from 'lucide-react';
+import { ChevronDown, Plus, Pencil, Trash2, Clock, FileText, Copy, Filter, X, Maximize2, Minimize2, Search, LayoutGrid, Table as TableIcon, Star, Calendar, Building2, ArrowUpDown, ArrowUp, ArrowDown, TrendingUp, TrendingDown, ExternalLink, Lock, Unlock } from 'lucide-react';
 import { format, differenceInMilliseconds } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
