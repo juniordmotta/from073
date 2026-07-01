@@ -1399,6 +1399,8 @@ export default function MinhasArbitragens() {
         retorno_previsto: '',
         lucro_projetado: '',
       });
+      setDataRegistroLocked(true);
+      setDataRegistroCustom('');
     } catch (error: any) {
       console.error('Erro ao criar arbitragem:', error);
       toast({
