@@ -1353,6 +1353,10 @@ export default function MinhasArbitragens() {
         arbitrageData.casa_03_parceria_id = selectedPartnership03;
       }
 
+      // Registrar no histórico da aposta se o saldo das casas foi descontado
+      (arbitrageData as any).saldo_descontado = descontarSaldo;
+
+
       const { data: insertedData, error: insertError } = await supabase
         .from('arbitrages')
         .insert(arbitrageData)
