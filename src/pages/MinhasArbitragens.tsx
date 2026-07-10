@@ -3628,6 +3628,23 @@ export default function MinhasArbitragens() {
             </p>
           </div>
 
+          <div className="flex items-start gap-2 rounded-md border p-3">
+            <Checkbox
+              id="descontar_saldo"
+              checked={descontarSaldo}
+              onCheckedChange={(v) => setDescontarSaldo(v === true)}
+              className="mt-0.5"
+            />
+            <div className="space-y-1">
+              <Label htmlFor="descontar_saldo" className="cursor-pointer">Descontar do saldo</Label>
+              <p className="text-xs text-muted-foreground">
+                {descontarSaldo
+                  ? 'O valor apostado será descontado automaticamente do saldo das casas envolvidas.'
+                  : 'O saldo das casas NÃO será alterado ao registrar esta aposta.'}
+              </p>
+            </div>
+          </div>
+
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
 
             <TabsList className="grid w-full grid-cols-2">
