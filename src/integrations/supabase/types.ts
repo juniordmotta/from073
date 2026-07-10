@@ -106,6 +106,7 @@ export type Database = {
           lucro_real: number | null
           porcentagem: number
           retorno_previsto: number
+          saldo_descontado: boolean
           status: Database["public"]["Enums"]["arbitrage_status"]
           updated_at: string
           user_id: string
@@ -147,6 +148,7 @@ export type Database = {
           lucro_real?: number | null
           porcentagem: number
           retorno_previsto: number
+          saldo_descontado?: boolean
           status?: Database["public"]["Enums"]["arbitrage_status"]
           updated_at?: string
           user_id: string
@@ -188,6 +190,7 @@ export type Database = {
           lucro_real?: number | null
           porcentagem?: number
           retorno_previsto?: number
+          saldo_descontado?: boolean
           status?: Database["public"]["Enums"]["arbitrage_status"]
           updated_at?: string
           user_id?: string

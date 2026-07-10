@@ -1,0 +1,1 @@
+ALTER TABLE public.arbitrages ADD COLUMN IF NOT EXISTS saldo_descontado boolean NOT NULL DEFAULT true;
