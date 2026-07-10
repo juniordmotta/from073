@@ -1401,12 +1401,14 @@ export default function MinhasArbitragens() {
         setArbitragens(prev => [...prev, insertedData as unknown as Arbitrage]);
       }
 
-      // Auto-debitar saldos das casas e ajustar saldo bancário
-      await autoDebitHouseBalances([
-        { partnershipId: selectedPartnership01, houseName: formData.casa_01_nome, valor: parseFloat(formData.casa_01_valor) },
-        { partnershipId: selectedPartnership02, houseName: formData.casa_02_nome, valor: parseFloat(formData.casa_02_valor) },
-        ...(useTresCasas && formData.casa_03_nome ? [{ partnershipId: selectedPartnership03, houseName: formData.casa_03_nome, valor: parseFloat(formData.casa_03_valor) }] : []),
-      ]);
+      // Auto-debitar saldos das casas e ajustar saldo bancário (se marcado)
+      if (descontarSaldo) {
+        await autoDebitHouseBalances([
+          { partnershipId: selectedPartnership01, houseName: formData.casa_01_nome, valor: parseFloat(formData.casa_01_valor) },
+          { partnershipId: selectedPartnership02, houseName: formData.casa_02_nome, valor: parseFloat(formData.casa_02_valor) },
+          ...(useTresCasas && formData.casa_03_nome ? [{ partnershipId: selectedPartnership03, houseName: formData.casa_03_nome, valor: parseFloat(formData.casa_03_valor) }] : []),
+        ]);
+      }
 
       // Recarregar stats do mês e saldos para atualizar os cards
       loadUserMonthStats();
