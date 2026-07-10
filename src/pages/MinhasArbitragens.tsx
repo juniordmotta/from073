@@ -1442,6 +1442,7 @@ export default function MinhasArbitragens() {
       });
       setDataRegistroLocked(true);
       setDataRegistroCustom('');
+      setDescontarSaldo(true);
     } catch (error: any) {
       console.error('Erro ao criar arbitragem:', error);
       toast({
