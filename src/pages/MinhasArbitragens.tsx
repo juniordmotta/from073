@@ -293,6 +293,7 @@ export default function MinhasArbitragens() {
   // Data personalizada de registro (created_at) — bloqueada por padrão
   const [dataRegistroLocked, setDataRegistroLocked] = useState(true);
   const [dataRegistroCustom, setDataRegistroCustom] = useState('');
+  const [descontarSaldo, setDescontarSaldo] = useState(true);
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
@@ -1400,12 +1401,14 @@ export default function MinhasArbitragens() {
         setArbitragens(prev => [...prev, insertedData as unknown as Arbitrage]);
       }
 
-      // Auto-debitar saldos das casas e ajustar saldo bancário
-      await autoDebitHouseBalances([
-        { partnershipId: selectedPartnership01, houseName: formData.casa_01_nome, valor: parseFloat(formData.casa_01_valor) },
-        { partnershipId: selectedPartnership02, houseName: formData.casa_02_nome, valor: parseFloat(formData.casa_02_valor) },
-        ...(useTresCasas && formData.casa_03_nome ? [{ partnershipId: selectedPartnership03, houseName: formData.casa_03_nome, valor: parseFloat(formData.casa_03_valor) }] : []),
-      ]);
+      // Auto-debitar saldos das casas e ajustar saldo bancário (se marcado)
+      if (descontarSaldo) {
+        await autoDebitHouseBalances([
+          { partnershipId: selectedPartnership01, houseName: formData.casa_01_nome, valor: parseFloat(formData.casa_01_valor) },
+          { partnershipId: selectedPartnership02, houseName: formData.casa_02_nome, valor: parseFloat(formData.casa_02_valor) },
+          ...(useTresCasas && formData.casa_03_nome ? [{ partnershipId: selectedPartnership03, houseName: formData.casa_03_nome, valor: parseFloat(formData.casa_03_valor) }] : []),
+        ]);
+      }
 
       // Recarregar stats do mês e saldos para atualizar os cards
       loadUserMonthStats();
@@ -1439,6 +1442,7 @@ export default function MinhasArbitragens() {
       });
       setDataRegistroLocked(true);
       setDataRegistroCustom('');
+      setDescontarSaldo(true);
     } catch (error: any) {
       console.error('Erro ao criar arbitragem:', error);
       toast({
@@ -3623,6 +3627,23 @@ export default function MinhasArbitragens() {
                 ? 'Por padrão, a aposta é registrada com a data e hora atuais. Clique no cadeado para alterar (somente no momento da criação).'
                 : 'A aposta será registrada no relatório com a data escolhida acima. Só pode ser definida agora, no cadastro.'}
             </p>
+          </div>
+
+          <div className="flex items-start gap-2 rounded-md border p-3">
+            <Checkbox
+              id="descontar_saldo"
+              checked={descontarSaldo}
+              onCheckedChange={(v) => setDescontarSaldo(v === true)}
+              className="mt-0.5"
+            />
+            <div className="space-y-1">
+              <Label htmlFor="descontar_saldo" className="cursor-pointer">Descontar do saldo</Label>
+              <p className="text-xs text-muted-foreground">
+                {descontarSaldo
+                  ? 'O valor apostado será descontado automaticamente do saldo das casas envolvidas.'
+                  : 'O saldo das casas NÃO será alterado ao registrar esta aposta.'}
+              </p>
+            </div>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
