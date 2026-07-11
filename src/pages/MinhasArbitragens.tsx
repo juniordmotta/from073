@@ -1114,36 +1114,53 @@ export default function MinhasArbitragens() {
     const odd3 = parseFloat(formData.casa_03_odd);
     const valor3 = parseFloat(formData.casa_03_valor);
 
-    if (useTresCasas) {
-      if (odd1 > 0 && valor1 > 0 && odd2 > 0 && valor2 > 0 && odd3 > 0 && valor3 > 0) {
-        const porcentagem = ((1 / odd1 + 1 / odd2 + 1 / odd3) - 1) * -100;
-        const totalApostado = valor1 + valor2 + valor3;
-        const retorno1 = valor1 * odd1;
-        const retorno2 = valor2 * odd2;
-        const retorno3 = valor3 * odd3;
-        const retornoPrevisto = Math.max(retorno1, retorno2, retorno3);
-        const lucroProjetado = retornoPrevisto - totalApostado;
+    if (calculoAutomatico) {
+      if (useTresCasas) {
+        if (odd1 > 0 && valor1 > 0 && odd2 > 0 && valor2 > 0 && odd3 > 0 && valor3 > 0) {
+          const porcentagem = ((1 / odd1 + 1 / odd2 + 1 / odd3) - 1) * -100;
+          const totalApostado = valor1 + valor2 + valor3;
+          const retorno1 = valor1 * odd1;
+          const retorno2 = valor2 * odd2;
+          const retorno3 = valor3 * odd3;
+          const retornoPrevisto = Math.max(retorno1, retorno2, retorno3);
+          const lucroProjetado = retornoPrevisto - totalApostado;
 
-        setFormData(prev => ({
-          ...prev,
-          porcentagem: formatNumber(porcentagem),
-          retorno_previsto: formatCurrency(retornoPrevisto),
-          lucro_projetado: formatCurrency(lucroProjetado),
-        }));
+          setFormData(prev => ({
+            ...prev,
+            porcentagem: formatNumber(porcentagem),
+            retorno_previsto: formatCurrency(retornoPrevisto),
+            lucro_projetado: formatCurrency(lucroProjetado),
+          }));
+        }
+      } else {
+        if (odd1 > 0 && valor1 > 0 && odd2 > 0 && valor2 > 0) {
+          const porcentagem = ((1 / odd1 + 1 / odd2) - 1) * -100;
+          const totalApostado = valor1 + valor2;
+          const retorno1 = valor1 * odd1;
+          const retorno2 = valor2 * odd2;
+          const retornoPrevisto = Math.max(retorno1, retorno2);
+          const lucroProjetado = retornoPrevisto - totalApostado;
+
+          setFormData(prev => ({
+            ...prev,
+            porcentagem: formatNumber(porcentagem),
+            retorno_previsto: formatCurrency(retornoPrevisto),
+            lucro_projetado: formatCurrency(lucroProjetado),
+          }));
+        }
       }
     } else {
-      if (odd1 > 0 && valor1 > 0 && odd2 > 0 && valor2 > 0) {
-        const porcentagem = ((1 / odd1 + 1 / odd2) - 1) * -100;
-        const totalApostado = valor1 + valor2;
-        const retorno1 = valor1 * odd1;
-        const retorno2 = valor2 * odd2;
-        const retornoPrevisto = Math.max(retorno1, retorno2);
+      // Modo manual: recalcula porcentagem e lucro projetado com base no retorno_previsto digitado
+      const retornoPrevisto = parseLocalizedNumber(formData.retorno_previsto);
+      const totalApostado = useTresCasas
+        ? (valor1 || 0) + (valor2 || 0) + (valor3 || 0)
+        : (valor1 || 0) + (valor2 || 0);
+      if (totalApostado > 0 && retornoPrevisto > 0) {
         const lucroProjetado = retornoPrevisto - totalApostado;
-
+        const porcentagem = (lucroProjetado / totalApostado) * 100;
         setFormData(prev => ({
           ...prev,
           porcentagem: formatNumber(porcentagem),
-          retorno_previsto: formatCurrency(retornoPrevisto),
           lucro_projetado: formatCurrency(lucroProjetado),
         }));
       }
@@ -1155,7 +1172,9 @@ export default function MinhasArbitragens() {
     formData.casa_02_valor,
     formData.casa_03_odd,
     formData.casa_03_valor,
+    formData.retorno_previsto,
     useTresCasas,
+    calculoAutomatico,
   ]);
 
   // Auto-debitar saldos das casas ao criar arbitragem
