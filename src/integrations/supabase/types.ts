@@ -70,6 +70,7 @@ export type Database = {
       }
       arbitrages: {
         Row: {
+          calculo_automatico: boolean
           casa_01_mercado: string
           casa_01_nome: string
           casa_01_odd: number
@@ -112,6 +113,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          calculo_automatico?: boolean
           casa_01_mercado?: string
           casa_01_nome: string
           casa_01_odd: number
@@ -154,6 +156,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          calculo_automatico?: boolean
           casa_01_mercado?: string
           casa_01_nome?: string
           casa_01_odd?: number
