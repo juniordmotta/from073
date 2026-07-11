@@ -294,6 +294,7 @@ export default function MinhasArbitragens() {
   const [dataRegistroLocked, setDataRegistroLocked] = useState(true);
   const [dataRegistroCustom, setDataRegistroCustom] = useState('');
   const [descontarSaldo, setDescontarSaldo] = useState(true);
+  const [calculoAutomatico, setCalculoAutomatico] = useState(true);
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
@@ -1113,36 +1114,53 @@ export default function MinhasArbitragens() {
     const odd3 = parseFloat(formData.casa_03_odd);
     const valor3 = parseFloat(formData.casa_03_valor);
 
-    if (useTresCasas) {
-      if (odd1 > 0 && valor1 > 0 && odd2 > 0 && valor2 > 0 && odd3 > 0 && valor3 > 0) {
-        const porcentagem = ((1 / odd1 + 1 / odd2 + 1 / odd3) - 1) * -100;
-        const totalApostado = valor1 + valor2 + valor3;
-        const retorno1 = valor1 * odd1;
-        const retorno2 = valor2 * odd2;
-        const retorno3 = valor3 * odd3;
-        const retornoPrevisto = Math.max(retorno1, retorno2, retorno3);
-        const lucroProjetado = retornoPrevisto - totalApostado;
+    if (calculoAutomatico) {
+      if (useTresCasas) {
+        if (odd1 > 0 && valor1 > 0 && odd2 > 0 && valor2 > 0 && odd3 > 0 && valor3 > 0) {
+          const porcentagem = ((1 / odd1 + 1 / odd2 + 1 / odd3) - 1) * -100;
+          const totalApostado = valor1 + valor2 + valor3;
+          const retorno1 = valor1 * odd1;
+          const retorno2 = valor2 * odd2;
+          const retorno3 = valor3 * odd3;
+          const retornoPrevisto = Math.max(retorno1, retorno2, retorno3);
+          const lucroProjetado = retornoPrevisto - totalApostado;
 
-        setFormData(prev => ({
-          ...prev,
-          porcentagem: formatNumber(porcentagem),
-          retorno_previsto: formatCurrency(retornoPrevisto),
-          lucro_projetado: formatCurrency(lucroProjetado),
-        }));
+          setFormData(prev => ({
+            ...prev,
+            porcentagem: formatNumber(porcentagem),
+            retorno_previsto: formatCurrency(retornoPrevisto),
+            lucro_projetado: formatCurrency(lucroProjetado),
+          }));
+        }
+      } else {
+        if (odd1 > 0 && valor1 > 0 && odd2 > 0 && valor2 > 0) {
+          const porcentagem = ((1 / odd1 + 1 / odd2) - 1) * -100;
+          const totalApostado = valor1 + valor2;
+          const retorno1 = valor1 * odd1;
+          const retorno2 = valor2 * odd2;
+          const retornoPrevisto = Math.max(retorno1, retorno2);
+          const lucroProjetado = retornoPrevisto - totalApostado;
+
+          setFormData(prev => ({
+            ...prev,
+            porcentagem: formatNumber(porcentagem),
+            retorno_previsto: formatCurrency(retornoPrevisto),
+            lucro_projetado: formatCurrency(lucroProjetado),
+          }));
+        }
       }
     } else {
-      if (odd1 > 0 && valor1 > 0 && odd2 > 0 && valor2 > 0) {
-        const porcentagem = ((1 / odd1 + 1 / odd2) - 1) * -100;
-        const totalApostado = valor1 + valor2;
-        const retorno1 = valor1 * odd1;
-        const retorno2 = valor2 * odd2;
-        const retornoPrevisto = Math.max(retorno1, retorno2);
+      // Modo manual: recalcula porcentagem e lucro projetado com base no retorno_previsto digitado
+      const retornoPrevisto = parseLocalizedNumber(formData.retorno_previsto);
+      const totalApostado = useTresCasas
+        ? (valor1 || 0) + (valor2 || 0) + (valor3 || 0)
+        : (valor1 || 0) + (valor2 || 0);
+      if (totalApostado > 0 && retornoPrevisto > 0) {
         const lucroProjetado = retornoPrevisto - totalApostado;
-
+        const porcentagem = (lucroProjetado / totalApostado) * 100;
         setFormData(prev => ({
           ...prev,
           porcentagem: formatNumber(porcentagem),
-          retorno_previsto: formatCurrency(retornoPrevisto),
           lucro_projetado: formatCurrency(lucroProjetado),
         }));
       }
@@ -1154,7 +1172,9 @@ export default function MinhasArbitragens() {
     formData.casa_02_valor,
     formData.casa_03_odd,
     formData.casa_03_valor,
+    formData.retorno_previsto,
     useTresCasas,
+    calculoAutomatico,
   ]);
 
   // Auto-debitar saldos das casas ao criar arbitragem
@@ -1447,6 +1467,7 @@ export default function MinhasArbitragens() {
       setDataRegistroLocked(true);
       setDataRegistroCustom('');
       setDescontarSaldo(true);
+      setCalculoAutomatico(true);
     } catch (error: any) {
       console.error('Erro ao criar arbitragem:', error);
       toast({
@@ -4094,14 +4115,25 @@ export default function MinhasArbitragens() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="retorno_previsto_add">Retorno Previsto (R$)</Label>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor="retorno_previsto_add">Retorno Previsto (R$)</Label>
+                      <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+                        <Checkbox
+                          checked={calculoAutomatico}
+                          onCheckedChange={(v) => setCalculoAutomatico(v === true)}
+                          className="h-3.5 w-3.5"
+                        />
+                        <span>Cálculo automático</span>
+                      </label>
+                    </div>
                     <Input
                       id="retorno_previsto_add"
                       type="text"
-                      placeholder="Calculado automaticamente"
+                      placeholder={calculoAutomatico ? "Calculado automaticamente" : "Digite o retorno"}
                       value={formData.retorno_previsto}
-                      readOnly
-                      className={`bg-muted ${parseLocalizedNumber(formData.retorno_previsto) > 0 ? 'border-success' : ''}`}
+                      readOnly={calculoAutomatico}
+                      onChange={(e) => !calculoAutomatico && setFormData(prev => ({ ...prev, retorno_previsto: e.target.value }))}
+                      className={`${calculoAutomatico ? 'bg-muted' : ''} ${parseLocalizedNumber(formData.retorno_previsto) > 0 ? 'border-success' : ''}`}
                     />
                   </div>
                   <div className="space-y-2">
