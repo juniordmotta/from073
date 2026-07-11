@@ -294,6 +294,7 @@ export default function MinhasArbitragens() {
   const [dataRegistroLocked, setDataRegistroLocked] = useState(true);
   const [dataRegistroCustom, setDataRegistroCustom] = useState('');
   const [descontarSaldo, setDescontarSaldo] = useState(true);
+  const [calculoAutomatico, setCalculoAutomatico] = useState(true);
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
