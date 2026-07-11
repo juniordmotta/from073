@@ -1420,6 +1420,9 @@ export default function MinhasArbitragens() {
 
       // Registrar no histórico da aposta se o saldo das casas foi descontado
       (arbitrageData as any).saldo_descontado = descontarSaldo;
+      // Persistir o modo de cálculo (automático/manual) junto com a arbitragem
+      (arbitrageData as any).calculo_automatico = calculoAutomatico;
+
 
 
       const { data: insertedData, error: insertError } = await supabase
