@@ -4114,14 +4114,25 @@ export default function MinhasArbitragens() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="retorno_previsto_add">Retorno Previsto (R$)</Label>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor="retorno_previsto_add">Retorno Previsto (R$)</Label>
+                      <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+                        <Checkbox
+                          checked={calculoAutomatico}
+                          onCheckedChange={(v) => setCalculoAutomatico(v === true)}
+                          className="h-3.5 w-3.5"
+                        />
+                        <span>Cálculo automático</span>
+                      </label>
+                    </div>
                     <Input
                       id="retorno_previsto_add"
                       type="text"
-                      placeholder="Calculado automaticamente"
+                      placeholder={calculoAutomatico ? "Calculado automaticamente" : "Digite o retorno"}
                       value={formData.retorno_previsto}
-                      readOnly
-                      className={`bg-muted ${parseLocalizedNumber(formData.retorno_previsto) > 0 ? 'border-success' : ''}`}
+                      readOnly={calculoAutomatico}
+                      onChange={(e) => !calculoAutomatico && setFormData(prev => ({ ...prev, retorno_previsto: e.target.value }))}
+                      className={`${calculoAutomatico ? 'bg-muted' : ''} ${parseLocalizedNumber(formData.retorno_previsto) > 0 ? 'border-success' : ''}`}
                     />
                   </div>
                   <div className="space-y-2">
