@@ -1287,7 +1287,52 @@ export default function MinhasArbitragens() {
       return;
     }
     
+    // Validação do Retorno Previsto quando cálculo manual
+    if (!calculoAutomatico) {
+      const raw = (formData.retorno_previsto ?? '').toString().trim();
+      const retornoManual = parseLocalizedNumber(raw);
+      const totalInvestido =
+        (parseFloat(formData.casa_01_valor) || 0) +
+        (parseFloat(formData.casa_02_valor) || 0) +
+        (useTresCasas ? (parseFloat(formData.casa_03_valor) || 0) : 0);
+
+      if (raw === '') {
+        toast({
+          variant: 'destructive',
+          title: 'Retorno Previsto obrigatório',
+          description: 'Informe o valor do retorno previsto ou reative o cálculo automático.',
+        });
+        return;
+      }
+      if (!Number.isFinite(retornoManual) || retornoManual <= 0) {
+        toast({
+          variant: 'destructive',
+          title: 'Retorno Previsto inválido',
+          description: 'O retorno previsto precisa ser um número maior que zero.',
+        });
+        return;
+      }
+      if (totalInvestido > 0 && retornoManual < totalInvestido) {
+        toast({
+          variant: 'destructive',
+          title: 'Retorno Previsto fora do intervalo',
+          description: 'O retorno previsto não pode ser menor que o total investido.',
+        });
+        return;
+      }
+      if (retornoManual > 1_000_000_000) {
+        toast({
+          variant: 'destructive',
+          title: 'Retorno Previsto fora do intervalo',
+          description: 'O valor informado é muito alto.',
+        });
+        return;
+      }
+    }
+
     setIsLoadingAdd(true);
+
+
 
     try {
       const { error: profileError } = await supabase.rpc('ensure_user_profile', {
