@@ -31,11 +31,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     let isMounted = true;
     let loadRequestId = 0;
+    let loadedForUserId: string | null = null;
     
-    const loadUserRole = async (userId: string) => {
+    const loadUserRole = async (userId: string, showLoading: boolean) => {
       if (!isMounted) return;
       const requestId = ++loadRequestId;
-      setIsLoading(true);
+      if (showLoading) setIsLoading(true);
       
       try {
         const [roleResult, profileResult] = await Promise.all([
@@ -71,6 +72,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         } else {
           setExpiresAt(null);
         }
+
+        loadedForUserId = userId;
       } catch (err) {
         console.error('Unexpected error loading role:', err);
         if (isMounted && requestId === loadRequestId) {
@@ -78,7 +81,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setExpiresAt(null);
         }
       } finally {
-        if (isMounted && requestId === loadRequestId) setIsLoading(false);
+        if (isMounted && requestId === loadRequestId && showLoading) setIsLoading(false);
       }
     };
     
@@ -87,15 +90,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       (event, session) => {
         if (!isMounted) return;
         
-        console.log('Auth state change:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
+        // TOKEN_REFRESHED / USER_UPDATED disparam sempre que a aba volta ao foco.
+        // Não recarregar role nem mostrar loading nesses casos — evita "piscar" a página.
+        if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+          return;
+        }
+
         if (session?.user) {
-          // Usar setTimeout para evitar deadlock com Supabase
-          setTimeout(() => void loadUserRole(session.user.id), 0);
+          // Só recarregar se for um usuário diferente do que já carregamos
+          if (loadedForUserId !== session.user.id) {
+            setTimeout(() => void loadUserRole(session.user.id, true), 0);
+          }
         } else {
           loadRequestId += 1;
+          loadedForUserId = null;
           setUserRole(null);
           setExpiresAt(null);
           setIsLoading(false);
@@ -111,7 +122,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        setTimeout(() => void loadUserRole(session.user.id), 0);
+        setTimeout(() => void loadUserRole(session.user.id, true), 0);
       } else {
         setExpiresAt(null);
         setIsLoading(false);
@@ -123,6 +134,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       subscription.unsubscribe();
     };
   }, []);
+
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({

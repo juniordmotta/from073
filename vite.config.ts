@@ -20,7 +20,22 @@ export default defineConfig(({ mode }) => ({
         navigateFallbackDenylist: [/^\/~oauth/],
         importScripts: ['/push-sw.js'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'html-navigations',
+              networkTimeoutSeconds: 5,
+              expiration: { maxEntries: 20 },
+            },
+          },
+        ],
       },
+
       manifest: {
         name: "Arb From 073",
         short_name: "Arb073",
