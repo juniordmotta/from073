@@ -1,6 +1,5 @@
-// Force the app to always run the latest deployed version.
-// - On new service worker available, activate it immediately and reload.
-// - On controller change, reload once so the page uses the new assets.
+// PWA registration: notify the app when a new version is ready and let the
+// user decide when to apply it. Also exposes a global update trigger.
 import { registerSW } from "virtual:pwa-register";
 
 const host = window.location.hostname;
@@ -24,6 +23,12 @@ const inIframe = (() => {
 
 const swOff = new URLSearchParams(window.location.search).get("sw") === "off";
 
+declare global {
+  interface Window {
+    __applyAppUpdate?: () => void;
+  }
+}
+
 if (!import.meta.env.PROD || isPreview || inIframe || swOff) {
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.getRegistrations().then((regs) => {
@@ -36,20 +41,19 @@ if (!import.meta.env.PROD || isPreview || inIframe || swOff) {
   const updateSW = registerSW({
     immediate: true,
     onNeedRefresh() {
-      // A new version is waiting: activate it and reload the page.
-      updateSW(true);
+      // Notify UI — user chooses when to reload.
+      window.dispatchEvent(new CustomEvent("pwa:update-ready"));
     },
     onRegisteredSW(_swUrl, registration) {
       if (!registration) return;
-      // Periodically check for updates so long-lived tabs also refresh.
       setInterval(() => {
         registration.update().catch(() => {});
       }, 60 * 1000);
     },
   });
 
-  // When the active SW changes (new version took control), reload once
-  // so the page loads the freshest HTML and hashed assets.
+  window.__applyAppUpdate = () => updateSW(true);
+
   let reloaded = false;
   navigator.serviceWorker?.addEventListener("controllerchange", () => {
     if (reloaded) return;
