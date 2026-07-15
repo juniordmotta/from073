@@ -17,7 +17,9 @@ import { SidebarProvider, SidebarTrigger, useSidebar } from '@/components/ui/sid
 import { AppSidebar } from '@/components/AppSidebar';
 import { LayoutDashboard, DollarSign, List, Users, LogOut, User, Handshake, Building2, StickyNote } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
+import { AppVersionBadge } from '@/components/UpdateNotifier';
 import { cn, formatUserName } from '@/lib/utils';
+
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -152,10 +154,12 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
         <main className="flex-1 container py-6 overflow-x-hidden">{children}</main>
         
         <footer className="border-t border-border py-6">
-          <div className="container text-center text-sm text-muted-foreground">
-            © 2025 Arb From 073. Sistema de Gerenciamento de Arbitragens Esportivas.
+          <div className="container flex flex-col items-center gap-1 text-center text-sm text-muted-foreground">
+            <span>© 2025 Arb From 073. Sistema de Gerenciamento de Arbitragens Esportivas.</span>
+            <AppVersionBadge />
           </div>
         </footer>
+
       </div>
     </div>
   );
