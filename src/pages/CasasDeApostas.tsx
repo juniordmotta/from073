@@ -1197,6 +1197,24 @@ const CasasDeApostas = () => {
           </div>
           
           <div className="flex items-center gap-2 flex-wrap">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Exportar
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportExcel} className="gap-2">
+                  <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+                  Exportar Excel
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportPDF} className="gap-2">
+                  <FileText className="h-4 w-4 text-red-600" />
+                  Exportar PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {isAdmin && (
               <Button
                 variant="outline"
@@ -1208,6 +1226,7 @@ const CasasDeApostas = () => {
                 Central de Notificações
               </Button>
             )}
+
             {isAdmin && (
               <Button
                 variant="outline"
