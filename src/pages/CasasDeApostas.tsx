@@ -14,7 +14,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { NotificationCenterDialog } from '@/components/NotificationCenterDialog';
-import { Bell } from 'lucide-react';
+import { Bell, Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+
 import { 
   Search, 
   Plus, 
