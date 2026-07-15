@@ -1062,7 +1062,126 @@ const CasasDeApostas = () => {
     return [...staticGroups, ...customGroupsList];
   }, [customGroups]);
 
+  // Exportar lista de casas para Excel (uma aba por grupo)
+  const handleExportExcel = () => {
+    try {
+      const wb = XLSX.utils.book_new();
+      const usedNames = new Set<string>();
+
+      filteredGroups.forEach((group) => {
+        const rows = [
+          ['Casa', 'Link'],
+          ...group.houses.map((h) => [h.name, h.url || '']),
+        ];
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        ws['!cols'] = [{ wch: 28 }, { wch: 40 }];
+
+        // Nome de aba deve ter no máx 31 chars e ser único
+        let sheetName = group.name.replace(/[\\/?*[\]:]/g, '').slice(0, 31) || 'Grupo';
+        let suffix = 1;
+        const base = sheetName;
+        while (usedNames.has(sheetName.toLowerCase())) {
+          suffix += 1;
+          sheetName = `${base.slice(0, 28)} ${suffix}`;
+        }
+        usedNames.add(sheetName.toLowerCase());
+
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      });
+
+      const stamp = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(wb, `casas-de-apostas-${stamp}.xlsx`);
+      toast({ title: 'Excel exportado', description: 'A lista de casas foi baixada.' });
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Erro', description: 'Não foi possível exportar o Excel.', variant: 'destructive' });
+    }
+  };
+
+  // Exportar lista de casas para PDF (grupos em destaque, casas indentadas)
+  const handleExportPDF = () => {
+    try {
+      const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const marginX = 40;
+      const marginTop = 50;
+      const marginBottom = 40;
+      let y = marginTop;
+
+      // Cabeçalho
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.text('Casas de Apostas', marginX, y);
+      y += 8;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(120);
+      doc.text(`Gerado em ${new Date().toLocaleString('pt-BR')}`, marginX, y + 8);
+      y += 24;
+      doc.setTextColor(0);
+
+      const ensureSpace = (needed: number) => {
+        if (y + needed > pageHeight - marginBottom) {
+          doc.addPage();
+          y = marginTop;
+        }
+      };
+
+      filteredGroups.forEach((group) => {
+        ensureSpace(40);
+        // Grupo em destaque
+        doc.setFillColor(30, 41, 59);
+        doc.rect(marginX, y - 12, pageWidth - marginX * 2, 20, 'F');
+        doc.setTextColor(255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.text(group.name, marginX + 8, y + 2);
+        doc.setTextColor(0);
+        y += 18;
+
+        if (group.houses.length === 0) {
+          doc.setFont('helvetica', 'italic');
+          doc.setFontSize(9);
+          doc.setTextColor(120);
+          doc.text('(sem casas cadastradas)', marginX + 24, y + 8);
+          doc.setTextColor(0);
+          y += 20;
+          return;
+        }
+
+        group.houses.forEach((house) => {
+          ensureSpace(30);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(10);
+          doc.text(`• ${house.name}`, marginX + 24, y + 10);
+          y += 12;
+
+          if (house.url) {
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            doc.setTextColor(59, 130, 246);
+            doc.textWithLink(house.url, marginX + 36, y + 10, { url: house.url.startsWith('http') ? house.url : `https://${house.url}` });
+            doc.setTextColor(0);
+            y += 12;
+          }
+          y += 4;
+        });
+
+        y += 8;
+      });
+
+      const stamp = new Date().toISOString().slice(0, 10);
+      doc.save(`casas-de-apostas-${stamp}.pdf`);
+      toast({ title: 'PDF exportado', description: 'A lista de casas foi baixada.' });
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Erro', description: 'Não foi possível exportar o PDF.', variant: 'destructive' });
+    }
+  };
+
   return (
+
     <Layout>
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
