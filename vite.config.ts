@@ -4,12 +4,23 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
+const pkg = require("./package.json");
+const buildDate = new Date();
+const pad = (n: number) => String(n).padStart(2, "0");
+const buildStamp = `${buildDate.getFullYear()}.${pad(buildDate.getMonth() + 1)}.${pad(buildDate.getDate())}.${pad(buildDate.getHours())}${pad(buildDate.getMinutes())}`;
+const APP_VERSION = `${pkg.version || "0.0.0"}-${buildStamp}`;
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  define: {
+    __APP_VERSION__: JSON.stringify(APP_VERSION),
+    __APP_BUILD_DATE__: JSON.stringify(buildDate.toISOString()),
+  },
   server: {
     host: "::",
     port: 8080,
   },
+
   plugins: [
     react(),
     mode === "development" && componentTagger(),
