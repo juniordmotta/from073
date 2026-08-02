@@ -205,6 +205,31 @@ Deno.serve(async (req) => {
     const diasTrabalhados = dias.size;
     const mediaPorDia = diasTrabalhados > 0 ? lucroBruto / diasTrabalhados : 0;
 
+    // Validação automática: recalcula de forma independente e compara
+    const abertas = (arbs as any[]).filter((a) => a.status === "aguardando");
+    const fechadas = (arbs as any[]).filter((a) => a.status !== "aguardando");
+    const checkAbertasQtd = abertas.length;
+    const checkAbertasValor = abertas.reduce(
+      (s, a) => s + Number(a.lucro_projetado || 0),
+      0
+    );
+    const checkBruto = fechadas.reduce(
+      (s, a) => s + Number(a.lucro_real || 0),
+      0
+    );
+    const near = (x: number, y: number) => Math.abs(x - y) < 0.01;
+    const validacao = {
+      ok:
+        checkAbertasQtd === apostasAbertas &&
+        near(checkAbertasValor, lucroAbertas) &&
+        near(checkBruto, lucroBruto),
+      esperado: {
+        apostasAbertas: checkAbertasQtd,
+        lucroAbertas: checkAbertasValor,
+        lucroBruto: checkBruto,
+      },
+    };
+
     const casas = Array.from(casasMap.entries())
       .map(([nome, usos]) => ({ nome, usos }))
       .sort((a, b) => b.usos - a.usos)
@@ -217,6 +242,7 @@ Deno.serve(async (req) => {
         usos,
       }))
       .sort((a, b) => b.usos - a.usos);
+
 
     return json({
       effectiveUserId,
