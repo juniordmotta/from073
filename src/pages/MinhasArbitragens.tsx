@@ -1571,6 +1571,8 @@ export default function MinhasArbitragens() {
       // Criar uma arbitragem com resultado já fechado
       const arbitrageData = {
         user_id: user.id,
+        // Registrar no dia informado no formulário (não no dia atual)
+        created_at: dataEvento,
         descricao: prejuizoData.descricao || tipoRegistro,
         data_evento: dataEvento,
         esporte_liga: tipoRegistro,
