@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
       admin
         .from("arbitrages")
         .select(
-          "id, status, lucro_real, casa_01_nome, casa_02_nome, casa_03_nome, casa_01_valor, casa_02_valor, casa_03_valor, casa_01_valor_resultado, casa_02_valor_resultado, casa_03_valor_resultado, casa_01_resultado, casa_02_resultado, casa_03_resultado, casa_01_parceria_id, casa_02_parceria_id, casa_03_parceria_id, created_at"
+          "id, status, lucro_real, lucro_projetado, casa_01_nome, casa_02_nome, casa_03_nome, casa_01_valor, casa_02_valor, casa_03_valor, casa_01_valor_resultado, casa_02_valor_resultado, casa_03_valor_resultado, casa_01_resultado, casa_02_resultado, casa_03_resultado, casa_01_parceria_id, casa_02_parceria_id, casa_03_parceria_id, created_at"
         )
         .eq("user_id", effectiveUserId)
         .gte("created_at", first.toISOString())
@@ -160,6 +160,7 @@ Deno.serve(async (req) => {
       .sort((a, b) => b.total - a.total);
 
     let lucroBruto = 0;
+    let lucroAbertas = 0;
     let totalInvestido = 0;
     let apostasAbertas = 0;
     let apostasFechadas = 0;
@@ -175,6 +176,7 @@ Deno.serve(async (req) => {
 
       if (a.status === "aguardando") {
         apostasAbertas++;
+        lucroAbertas += Number(a.lucro_projetado || 0);
       } else {
         apostasFechadas++;
         lucroBruto += Number(a.lucro_real || 0);
@@ -221,6 +223,7 @@ Deno.serve(async (req) => {
       enforcedByServer: !isAdmin,
       data: {
         lucroBruto,
+        lucroAbertas,
         despesas,
         lucroLiquido,
         totalInvestido,
