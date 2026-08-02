@@ -362,8 +362,9 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
               <MetricCard
                 icon={<Clock className="h-3.5 w-3.5" />}
                 label="Em Aberto"
-                value={String(data.apostasAbertas)}
+                value={`${data.apostasAbertas} · R$ ${formatCurrency(data.lucroAbertas || 0)}`}
               />
+
               <MetricCard
                 icon={<CheckCircle2 className="h-3.5 w-3.5" />}
                 label="Fechadas"
