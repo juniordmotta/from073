@@ -1609,13 +1609,13 @@ export default function MinhasArbitragens() {
         setArbitragens(prev => [...prev, insertedData as unknown as Arbitrage]);
       }
 
-      // Auto-debitar saldo da casa
-      const valorApostadoNum = parseLocalizedNumber(prejuizoData.valor_apostado);
-      if (prejuizoData.casa_nome && valorApostadoNum > 0) {
+      // Descontar da casa apenas o prejuízo (quando houver perda)
+      if (prejuizoData.casa_nome && lucroReal < 0) {
         await autoDebitHouseBalances([
-          { partnershipId: prejuizoData.partnership_id || selectedPartnership01, houseName: prejuizoData.casa_nome, valor: valorApostadoNum },
+          { partnershipId: prejuizoData.partnership_id || selectedPartnership01, houseName: prejuizoData.casa_nome, valor: Math.abs(lucroReal) },
         ]);
       }
+
 
       loadUserMonthStats();
       loadPartnershipBalances();
