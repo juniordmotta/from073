@@ -262,6 +262,8 @@ Deno.serve(async (req) => {
         parcerias,
         casas,
         saldosParceriasAtivas,
+        validacao,
+
       },
     });
   } catch (e) {
