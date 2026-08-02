@@ -160,6 +160,7 @@ Deno.serve(async (req) => {
       .sort((a, b) => b.total - a.total);
 
     let lucroBruto = 0;
+    let lucroAbertas = 0;
     let totalInvestido = 0;
     let apostasAbertas = 0;
     let apostasFechadas = 0;
@@ -175,6 +176,7 @@ Deno.serve(async (req) => {
 
       if (a.status === "aguardando") {
         apostasAbertas++;
+        lucroAbertas += Number(a.lucro_projetado || 0);
       } else {
         apostasFechadas++;
         lucroBruto += Number(a.lucro_real || 0);
