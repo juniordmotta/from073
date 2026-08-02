@@ -41,6 +41,7 @@ interface ProfileOption {
 
 interface ReportData {
   lucroBruto: number;
+  lucroAbertas?: number;
   despesas: number;
   lucroLiquido: number;
   totalInvestido: number;
