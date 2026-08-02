@@ -61,7 +61,16 @@ interface ReportData {
     saldoCasas: number;
     casas: { nome: string; saldo: number; lucroLiquido: number }[];
   }[];
+  validacao?: {
+    ok: boolean;
+    esperado: {
+      apostasAbertas: number;
+      lucroAbertas: number;
+      lucroBruto: number;
+    };
+  };
 }
+
 
 type PartnershipDetail = NonNullable<ReportData['saldosParceriasAtivas']>[number];
 
