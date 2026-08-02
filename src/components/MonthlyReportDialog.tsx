@@ -61,7 +61,16 @@ interface ReportData {
     saldoCasas: number;
     casas: { nome: string; saldo: number; lucroLiquido: number }[];
   }[];
+  validacao?: {
+    ok: boolean;
+    esperado: {
+      apostasAbertas: number;
+      lucroAbertas: number;
+      lucroBruto: number;
+    };
+  };
 }
+
 
 type PartnershipDetail = NonNullable<ReportData['saldosParceriasAtivas']>[number];
 
@@ -320,9 +329,17 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
                 </div>
               )}
             </Card>
-
+            {data.validacao && !data.validacao.ok && (
+              <div className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-xs text-destructive">
+                Divergência detectada na conferência automática — valores conferidos:{' '}
+                {data.validacao.esperado.apostasAbertas} aposta(s) em aberto, R${' '}
+                {formatCurrency(data.validacao.esperado.lucroAbertas)} em aberto e R${' '}
+                {formatCurrency(data.validacao.esperado.lucroBruto)} de lucro bruto fechado.
+              </div>
+            )}
 
             {/* Métricas financeiras */}
+
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <MetricCard
                 icon={<TrendingUp className="h-3.5 w-3.5" />}
