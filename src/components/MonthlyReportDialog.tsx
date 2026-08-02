@@ -166,9 +166,9 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
       startY: 38,
       head: [['Indicador', 'Valor']],
       body: [
-        ['Lucro Bruto', fc(data.lucroBruto)],
+        ['Lucro Bruto + Abertas', fc(data.lucroBruto + (data.lucroAbertas || 0))],
         ['Despesas', fc(data.despesas)],
-        ['Lucro Líquido', fc(data.lucroLiquido)],
+        ['Lucro Líquido + Abertas', fc(data.lucroLiquido + (data.lucroAbertas || 0))],
         ['ROI', `${formatCurrency(data.roi)}%`],
         ['Total Investido', fc(data.totalInvestido)],
         ['Quantidade de Apostas', String(data.totalApostas)],
