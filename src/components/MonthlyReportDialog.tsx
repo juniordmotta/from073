@@ -326,9 +326,9 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <MetricCard
                 icon={<TrendingUp className="h-3.5 w-3.5" />}
-                label="Lucro Bruto"
-                value={`R$ ${formatCurrency(data.lucroBruto)}`}
-                valueClass={data.lucroBruto >= 0 ? 'text-success' : 'text-destructive'}
+                label="Lucro Bruto + Abertas"
+                value={`R$ ${formatCurrency(data.lucroBruto + (data.lucroAbertas || 0))}`}
+                valueClass={(data.lucroBruto + (data.lucroAbertas || 0)) >= 0 ? 'text-success' : 'text-destructive'}
               />
               <MetricCard
                 icon={<Receipt className="h-3.5 w-3.5" />}
@@ -337,11 +337,12 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
                 valueClass="text-destructive"
               />
               <MetricCard
-                icon={data.lucroLiquido >= 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
-                label="Lucro Líquido"
-                value={`R$ ${formatCurrency(data.lucroLiquido)}`}
-                valueClass={data.lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}
+                icon={(data.lucroLiquido + (data.lucroAbertas || 0)) >= 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+                label="Lucro Líquido + Abertas"
+                value={`R$ ${formatCurrency(data.lucroLiquido + (data.lucroAbertas || 0))}`}
+                valueClass={(data.lucroLiquido + (data.lucroAbertas || 0)) >= 0 ? 'text-success' : 'text-destructive'}
               />
+
               <MetricCard
                 icon={<Percent className="h-3.5 w-3.5" />}
                 label="ROI"
