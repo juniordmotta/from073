@@ -223,6 +223,7 @@ Deno.serve(async (req) => {
       enforcedByServer: !isAdmin,
       data: {
         lucroBruto,
+        lucroAbertas,
         despesas,
         lucroLiquido,
         totalInvestido,
