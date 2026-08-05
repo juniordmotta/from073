@@ -60,11 +60,31 @@ export const UpdateNotifier = () => {
   );
 };
 
-export const AppVersionBadge = () => (
-  <span
-    className="text-[10px] text-muted-foreground/70 font-mono select-none"
-    title={`Versão ${APP_VERSION}`}
-  >
-    v{APP_VERSION}
-  </span>
-);
+export const AppVersionBadge = () => {
+  const [updating, setUpdating] = useState(false);
+
+  return (
+    <span className="flex items-center gap-2">
+      <span
+        className="text-[10px] text-muted-foreground/70 font-mono select-none"
+        title={`Versão ${APP_VERSION}`}
+      >
+        v{APP_VERSION}
+      </span>
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-6 px-2 text-[10px] gap-1"
+        disabled={updating}
+        onClick={() => {
+          setUpdating(true);
+          void hardReloadApp();
+        }}
+      >
+        <RefreshCw className={`h-3 w-3 ${updating ? "animate-spin" : ""}`} />
+        {updating ? "Atualizando..." : "Atualizar agora"}
+      </Button>
+    </span>
+  );
+};
+
