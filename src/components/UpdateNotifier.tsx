@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, X } from "lucide-react";
+import { hardReloadApp } from "@/lib/hardReload";
 
 export const APP_VERSION =
   typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "dev";
@@ -18,12 +19,9 @@ export const UpdateNotifier = () => {
   if (!ready || dismissed) return null;
 
   const apply = () => {
-    if (typeof window.__applyAppUpdate === "function") {
-      window.__applyAppUpdate();
-    } else {
-      window.location.reload();
-    }
+    void hardReloadApp();
   };
+
 
   return (
     <div className="fixed bottom-4 right-4 z-[100] max-w-sm animate-fade-in">
@@ -62,11 +60,31 @@ export const UpdateNotifier = () => {
   );
 };
 
-export const AppVersionBadge = () => (
-  <span
-    className="text-[10px] text-muted-foreground/70 font-mono select-none"
-    title={`Versão ${APP_VERSION}`}
-  >
-    v{APP_VERSION}
-  </span>
-);
+export const AppVersionBadge = () => {
+  const [updating, setUpdating] = useState(false);
+
+  return (
+    <span className="flex items-center gap-2">
+      <span
+        className="text-[10px] text-muted-foreground/70 font-mono select-none"
+        title={`Versão ${APP_VERSION}`}
+      >
+        v{APP_VERSION}
+      </span>
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-6 px-2 text-[10px] gap-1"
+        disabled={updating}
+        onClick={() => {
+          setUpdating(true);
+          void hardReloadApp();
+        }}
+      >
+        <RefreshCw className={`h-3 w-3 ${updating ? "animate-spin" : ""}`} />
+        {updating ? "Atualizando..." : "Atualizar agora"}
+      </Button>
+    </span>
+  );
+};
+
