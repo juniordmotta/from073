@@ -19,12 +19,9 @@ export const UpdateNotifier = () => {
   if (!ready || dismissed) return null;
 
   const apply = () => {
-    if (typeof window.__applyAppUpdate === "function") {
-      window.__applyAppUpdate();
-    } else {
-      window.location.reload();
-    }
+    void hardReloadApp();
   };
+
 
   return (
     <div className="fixed bottom-4 right-4 z-[100] max-w-sm animate-fade-in">
