@@ -1335,14 +1335,7 @@ export default function MinhasArbitragens() {
 
 
     try {
-      const { error: profileError } = await supabase.rpc('ensure_user_profile', {
-        user_uuid: user.id
-      });
 
-      if (profileError) {
-        console.error('Erro ao verificar perfil:', profileError);
-        throw profileError;
-      }
 
       const dataEvento = formData.data_evento 
         ? new Date(formData.data_evento + ':00').toISOString() 
