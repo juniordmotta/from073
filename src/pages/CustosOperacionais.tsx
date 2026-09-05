@@ -442,7 +442,10 @@ export default function CustosOperacionais() {
 
         {/* Filtros inline */}
         <div className="flex flex-wrap items-center gap-2">
+          <MobileFilters className="w-full md:w-auto md:contents" label="Filtros de período">
+          <div className="flex flex-wrap items-center gap-2">
           {isAdmin && (
+
             <Select value={selectedUserId} onValueChange={setSelectedUserId}>
               <SelectTrigger className="w-[140px] h-8 text-sm">
                 <SelectValue placeholder="Usuário" />
