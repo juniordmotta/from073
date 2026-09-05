@@ -142,16 +142,22 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
           </div>
         </header>
 
-        <main className="flex-1 container py-6 overflow-x-hidden">{children}</main>
+        <main className="flex-1 container py-4 md:py-6 overflow-x-hidden pb-24 md:pb-6">{children}</main>
         
-        <footer className="border-t border-border py-6">
+        <footer className="hidden md:block border-t border-border py-6">
           <div className="container flex flex-col items-center gap-1 text-center text-sm text-muted-foreground">
             <span>© 2025 Arb From 073. Sistema de Gerenciamento de Arbitragens Esportivas.</span>
             <AppVersionBadge />
           </div>
         </footer>
 
+        <div className="md:hidden flex flex-col items-center gap-1 pb-24 text-center text-xs text-muted-foreground">
+          <AppVersionBadge />
+        </div>
+
+        <MobileBottomNav />
       </div>
+
     </div>
   );
 };
