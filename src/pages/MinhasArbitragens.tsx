@@ -2131,7 +2131,9 @@ export default function MinhasArbitragens() {
           </div>
 
         {/* Filtros agrupados */}
+        <MobileFilters activeCount={activeFiltersCount}>
         <div className="flex flex-col md:flex-row gap-2">
+
           {/* Filtros de Data */}
           <div className="flex items-center gap-1 flex-wrap">
             <div className="flex rounded-md border overflow-hidden">
