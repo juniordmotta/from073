@@ -2303,10 +2303,10 @@ export default function MinhasArbitragens() {
                 </div>
               </PopoverContent>
             </Popover>
+          </div>
         </div>
         </MobileFilters>
 
-        </div>
 
         {/* Cards de resumo - Layout igual ao Dashboard */}
         {filteredArbitragens.length > 0 && (
