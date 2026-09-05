@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Layout } from '@/components/Layout';
+import { MobileFilters } from '@/components/MobileFilters';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
