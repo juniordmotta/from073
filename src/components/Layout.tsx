@@ -72,11 +72,6 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="flex min-h-screen w-full">
-      {/* Sidebar apenas no mobile */}
-      <div className="md:hidden">
-        <AppSidebar />
-      </div>
-      
       {/* Overlay escuro quando sidebar está aberto no mobile */}
       {open && (
         <div 
@@ -87,17 +82,13 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
       
       <div className="flex flex-1 flex-col min-w-0">
         <header className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-          <div className="container flex h-16 items-center justify-between">
+          <div className="container flex h-14 md:h-16 items-center justify-between">
             <div className="flex items-center gap-4">
-              {/* SidebarTrigger apenas no mobile */}
-              <div className="md:hidden">
-                <SidebarTrigger />
-              </div>
-              
               <Link to="/dashboard" className="flex items-center gap-2">
                 <DollarSign className="h-6 w-6 text-success" />
-                <span className="text-xl font-bold">Arb From 073</span>
+                <span className="text-lg md:text-xl font-bold">Arb From 073</span>
               </Link>
+
               
               <nav className="hidden md:flex items-center gap-1">
                 {navItems.map(
