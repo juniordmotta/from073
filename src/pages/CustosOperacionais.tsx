@@ -492,7 +492,10 @@ export default function CustosOperacionais() {
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
+          </div>
+          </MobileFilters>
           <div className="ml-auto flex items-center gap-2 rounded-lg border bg-card px-3 py-1.5">
+
             <DollarSign className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Total:</span>
             <span className="text-sm font-bold">R$ {formatCurrency(totalCosts)}</span>
