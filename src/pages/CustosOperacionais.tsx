@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Layout } from '@/components/Layout';
+import { MobileFilters } from '@/components/MobileFilters';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -441,7 +442,10 @@ export default function CustosOperacionais() {
 
         {/* Filtros inline */}
         <div className="flex flex-wrap items-center gap-2">
+          <MobileFilters className="w-full md:w-auto md:contents" label="Filtros de período">
+          <div className="flex flex-wrap items-center gap-2">
           {isAdmin && (
+
             <Select value={selectedUserId} onValueChange={setSelectedUserId}>
               <SelectTrigger className="w-[140px] h-8 text-sm">
                 <SelectValue placeholder="Usuário" />
@@ -488,7 +492,10 @@ export default function CustosOperacionais() {
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
+          </div>
+          </MobileFilters>
           <div className="ml-auto flex items-center gap-2 rounded-lg border bg-card px-3 py-1.5">
+
             <DollarSign className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Total:</span>
             <span className="text-sm font-bold">R$ {formatCurrency(totalCosts)}</span>

@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Layout } from '@/components/Layout';
+import { MobileFilters } from '@/components/MobileFilters';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useGameNotifications } from '@/hooks/useGameNotifications';
@@ -2131,7 +2132,9 @@ export default function MinhasArbitragens() {
           </div>
 
         {/* Filtros agrupados */}
+        <MobileFilters activeCount={activeFiltersCount}>
         <div className="flex flex-col md:flex-row gap-2">
+
           {/* Filtros de Data */}
           <div className="flex items-center gap-1 flex-wrap">
             <div className="flex rounded-md border overflow-hidden">
@@ -2303,6 +2306,8 @@ export default function MinhasArbitragens() {
             </Popover>
           </div>
         </div>
+        </MobileFilters>
+
 
         {/* Cards de resumo - Layout igual ao Dashboard */}
         {filteredArbitragens.length > 0 && (

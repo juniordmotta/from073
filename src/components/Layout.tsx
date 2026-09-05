@@ -14,7 +14,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { SidebarProvider, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/AppSidebar';
+import { MobileBottomNav } from '@/components/MobileBottomNav';
+
 import { LayoutDashboard, DollarSign, List, Users, LogOut, User, Handshake, Building2, StickyNote } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 import { AppVersionBadge } from '@/components/UpdateNotifier';
@@ -72,11 +73,6 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="flex min-h-screen w-full">
-      {/* Sidebar apenas no mobile */}
-      <div className="md:hidden">
-        <AppSidebar />
-      </div>
-      
       {/* Overlay escuro quando sidebar está aberto no mobile */}
       {open && (
         <div 
@@ -87,17 +83,13 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
       
       <div className="flex flex-1 flex-col min-w-0">
         <header className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-          <div className="container flex h-16 items-center justify-between">
+          <div className="container flex h-14 md:h-16 items-center justify-between">
             <div className="flex items-center gap-4">
-              {/* SidebarTrigger apenas no mobile */}
-              <div className="md:hidden">
-                <SidebarTrigger />
-              </div>
-              
               <Link to="/dashboard" className="flex items-center gap-2">
                 <DollarSign className="h-6 w-6 text-success" />
-                <span className="text-xl font-bold">Arb From 073</span>
+                <span className="text-lg md:text-xl font-bold">Arb From 073</span>
               </Link>
+
               
               <nav className="hidden md:flex items-center gap-1">
                 {navItems.map(
@@ -151,16 +143,22 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
           </div>
         </header>
 
-        <main className="flex-1 container py-6 overflow-x-hidden">{children}</main>
+        <main className="flex-1 container py-4 md:py-6 overflow-x-hidden pb-24 md:pb-6">{children}</main>
         
-        <footer className="border-t border-border py-6">
+        <footer className="hidden md:block border-t border-border py-6">
           <div className="container flex flex-col items-center gap-1 text-center text-sm text-muted-foreground">
             <span>© 2025 Arb From 073. Sistema de Gerenciamento de Arbitragens Esportivas.</span>
             <AppVersionBadge />
           </div>
         </footer>
 
+        <div className="md:hidden flex flex-col items-center gap-1 pb-24 text-center text-xs text-muted-foreground">
+          <AppVersionBadge />
+        </div>
+
+        <MobileBottomNav />
       </div>
+
     </div>
   );
 };
