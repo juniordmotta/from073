@@ -18,7 +18,7 @@ import { highlightText } from '@/lib/utils/highlightText';
 import { cn, formatCurrency } from '@/lib/utils';
 import { format, startOfMonth, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Plus, Search, CalendarIcon, X, Pencil, Trash2, FileText, StickyNote, Tag, Check } from 'lucide-react';
+import { Plus, Search, CalendarIcon, X, Pencil, Trash2, FileText, StickyNote, Tag, Check, DollarSign } from 'lucide-react';
 
 interface NoteCategory {
   id: string;
@@ -194,6 +194,11 @@ export default function Anotacoes() {
 
     return result;
   }, [notes, debouncedSearch, categoryFilter]);
+
+  const totalAdded = useMemo(
+    () => filteredNotes.reduce((total, note) => total + Number(note.valor || 0), 0),
+    [filteredNotes]
+  );
 
   // Date filter handlers
   const handleApplyDateFilter = () => {
@@ -566,6 +571,15 @@ export default function Anotacoes() {
                   </Button>
                 </div>
               </div>
+            </div>
+            <div className="mt-4 flex items-center justify-between gap-3 border-t pt-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <DollarSign className="h-4 w-4" />
+                <span>Total adicionado</span>
+              </div>
+              <span className="text-base font-bold text-primary">
+                R$ {formatCurrency(totalAdded)}
+              </span>
             </div>
           </CardContent>
         </Card>
