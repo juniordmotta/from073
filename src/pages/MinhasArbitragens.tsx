@@ -1985,7 +1985,8 @@ export default function MinhasArbitragens() {
   return (
     <Layout>
       <div className="mobile-arbitrages-page space-y-4 md:space-y-6">
-        <div className="flex w-full items-center justify-between gap-2.5 flex-wrap md:w-auto md:gap-3">
+        <div className="flex items-center justify-between flex-wrap gap-3 md:gap-4">
+          <div className="flex w-full items-center justify-between gap-2.5 flex-wrap md:w-auto md:gap-3">
             <div className="w-full md:w-auto">
               <p className="md:hidden text-[10px] font-medium uppercase text-mobile-muted">Gestão de apostas</p>
               <h1 className="text-xl font-bold md:text-3xl">Minhas Arbitragens</h1>
@@ -2132,6 +2133,7 @@ export default function MinhasArbitragens() {
               );
             })()}
           </div>
+        </div>
 
         {/* Filtros agrupados */}
         <MobileFilters activeCount={activeFiltersCount} className="mobile-arbitrages-filters">
