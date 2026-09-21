@@ -36,6 +36,7 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
   const isAdminMaster = userRole?.role === 'admin_master';
+  const isDashboard = location.pathname === '/dashboard';
 
   // Ativar push notifications em background
   usePushNotifications({ userId: user?.id, enabled: true });
@@ -72,7 +73,7 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
   ];
 
   return (
-    <div className="flex min-h-screen w-full">
+    <div className={cn('flex min-h-screen w-full', isDashboard && 'mobile-dashboard-shell')}>
       {/* Overlay escuro quando sidebar está aberto no mobile */}
       {open && (
         <div 
@@ -82,11 +83,12 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
       )}
       
       <div className="flex flex-1 flex-col min-w-0">
-        <header className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+        <header className={cn('sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60', isDashboard && 'mobile-dashboard-header')}>
           <div className="container flex h-14 md:h-16 items-center justify-between">
             <div className="flex items-center gap-4">
               <Link to="/dashboard" className="flex items-center gap-2">
-                <DollarSign className="h-6 w-6 text-success" />
+                <img src="/logo-192.png" alt="" className="h-7 w-7 rounded-md md:hidden" />
+                <DollarSign className="hidden h-6 w-6 text-success md:block" />
                 <span className="text-lg md:text-xl font-bold">Arb From 073</span>
               </Link>
 

@@ -49,6 +49,13 @@ All colors MUST be HSL.
     --chart-5: 27 87% 67%;
 
     --radius: 0.5rem;
+
+    --mobile-canvas: 240 10% 3.9%;
+    --mobile-surface: 240 8% 7%;
+    --mobile-elevated: 240 7% 10%;
+    --mobile-border: 240 6% 17%;
+    --mobile-foreground: 0 0% 98%;
+    --mobile-muted: 240 5% 64.9%;
   }
 
   .dark {
@@ -91,6 +98,13 @@ All colors MUST be HSL.
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+
+    --mobile-canvas: 240 10% 3.9%;
+    --mobile-surface: 240 8% 7%;
+    --mobile-elevated: 240 7% 10%;
+    --mobile-border: 240 6% 17%;
+    --mobile-foreground: 0 0% 98%;
+    --mobile-muted: 240 5% 64.9%;
   }
 }
 
@@ -108,6 +122,48 @@ All colors MUST be HSL.
   
   h1, h2, h3, h4, h5, h6 {
     @apply font-semibold;
+  }
+}
+
+@media (max-width: 767px) {
+  .mobile-dashboard-shell {
+    background: hsl(var(--mobile-canvas));
+    color: hsl(var(--mobile-foreground));
+  }
+
+  .mobile-dashboard-shell main {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .mobile-dashboard-header {
+    background: hsl(var(--mobile-canvas) / 0.92);
+    border-color: hsl(var(--mobile-border));
+    color: hsl(var(--mobile-foreground));
+  }
+
+  .mobile-dashboard-card {
+    background: hsl(var(--mobile-surface) / 0.82);
+    border-color: hsl(var(--mobile-border));
+    color: hsl(var(--mobile-foreground));
+    box-shadow: 0 12px 32px -24px hsl(var(--primary) / 0.45);
+    backdrop-filter: blur(16px);
+  }
+
+  .mobile-dashboard-goal > div {
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.2), hsl(var(--mobile-surface)) 72%);
+    border-color: hsl(var(--primary) / 0.35);
+    color: hsl(var(--mobile-foreground));
+    box-shadow: 0 16px 38px -26px hsl(var(--primary) / 0.7);
+  }
+
+  .mobile-dashboard-bet {
+    background: hsl(var(--mobile-elevated) / 0.8);
+    border-color: hsl(var(--mobile-border));
+  }
+
+  .mobile-dashboard-muted {
+    color: hsl(var(--mobile-muted));
   }
 }
 

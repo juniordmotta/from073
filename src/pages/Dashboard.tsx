@@ -248,10 +248,13 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <div className="space-y-4">
+      <div className="space-y-4 md:space-y-4 pb-2">
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <Button size="sm" variant="outline" onClick={() => setReportOpen(true)}>
+          <div>
+            <p className="md:hidden text-[10px] font-medium uppercase text-mobile-muted">Visão geral</p>
+            <h1 className="text-xl md:text-2xl font-bold">Dashboard</h1>
+          </div>
+          <Button size="sm" variant="outline" className="mobile-dashboard-card border-mobile-border bg-mobile-surface/80 md:border-border md:bg-background" onClick={() => setReportOpen(true)}>
             <FileBarChart className="h-4 w-4" />
             Relatório Mensal
           </Button>
@@ -262,9 +265,9 @@ export default function Dashboard() {
         )}
 
         {/* Cards compactos */}
-        <div className="grid gap-2 grid-cols-2 md:grid-cols-5">
+        <div className="grid gap-3 grid-cols-2 md:gap-2 md:grid-cols-5">
           {/* Total Investido (Abertas) */}
-          <Card className="p-2 animate-fade-in">
+          <Card className="mobile-dashboard-card p-3 md:p-2 animate-fade-in">
             <div className="flex items-center gap-1 mb-0.5">
               <DollarSign className="h-3 w-3 text-muted-foreground" />
               <span className="text-[10px] text-muted-foreground">Investido (Abertas)</span>
@@ -279,7 +282,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Quantidade + Lucro Projetado + ROI */}
-          <Card className="p-2 animate-fade-in" style={{ animationDelay: '50ms', animationFillMode: 'backwards' }}>
+          <Card className="mobile-dashboard-card p-3 md:p-2 animate-fade-in" style={{ animationDelay: '50ms', animationFillMode: 'backwards' }}>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-1">
                 <Target className="h-3 w-3 text-muted-foreground" />
@@ -300,7 +303,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Lucro do Mês */}
-          <Card className="p-2 animate-fade-in" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
+          <Card className="mobile-dashboard-card col-span-2 md:col-span-1 p-5 md:p-2 text-center md:text-left animate-fade-in" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
             <div className="flex items-center gap-1 mb-0.5">
               {monthStats.totalLucro >= 0 ? (
                 <TrendingUp className="h-3 w-3 text-success" />
@@ -309,7 +312,7 @@ export default function Dashboard() {
               )}
               <span className="text-[10px] text-muted-foreground">Lucro do Mês</span>
             </div>
-            <div className={`text-lg font-bold ${monthStats.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
+            <div className={`text-3xl md:text-lg font-bold ${monthStats.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
               R$ {formatCurrency(animatedMonthLucro)}
             </div>
             <div className="border-t pt-1 mt-1 flex items-center justify-between">
@@ -319,7 +322,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Média por Dia */}
-          <Card className="p-2 animate-fade-in" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
+          <Card className="mobile-dashboard-card p-3 md:p-2 animate-fade-in" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
             <div className="flex items-center gap-1 mb-0.5">
               <Calendar className="h-3 w-3 text-muted-foreground" />
               <span className="text-[10px] text-muted-foreground">Média/Dia</span>
@@ -332,7 +335,7 @@ export default function Dashboard() {
 
           {/* Meta Mensal */}
           {user?.id && (
-            <div className="animate-fade-in" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
+            <div className="mobile-dashboard-goal col-span-2 row-start-1 md:col-span-1 md:row-auto animate-fade-in" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
               <MonthlyGoalCard
                 userId={user.id}
                 currentProfit={monthStats.totalLucro}
@@ -344,7 +347,7 @@ export default function Dashboard() {
 
         {/* Apostas em Aberto */}
         {openBets.length > 0 && (
-          <Card className="animate-slide-in-bottom" style={{ animationDelay: '250ms', animationFillMode: 'backwards' }}>
+          <Card className="mobile-dashboard-card animate-slide-in-bottom" style={{ animationDelay: '250ms', animationFillMode: 'backwards' }}>
             <CardHeader className="py-3 px-4">
               <CardTitle className="text-base">Apostas em Aberto ({openBets.length})</CardTitle>
             </CardHeader>
@@ -446,7 +449,7 @@ export default function Dashboard() {
                   return (
                     <div
                       key={bet.id}
-                      className={`rounded-lg border bg-card overflow-hidden ${
+                       className={`mobile-dashboard-bet rounded-lg border overflow-hidden ${
                         isEventPast ? 'border-l-4 border-red-500' : isEventToday ? 'border-l-4 border-sky-300' : ''
                       }`}
                     >

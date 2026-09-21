@@ -31,7 +31,7 @@ export function MobileBottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80"
+      className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-mobile-border bg-mobile-surface/90 text-mobile-foreground shadow-2xl backdrop-blur-xl"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="grid grid-cols-5">
@@ -43,7 +43,7 @@ export function MobileBottomNav() {
               onClick={() => navigate(item.path)}
               className={cn(
                 'flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] transition-colors',
-                active ? 'text-primary font-semibold' : 'text-muted-foreground'
+                active ? 'text-primary font-semibold' : 'text-mobile-muted'
               )}
             >
               <span className={cn('flex h-7 w-12 items-center justify-center rounded-full transition-colors', active && 'bg-primary/15')}>
@@ -59,7 +59,7 @@ export function MobileBottomNav() {
             <button
               className={cn(
                 'flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] transition-colors',
-                isMoreActive ? 'text-primary font-semibold' : 'text-muted-foreground'
+                isMoreActive ? 'text-primary font-semibold' : 'text-mobile-muted'
               )}
             >
               <span className={cn('flex h-7 w-12 items-center justify-center rounded-full transition-colors', isMoreActive && 'bg-primary/15')}>
