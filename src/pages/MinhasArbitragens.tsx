@@ -2665,14 +2665,14 @@ export default function MinhasArbitragens() {
                         <div className="grid grid-cols-2 gap-2">
                           <div className="rounded-md border p-2 text-[10px] space-y-0.5">
                             <div className="font-medium">{arb.casa_01_nome}</div>
-                            <div className="text-primary">Parceria: {formatUserName(arb.partnerships_casa_01?.nome_completo || 'Não informada')}</div>
+                            <div className="text-primary">{formatUserName(arb.partnerships_casa_01?.nome_completo || 'Não informada')}</div>
                             <div className="text-muted-foreground">Odd: {Number(arb.casa_01_odd).toFixed(3)}</div>
                             <div className="text-muted-foreground">Valor: R$ {formatCurrency(arb.casa_01_valor)}</div>
                             {arb.casa_01_mercado && <div className="text-muted-foreground">{arb.casa_01_mercado}</div>}
                           </div>
                           <div className="rounded-md border p-2 text-[10px] space-y-0.5">
                             <div className="font-medium">{arb.casa_02_nome}</div>
-                            <div className="text-primary">Parceria: {formatUserName(arb.partnerships_casa_02?.nome_completo || 'Não informada')}</div>
+                            <div className="text-primary">{formatUserName(arb.partnerships_casa_02?.nome_completo || 'Não informada')}</div>
                             <div className="text-muted-foreground">Odd: {Number(arb.casa_02_odd).toFixed(3)}</div>
                             <div className="text-muted-foreground">Valor: R$ {formatCurrency(arb.casa_02_valor)}</div>
                             {arb.casa_02_mercado && <div className="text-muted-foreground">{arb.casa_02_mercado}</div>}
@@ -2681,7 +2681,7 @@ export default function MinhasArbitragens() {
                         {arb.casa_03_nome && (
                           <div className="rounded-md border p-2 text-[10px] space-y-0.5">
                             <div className="font-medium">{arb.casa_03_nome}</div>
-                            <div className="text-primary">Parceria: {formatUserName(arb.partnerships_casa_03?.nome_completo || 'Não informada')}</div>
+                            <div className="text-primary">{formatUserName(arb.partnerships_casa_03?.nome_completo || 'Não informada')}</div>
                             <div className="text-muted-foreground">Odd: {Number(arb.casa_03_odd || 0).toFixed(3)} • Valor: R$ {formatCurrency(arb.casa_03_valor || 0)}</div>
                             {arb.casa_03_mercado && <div className="text-muted-foreground">{arb.casa_03_mercado}</div>}
                           </div>
