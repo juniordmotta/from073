@@ -36,7 +36,7 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
   const isAdminMaster = userRole?.role === 'admin_master';
-  const isDashboard = location.pathname === '/dashboard';
+  const usesMobileDarkLayout = location.pathname === '/dashboard' || location.pathname === '/minhas-arbitragens';
 
   // Ativar push notifications em background
   usePushNotifications({ userId: user?.id, enabled: true });
@@ -73,7 +73,7 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
   ];
 
   return (
-    <div className={cn('flex min-h-screen w-full', isDashboard && 'mobile-dashboard-shell')}>
+    <div className={cn('flex min-h-screen w-full', usesMobileDarkLayout && 'mobile-dashboard-shell')}>
       {/* Overlay escuro quando sidebar está aberto no mobile */}
       {open && (
         <div 
@@ -83,7 +83,7 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
       )}
       
       <div className="flex flex-1 flex-col min-w-0">
-        <header className={cn('sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60', isDashboard && 'mobile-dashboard-header')}>
+        <header className={cn('sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60', usesMobileDarkLayout && 'mobile-dashboard-header')}>
           <div className="container flex h-14 md:h-16 items-center justify-between">
             <div className="flex items-center gap-4">
               <Link to="/dashboard" className="flex items-center gap-2">

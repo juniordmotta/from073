@@ -165,6 +165,25 @@ All colors MUST be HSL.
   .mobile-dashboard-muted {
     color: hsl(var(--mobile-muted));
   }
+
+  .mobile-arbitrages-search {
+    background: hsl(var(--mobile-surface) / 0.82);
+    border-color: hsl(var(--mobile-border));
+  }
+
+  .mobile-arbitrages-filters > button {
+    background: hsl(var(--mobile-surface) / 0.82);
+    border-color: hsl(var(--mobile-border));
+    color: hsl(var(--mobile-foreground));
+    backdrop-filter: blur(16px);
+  }
+
+  .mobile-arbitrages-filter-panel {
+    padding: 0.75rem;
+    border: 1px solid hsl(var(--mobile-border));
+    border-radius: 0.5rem;
+    background: hsl(var(--mobile-surface) / 0.88);
+  }
 }
 
 @layer utilities {
