@@ -162,6 +162,11 @@ All colors MUST be HSL.
     border-color: hsl(var(--mobile-border));
   }
 
+  .mobile-dashboard-bet-expanded {
+    border-color: hsl(var(--primary) / 0.65);
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.2), 0 16px 38px -22px hsl(var(--primary) / 0.85);
+  }
+
   .mobile-dashboard-muted {
     color: hsl(var(--mobile-muted));
   }
