@@ -87,8 +87,9 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
           <div className="container flex h-14 md:h-16 items-center justify-between">
             <div className="flex items-center gap-4">
               <Link to="/dashboard" className="flex items-center gap-2">
-                <img src="/logo-192.png" alt="" className="h-7 w-7 rounded-md" />
-                <span className="text-base md:text-xl font-bold">Arb From 073</span>
+                <img src="/logo-192.png" alt="" className="h-7 w-7 rounded-md md:hidden" />
+                <DollarSign className="hidden h-6 w-6 text-success md:block" />
+                <span className="text-lg md:text-xl font-bold">Arb From 073</span>
               </Link>
 
               

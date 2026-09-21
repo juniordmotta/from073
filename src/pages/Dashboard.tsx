@@ -254,7 +254,7 @@ export default function Dashboard() {
             <p className="md:hidden text-[10px] font-medium uppercase text-mobile-muted">Visão geral</p>
             <h1 className="text-xl md:text-2xl font-bold">Dashboard</h1>
           </div>
-          <Button size="sm" variant="outline" className="mobile-dashboard-card border-mobile-border bg-mobile-surface/80 md:bg-background" onClick={() => setReportOpen(true)}>
+          <Button size="sm" variant="outline" className="mobile-dashboard-card border-mobile-border bg-mobile-surface/80 md:border-border md:bg-background" onClick={() => setReportOpen(true)}>
             <FileBarChart className="h-4 w-4" />
             Relatório Mensal
           </Button>
