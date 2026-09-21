@@ -55,6 +55,14 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        mobile: {
+          canvas: "hsl(var(--mobile-canvas))",
+          surface: "hsl(var(--mobile-surface))",
+          elevated: "hsl(var(--mobile-elevated))",
+          border: "hsl(var(--mobile-border))",
+          foreground: "hsl(var(--mobile-foreground))",
+          muted: "hsl(var(--mobile-muted))",
+        },
         chart: {
           "1": "hsl(var(--chart-1))",
           "2": "hsl(var(--chart-2))",
