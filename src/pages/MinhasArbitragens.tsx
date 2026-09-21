@@ -1984,13 +1984,16 @@ export default function MinhasArbitragens() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-3xl font-bold">Minhas Arbitragens</h1>
+      <div className="mobile-arbitrages-page space-y-4 md:space-y-6">
+        <div className="flex items-center justify-between flex-wrap gap-3 md:gap-4">
+          <div className="flex w-full items-center justify-between gap-2.5 flex-wrap md:w-auto md:gap-3">
+            <div className="w-full md:w-auto">
+              <p className="md:hidden text-[10px] font-medium uppercase text-mobile-muted">Gestão de apostas</p>
+              <h1 className="text-xl font-bold md:text-3xl">Minhas Arbitragens</h1>
+            </div>
             {activeFiltersCount > 0 && (
               <>
-                <Badge className="text-xs bg-yellow-400 text-black hover:bg-yellow-500">
+                <Badge className="hidden text-xs bg-yellow-400 text-black hover:bg-yellow-500 md:inline-flex">
                   {activeFiltersCount} filtro{activeFiltersCount > 1 ? 's' : ''} ativo{activeFiltersCount > 1 ? 's' : ''}
                 </Badge>
                 <Button
@@ -2005,7 +2008,7 @@ export default function MinhasArbitragens() {
                     setFilterPartnership([]);
                     setSelectedPeriod('custom');
                   }}
-                  className="h-8"
+                  className="hidden h-8 md:inline-flex"
                 >
                   <X className="h-4 w-4 mr-2" />
                   Limpar Filtros
@@ -2013,14 +2016,14 @@ export default function MinhasArbitragens() {
               </>
             )}
             
-            <div className="relative">
+            <div className="relative order-2 w-full min-w-0 md:order-none md:w-auto md:flex-none">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Buscar..."
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
-                className="pl-9 h-8 w-64"
+                className="mobile-arbitrages-search h-9 w-full pl-9 md:h-8 md:w-64"
               />
               {searchText && (
                 <Button
@@ -2041,7 +2044,7 @@ export default function MinhasArbitragens() {
               const activePartnerships = partnerships.filter(p => p.status === 'ativo');
               
               const addButton = isMobile ? (
-                <Button size="icon" className="h-8 w-8 shrink-0" onClick={() => setOpenAdd(true)}>
+                 <Button size="icon" className="h-9 w-9 shrink-0 md:h-8 md:w-8" onClick={() => setOpenAdd(true)} title="Adicionar arbitragem">
                   <Plus className="h-4 w-4" />
                 </Button>
               ) : (
@@ -2053,12 +2056,12 @@ export default function MinhasArbitragens() {
 
               // Se só tem 1 parceria ativa, vai direto
               if (activePartnerships.length === 1) {
-                return (
-                  <div className="flex items-center gap-1">
+                  return (
+                   <div className="order-3 flex flex-1 items-center gap-1 md:order-none md:flex-none">
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="gap-2 h-8"
+                       className="h-9 flex-1 gap-1.5 px-2.5 text-xs md:h-8 md:flex-none md:gap-2 md:px-3 md:text-sm"
                       onClick={() => navigate(`/parcerias?partnership=${activePartnerships[0].id}&view=report`)}
                     >
                       <Building2 className="h-4 w-4" />
@@ -2071,10 +2074,10 @@ export default function MinhasArbitragens() {
               
               // Múltiplas parcerias: mostra dialog
               return (
-                <div className="flex items-center gap-1">
+                 <div className="order-3 flex flex-1 items-center gap-1 md:order-none md:flex-none">
                 <Dialog open={goToHousesOpen} onOpenChange={setGoToHousesOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2 h-8">
+                     <Button variant="outline" size="sm" className="h-9 flex-1 gap-1.5 px-2.5 text-xs md:h-8 md:flex-none md:gap-2 md:px-3 md:text-sm">
                       <Building2 className="h-4 w-4" />
                       Ir para Casas
                     </Button>
@@ -2130,10 +2133,11 @@ export default function MinhasArbitragens() {
               );
             })()}
           </div>
+        </div>
 
         {/* Filtros agrupados */}
-        <MobileFilters activeCount={activeFiltersCount}>
-        <div className="flex flex-col md:flex-row gap-2">
+        <MobileFilters activeCount={activeFiltersCount} className="mobile-arbitrages-filters">
+        <div className="mobile-arbitrages-filter-panel flex flex-col gap-2 md:flex-row">
 
           {/* Filtros de Data */}
           <div className="flex items-center gap-1 flex-wrap">
@@ -2315,7 +2319,7 @@ export default function MinhasArbitragens() {
             {/* Row 1: Investido + Total/Lucro/ROI side by side */}
             <div className="grid gap-2 grid-cols-2 md:grid-cols-[3fr_3fr_3.5fr_2.6fr_3.5fr]">
               {/* Total Investido */}
-              <div className="rounded-lg border bg-card p-2 animate-fade-in">
+              <div className="mobile-dashboard-card rounded-lg border bg-card p-3 md:p-2 animate-fade-in">
                 <div className="flex items-center gap-1 mb-0.5">
                   <span className="text-[10px] text-muted-foreground">Total Investido</span>
                 </div>
@@ -2334,7 +2338,7 @@ export default function MinhasArbitragens() {
               </div>
 
               {/* Quantidade + Lucro Aberto + ROI */}
-              <div className="rounded-lg border bg-card p-2 animate-fade-in" style={{ animationDelay: '50ms', animationFillMode: 'backwards' }}>
+              <div className="mobile-dashboard-card rounded-lg border bg-card p-3 md:p-2 animate-fade-in" style={{ animationDelay: '50ms', animationFillMode: 'backwards' }}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[10px] text-muted-foreground">Total</span>
                   <span className="text-sm font-bold">{filteredArbitragens.length}</span>
@@ -2460,7 +2464,7 @@ export default function MinhasArbitragens() {
             </div>
 
             {/* Mobile only: Lucro do Mês full width */}
-            <div className="rounded-lg border bg-card p-3 animate-fade-in md:hidden" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
+            <div className="mobile-dashboard-card w-full rounded-lg border bg-card p-4 animate-fade-in md:hidden" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
               <div className="flex items-center gap-1 mb-2">
                 {lucroLiquido >= 0 ? (
                   <TrendingUp className="h-3 w-3 text-success" />
@@ -2509,7 +2513,7 @@ export default function MinhasArbitragens() {
 
             {/* Mobile only: Meta Mensal full width */}
             {user?.id && (
-              <div className="animate-fade-in md:hidden" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
+              <div className="mobile-dashboard-goal w-full animate-fade-in md:hidden" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
                 <MonthlyGoalCard
                   userId={user.id}
                   currentProfit={goalProfit}
@@ -2561,7 +2565,7 @@ export default function MinhasArbitragens() {
             </div>
             {isMobile ? (
             // Visualização Mobile - Lista compacta com expansão por clique
-            <div className={`space-y-1.5 ${debouncedSearchText ? 'animate-fade-in' : ''}`}>
+            <div className={`space-y-2 ${debouncedSearchText ? 'animate-fade-in' : ''}`}>
               {paginatedArbitragens.map((arb) => {
                 const eventDate = new Date(arb.data_evento);
                 eventDate.setHours(0, 0, 0, 0);
@@ -2577,7 +2581,7 @@ export default function MinhasArbitragens() {
                 return (
                   <div
                     key={arb.id}
-                    className={`rounded-lg border bg-card overflow-hidden ${debouncedSearchText ? 'animate-fade-in' : ''} ${
+                    className={`mobile-dashboard-bet rounded-lg border bg-card overflow-hidden ${debouncedSearchText ? 'animate-fade-in' : ''} ${
                       isEventPast && arb.status === 'aguardando'
                         ? 'border-l-4 border-red-500'
                         : isEventToday
@@ -2587,7 +2591,7 @@ export default function MinhasArbitragens() {
                   >
                     {/* Linha principal - sempre visível, clicável */}
                     <div 
-                      className="flex items-center gap-2 px-2.5 py-2 cursor-pointer active:bg-muted/50"
+                      className="flex min-h-14 items-center gap-2 px-3 py-2.5 cursor-pointer active:bg-muted/50"
                       onClick={() => setExpandedMobileCard(isExpanded ? null : arb.id)}
                     >
                       {/* Descrição + casas */}
@@ -3466,7 +3470,6 @@ export default function MinhasArbitragens() {
             )}
           </DialogContent>
         </Dialog>
-      </div>
 
       {/* Dialog de Ganhos por Casa */}
       {viewGanhosArbitrage && (
