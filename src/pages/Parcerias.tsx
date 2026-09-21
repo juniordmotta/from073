@@ -36,6 +36,7 @@ import { AddHouseAutocomplete } from '@/components/AddHouseAutocomplete';
 import { bettingHouseGroups } from '@/data/bettingHousesData';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BalanceMovements } from '@/components/BalanceMovements';
+import { MobileFilters } from '@/components/MobileFilters';
 
 interface Partnership {
   id: string;
@@ -1228,7 +1229,7 @@ const Parcerias = () => {
 
   return (
     <Layout>
-      <div className="p-4 md:p-6 space-y-4">
+      <div className="mobile-section-page space-y-4 p-0 md:p-6">
         <div className="flex justify-between items-center flex-wrap gap-2">
           <div className="flex items-center gap-4">
             <h1 className="text-3xl font-bold">Parcerias</h1>
@@ -1467,8 +1468,8 @@ const Parcerias = () => {
 
         {/* Seção de Filtros e Busca */}
         {viewMode === 'list' && (
-          <Card className="p-4">
-            <div className="flex flex-col md:flex-row gap-4">
+          <Card className="mobile-dashboard-card p-3 md:p-4">
+            <div className="flex flex-col gap-3 md:flex-row md:gap-4">
               {/* Campo de Busca */}
               <div className="flex-1">
                 <div className="relative">
@@ -1482,6 +1483,8 @@ const Parcerias = () => {
                 </div>
               </div>
 
+              <MobileFilters activeCount={activeFiltersCount} className="mobile-standard-filters md:contents">
+              <div className="mobile-standard-filter-panel flex flex-col gap-3 md:contents">
               {/* Filtro de Status */}
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-muted-foreground hidden md:block" />
@@ -1541,6 +1544,8 @@ const Parcerias = () => {
                   Limpar ({activeFiltersCount})
                 </Button>
               )}
+              </div>
+              </MobileFilters>
             </div>
           </Card>
         )}
@@ -1641,7 +1646,7 @@ const Parcerias = () => {
                 <div className="text-center py-8">Nenhuma parceria encontrada</div>
               ) : (
                 filteredPartnerships.map((partnership) => (
-                  <Card key={partnership.id} className={`p-4 ${debouncedSearch ? 'animate-fade-in' : ''}`}>
+                  <Card key={partnership.id} className={`mobile-dashboard-card p-4 ${debouncedSearch ? 'animate-fade-in' : ''}`}>
                     <div className="space-y-3">
                       {/* Header do Card */}
                       <div className="flex items-start justify-between">
@@ -1906,7 +1911,7 @@ const Parcerias = () => {
                     </div>
                     <div className="md:hidden space-y-1.5">
                       {Array.from({ length: 5 }).map((_, i) => (
-                        <div key={i} className="rounded-lg border bg-card px-3 py-2 flex items-center justify-between">
+                        <div key={i} className="mobile-dashboard-card rounded-lg border px-3 py-2 flex items-center justify-between">
                           <Skeleton className="h-3 w-24" />
                           <Skeleton className="h-4 w-20" />
                         </div>
@@ -1926,7 +1931,7 @@ const Parcerias = () => {
                     </div>
                     <div className="md:hidden space-y-1.5 mt-3">
                       {Array.from({ length: 3 }).map((_, i) => (
-                        <div key={i} className="rounded-lg border bg-card px-3 py-2 flex items-center justify-between">
+                        <div key={i} className="mobile-dashboard-card rounded-lg border px-3 py-2 flex items-center justify-between">
                           <Skeleton className="h-3 w-24" />
                           <Skeleton className="h-4 w-20" />
                         </div>
@@ -2032,21 +2037,21 @@ const Parcerias = () => {
 
                     {/* Mobile: thin stacked rows */}
                     <div className="md:hidden space-y-1.5">
-                      <div className="rounded-lg border bg-card px-3 py-2 flex items-center justify-between">
+                      <div className="mobile-dashboard-card rounded-lg border px-3 py-2 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
                           <span className="text-xs text-muted-foreground">Custos do Mês</span>
                         </div>
                         <span className="text-sm font-bold text-destructive">R$ {formatCurrency(partnershipDetails.custosMes)}</span>
                       </div>
-                      <div className="rounded-lg border bg-card px-3 py-2 flex items-center justify-between">
+                      <div className="mobile-dashboard-card rounded-lg border px-3 py-2 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
                           <span className="text-xs text-muted-foreground">Lucro Bruto</span>
                         </div>
                         <span className={`text-sm font-bold ${partnershipDetails.lucroBruto >= 0 ? 'text-success' : 'text-destructive'}`}>R$ {formatCurrency(partnershipDetails.lucroBruto)}</span>
                       </div>
-                      <div className="rounded-lg border bg-card px-3 py-2 flex items-center justify-between">
+                      <div className="mobile-dashboard-card rounded-lg border px-3 py-2 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Target className="h-3.5 w-3.5 text-muted-foreground" />
                           <span className="text-xs text-muted-foreground">Lucro Líquido</span>
@@ -2179,7 +2184,7 @@ const Parcerias = () => {
 
                     {/* Mobile: stacked saldo rows */}
                     <div className="md:hidden space-y-1.5 mt-3">
-                      <div className="rounded-lg border bg-card px-3 py-2">
+                      <div className="mobile-dashboard-card rounded-lg border px-3 py-2">
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-2">
                             <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
@@ -2594,7 +2599,7 @@ const Parcerias = () => {
                           {filteredCasas.map((casa: any) => (
                             <div 
                               key={casa.nome} 
-                              className={`rounded-lg border bg-card p-3 space-y-2 transition-all duration-500 ${
+                              className={`mobile-dashboard-card rounded-lg border p-3 space-y-2 transition-all duration-500 ${
                                 recentlyUpdatedHouse === casa.nome ? 'ring-2 ring-primary/30 bg-primary/5' : ''
                               }`}
                             >
@@ -2729,7 +2734,7 @@ const Parcerias = () => {
               <>
                 {/* Métricas Principais */}
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-                  <Card>
+                  <Card className="mobile-dashboard-card">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Total Parcerias</CardTitle>
                       <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
@@ -2742,7 +2747,7 @@ const Parcerias = () => {
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card className="mobile-dashboard-card">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Parcerias Ativas</CardTitle>
                       <TrendingUp className="h-4 w-4 text-success" />
@@ -2755,7 +2760,7 @@ const Parcerias = () => {
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card className="mobile-dashboard-card">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Parcerias Inativas</CardTitle>
                       <TrendingDown className="h-4 w-4 text-muted-foreground" />
@@ -2768,7 +2773,7 @@ const Parcerias = () => {
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card className="mobile-dashboard-card">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Valor Total Banca</CardTitle>
                       <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -2781,7 +2786,7 @@ const Parcerias = () => {
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card className="mobile-dashboard-card">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Total Apostas</CardTitle>
                       <Target className="h-4 w-4 text-muted-foreground" />

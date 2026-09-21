@@ -36,7 +36,16 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
 
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
   const isAdminMaster = userRole?.role === 'admin_master';
-  const usesMobileDarkLayout = location.pathname === '/dashboard' || location.pathname === '/minhas-arbitragens';
+  const mobileDarkRoutes = [
+    '/dashboard',
+    '/minhas-arbitragens',
+    '/custos-operacionais',
+    '/parcerias',
+    '/casas-de-apostas',
+    '/anotacoes',
+    '/usuarios',
+  ];
+  const usesMobileDarkLayout = mobileDarkRoutes.includes(location.pathname);
 
   // Ativar push notifications em background
   usePushNotifications({ userId: user?.id, enabled: true });

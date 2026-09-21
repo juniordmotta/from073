@@ -370,7 +370,7 @@ export default function CustosOperacionais() {
 
   return (
     <Layout>
-      <div className="space-y-4">
+      <div className="mobile-section-page space-y-4">
         {/* Header compacto */}
         <div className="flex items-center justify-between">
           <h1 className="text-2xl md:text-3xl font-bold">Custos Operacionais</h1>
@@ -442,8 +442,8 @@ export default function CustosOperacionais() {
 
         {/* Filtros inline */}
         <div className="flex flex-wrap items-center gap-2">
-          <MobileFilters className="w-full md:w-auto md:contents" label="Filtros de período">
-          <div className="flex flex-wrap items-center gap-2">
+          <MobileFilters className="mobile-standard-filters w-full md:w-auto md:contents" label="Filtros de período">
+          <div className="mobile-standard-filter-panel flex flex-wrap items-center gap-2">
           {isAdmin && (
 
             <Select value={selectedUserId} onValueChange={setSelectedUserId}>
@@ -494,7 +494,7 @@ export default function CustosOperacionais() {
           </div>
           </div>
           </MobileFilters>
-          <div className="ml-auto flex items-center gap-2 rounded-lg border bg-card px-3 py-1.5">
+          <div className="mobile-dashboard-goal ml-auto flex items-center gap-2 rounded-lg border bg-card px-3 py-1.5">
 
             <DollarSign className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Total:</span>
@@ -564,7 +564,7 @@ export default function CustosOperacionais() {
             <p className="text-center text-muted-foreground py-8">Nenhum custo encontrado</p>
           ) : (
             costs.map((cost) => (
-              <div key={cost.id} className="rounded-lg border bg-card p-3 flex items-center justify-between gap-3">
+              <div key={cost.id} className="mobile-dashboard-card rounded-lg border p-3 flex items-center justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{cost.descricao}</p>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
