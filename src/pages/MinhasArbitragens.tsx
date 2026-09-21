@@ -1993,7 +1993,7 @@ export default function MinhasArbitragens() {
             </div>
             {activeFiltersCount > 0 && (
               <>
-                <Badge className="text-xs bg-yellow-400 text-black hover:bg-yellow-500">
+                <Badge className="hidden text-xs bg-yellow-400 text-black hover:bg-yellow-500 md:inline-flex">
                   {activeFiltersCount} filtro{activeFiltersCount > 1 ? 's' : ''} ativo{activeFiltersCount > 1 ? 's' : ''}
                 </Badge>
                 <Button
@@ -2008,7 +2008,7 @@ export default function MinhasArbitragens() {
                     setFilterPartnership([]);
                     setSelectedPeriod('custom');
                   }}
-                  className="h-8"
+                  className="hidden h-8 md:inline-flex"
                 >
                   <X className="h-4 w-4 mr-2" />
                   Limpar Filtros
@@ -2016,7 +2016,7 @@ export default function MinhasArbitragens() {
               </>
             )}
             
-            <div className="relative min-w-0 flex-1 md:flex-none">
+            <div className="relative order-2 w-full min-w-0 md:order-none md:w-auto md:flex-none">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
@@ -2056,12 +2056,12 @@ export default function MinhasArbitragens() {
 
               // Se só tem 1 parceria ativa, vai direto
               if (activePartnerships.length === 1) {
-                return (
-                  <div className="flex items-center gap-1">
+                  return (
+                   <div className="order-3 flex flex-1 items-center gap-1 md:order-none md:flex-none">
                     <Button 
                       variant="outline" 
                       size="sm" 
-                       className="h-9 gap-1.5 px-2.5 text-xs md:h-8 md:gap-2 md:px-3 md:text-sm"
+                       className="h-9 flex-1 gap-1.5 px-2.5 text-xs md:h-8 md:flex-none md:gap-2 md:px-3 md:text-sm"
                       onClick={() => navigate(`/parcerias?partnership=${activePartnerships[0].id}&view=report`)}
                     >
                       <Building2 className="h-4 w-4" />
@@ -2074,10 +2074,10 @@ export default function MinhasArbitragens() {
               
               // Múltiplas parcerias: mostra dialog
               return (
-                <div className="flex items-center gap-1">
+                 <div className="order-3 flex flex-1 items-center gap-1 md:order-none md:flex-none">
                 <Dialog open={goToHousesOpen} onOpenChange={setGoToHousesOpen}>
                   <DialogTrigger asChild>
-                     <Button variant="outline" size="sm" className="h-9 gap-1.5 px-2.5 text-xs md:h-8 md:gap-2 md:px-3 md:text-sm">
+                     <Button variant="outline" size="sm" className="h-9 flex-1 gap-1.5 px-2.5 text-xs md:h-8 md:flex-none md:gap-2 md:px-3 md:text-sm">
                       <Building2 className="h-4 w-4" />
                       Ir para Casas
                     </Button>
@@ -2463,7 +2463,7 @@ export default function MinhasArbitragens() {
             </div>
 
             {/* Mobile only: Lucro do Mês full width */}
-            <div className="mobile-dashboard-card rounded-lg border bg-card p-4 animate-fade-in md:hidden" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
+            <div className="mobile-dashboard-card w-full rounded-lg border bg-card p-4 animate-fade-in md:hidden" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
               <div className="flex items-center gap-1 mb-2">
                 {lucroLiquido >= 0 ? (
                   <TrendingUp className="h-3 w-3 text-success" />
@@ -2512,7 +2512,7 @@ export default function MinhasArbitragens() {
 
             {/* Mobile only: Meta Mensal full width */}
             {user?.id && (
-              <div className="mobile-dashboard-goal animate-fade-in md:hidden" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
+              <div className="mobile-dashboard-goal w-full animate-fade-in md:hidden" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
                 <MonthlyGoalCard
                   userId={user.id}
                   currentProfit={goalProfit}
