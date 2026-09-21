@@ -231,6 +231,7 @@ export default function MinhasArbitragens() {
     totalInvestido: 0,
     diasComApostas: 0,
   });
+  const [isMonthProfitExpanded, setIsMonthProfitExpanded] = useState(false);
   
   // Estado para custos operacionais do mês
   const [monthlyCosts, setMonthlyCosts] = useState(0);
@@ -2464,22 +2465,35 @@ export default function MinhasArbitragens() {
             </div>
 
             {/* Mobile only: Lucro do Mês full width */}
-            <div className="mobile-dashboard-card w-full rounded-lg border bg-card p-4 animate-fade-in md:hidden" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
-              <div className="flex items-center gap-1 mb-2">
-                {lucroLiquido >= 0 ? (
-                  <TrendingUp className="h-3 w-3 text-success" />
-                ) : (
-                  <TrendingDown className="h-3 w-3 text-destructive" />
-                )}
-                <span className="text-[10px] text-muted-foreground">Lucro do Mês</span>
+            <div className="mobile-dashboard-card w-full rounded-lg border bg-card p-3 animate-fade-in md:hidden" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2">
+                  {lucroLiquido >= 0 ? (
+                    <TrendingUp className="h-4 w-4 shrink-0 text-success" />
+                  ) : (
+                    <TrendingDown className="h-4 w-4 shrink-0 text-destructive" />
+                  )}
+                  <div className="min-w-0">
+                    <span className="block text-[10px] text-muted-foreground">Lucro líquido do mês</span>
+                    <span className={`block truncate text-lg font-bold ${lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      R$ {formatCurrency(animatedLucroLiquido)}
+                    </span>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                  aria-label={isMonthProfitExpanded ? 'Ocultar detalhes do lucro do mês' : 'Mostrar detalhes do lucro do mês'}
+                  aria-expanded={isMonthProfitExpanded}
+                  onClick={() => setIsMonthProfitExpanded((expanded) => !expanded)}
+                >
+                  <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isMonthProfitExpanded ? 'rotate-180' : ''}`} />
+                </Button>
               </div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-muted-foreground">Líquido</span>
-                <span className={`text-xl font-bold ${lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
-                  R$ {formatCurrency(animatedLucroLiquido)}
-                </span>
-              </div>
-              <div className="space-y-1 border-t pt-2">
+              {isMonthProfitExpanded && (
+              <div className="mt-3 space-y-1 border-t pt-2 animate-fade-in">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-muted-foreground">Bruto</span>
                   <span className={`text-xs font-medium ${userMonthStats.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
@@ -2509,6 +2523,7 @@ export default function MinhasArbitragens() {
                   </span>
                 </div>
               </div>
+              )}
             </div>
 
             {/* Mobile only: Meta Mensal full width */}
