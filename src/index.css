@@ -189,6 +189,39 @@ All colors MUST be HSL.
     border-radius: 0.5rem;
     background: hsl(var(--mobile-surface) / 0.88);
   }
+
+  .mobile-section-page h1,
+  .mobile-section-page h2 {
+    color: hsl(var(--mobile-foreground));
+  }
+
+  .mobile-section-page h1 {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+
+  .mobile-standard-filters > button {
+    background: hsl(var(--mobile-surface) / 0.82);
+    border-color: hsl(var(--mobile-border));
+    color: hsl(var(--mobile-foreground));
+    backdrop-filter: blur(16px);
+  }
+
+  .mobile-standard-filter-panel {
+    padding: 0.75rem;
+    border: 1px solid hsl(var(--mobile-border));
+    border-radius: 0.5rem;
+    background: hsl(var(--mobile-surface) / 0.88);
+  }
+
+  .mobile-catalog-group {
+    border-color: hsl(var(--mobile-border));
+    background: hsl(var(--mobile-elevated) / 0.7);
+  }
+
+  .mobile-note-row {
+    border-color: hsl(var(--mobile-border));
+  }
 }
 
 @layer utilities {

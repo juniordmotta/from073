@@ -28,6 +28,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ValidatedInput } from '@/components/ui/validated-input';
 import { createUserSchema } from '@/lib/validations/user';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { MobileFilters } from '@/components/MobileFilters';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -497,7 +498,7 @@ export default function Usuarios() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="mobile-section-page space-y-4 md:space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <h1 className="text-3xl font-bold">Gerenciar Usuários</h1>
 
@@ -594,8 +595,8 @@ export default function Usuarios() {
         </div>
 
         {/* Seção de Filtros e Busca */}
-        <Card className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
+        <Card className="mobile-dashboard-card p-3 md:p-4">
+          <div className="flex flex-col gap-3 md:flex-row md:gap-4">
             {/* Campo de Busca */}
             <div className="flex-1">
               <div className="relative">
@@ -609,6 +610,8 @@ export default function Usuarios() {
               </div>
             </div>
 
+            <MobileFilters activeCount={activeFiltersCount} label="Filtros" className="mobile-standard-filters md:contents">
+            <div className="mobile-standard-filter-panel flex flex-col gap-3 md:contents">
             {/* Filtro de Role */}
             <div className="w-full md:w-48">
               <Select value={roleFilter} onValueChange={setRoleFilter}>
@@ -636,6 +639,8 @@ export default function Usuarios() {
                 Limpar ({activeFiltersCount})
               </Button>
             )}
+            </div>
+            </MobileFilters>
           </div>
         </Card>
 
@@ -735,7 +740,7 @@ export default function Usuarios() {
         {/* Visualização Mobile/Tablet em Cards */}
         <div className={`md:hidden space-y-4 ${debouncedSearch ? 'animate-fade-in' : ''}`}>
           {paginatedUsers.map((user) => (
-            <Card key={user.id} className={`p-4 ${debouncedSearch ? 'animate-fade-in' : ''}`}>
+            <Card key={user.id} className={`mobile-dashboard-card p-4 ${debouncedSearch ? 'animate-fade-in' : ''}`}>
               <div className="space-y-3">
                 {/* Header do Card */}
                 <div className="flex items-start justify-between">

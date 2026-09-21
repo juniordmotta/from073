@@ -19,6 +19,7 @@ import { cn, formatCurrency } from '@/lib/utils';
 import { format, startOfMonth, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Plus, Search, CalendarIcon, X, Pencil, Trash2, FileText, StickyNote, Tag, Check, DollarSign } from 'lucide-react';
+import { MobileFilters } from '@/components/MobileFilters';
 
 interface NoteCategory {
   id: string;
@@ -443,7 +444,7 @@ export default function Anotacoes() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="mobile-section-page space-y-4 md:space-y-6">
         {/* Header */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -468,9 +469,9 @@ export default function Anotacoes() {
         </div>
 
         {/* Filters */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center">
+        <Card className="mobile-dashboard-card">
+          <CardContent className="p-3 md:pt-6">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
               {/* Search */}
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -482,6 +483,8 @@ export default function Anotacoes() {
                 />
               </div>
 
+              <MobileFilters label="Filtros" className="mobile-standard-filters md:contents">
+              <div className="mobile-standard-filter-panel flex flex-col gap-3 md:contents">
               {/* Category Filter */}
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger className="w-[180px]">
@@ -571,6 +574,8 @@ export default function Anotacoes() {
                   </Button>
                 </div>
               </div>
+              </div>
+              </MobileFilters>
             </div>
             <div className="mt-4 flex items-center justify-between gap-3 border-t pt-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -585,7 +590,7 @@ export default function Anotacoes() {
         </Card>
 
         {/* Notes List */}
-        <Card>
+        <Card className="mobile-dashboard-card">
           <CardContent className="p-0">
             {loading ? (
               <div className="py-10 text-center text-muted-foreground">
@@ -604,7 +609,7 @@ export default function Anotacoes() {
                 {filteredNotes.map((note) => (
                   <div
                     key={note.id}
-                    className="flex items-start gap-4 p-4 hover:bg-muted/50 transition-colors group"
+                    className="mobile-note-row flex items-start gap-3 p-3 md:gap-4 md:p-4 hover:bg-muted/50 transition-colors group"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -645,7 +650,7 @@ export default function Anotacoes() {
                         </span>
                       </div>
                     )}
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                    <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0">
                       <Button
                         variant="ghost"
                         size="icon"

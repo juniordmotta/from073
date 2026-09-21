@@ -18,6 +18,7 @@ import { Bell, Download, FileSpreadsheet, FileText } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
+import { MobileFilters } from '@/components/MobileFilters';
 
 import { 
   Search, 
@@ -1183,7 +1184,7 @@ const CasasDeApostas = () => {
   return (
 
     <Layout>
-      <div className="space-y-6 animate-fade-in">
+      <div className="mobile-section-page space-y-4 md:space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -1196,7 +1197,8 @@ const CasasDeApostas = () => {
             </p>
           </div>
           
-          <div className="flex items-center gap-2 flex-wrap">
+          <MobileFilters label="Ações e indicadores" className="mobile-standard-filters md:contents">
+          <div className="mobile-standard-filter-panel flex items-center gap-2 flex-wrap">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2">
@@ -1261,11 +1263,12 @@ const CasasDeApostas = () => {
               </Badge>
             )}
           </div>
+          </MobileFilters>
         </div>
 
         {/* Search */}
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="mobile-dashboard-card">
+          <CardContent className="p-3 md:pt-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -1279,7 +1282,7 @@ const CasasDeApostas = () => {
         </Card>
 
         {/* Lista de Grupos */}
-        <Card>
+        <Card className="mobile-dashboard-card">
           <CardHeader>
             <CardTitle className="text-lg">Grupos de Casas</CardTitle>
             <CardDescription>
@@ -1298,7 +1301,7 @@ const CasasDeApostas = () => {
                   <AccordionItem 
                     key={group.id} 
                     value={group.id}
-                    className="border rounded-lg px-4 data-[state=open]:bg-muted/30"
+                    className="mobile-catalog-group border rounded-lg px-3 md:px-4 data-[state=open]:bg-muted/30"
                   >
                     <AccordionTrigger className="hover:no-underline py-4">
                       <div className="flex items-center gap-3 flex-1">
@@ -1458,7 +1461,7 @@ const CasasDeApostas = () => {
                             {/* Mobile layout - compact list style */}
                             <div
                               key={`mobile-${house.id}`}
-                              className={`md:hidden rounded-md border bg-background p-2.5 space-y-1.5 ${isHidden ? 'opacity-50 border-destructive/50' : ''} ${isUsedByPartnership ? 'border-success/50 bg-success/5' : ''}`}
+                              className={`mobile-dashboard-bet md:hidden rounded-md border p-2.5 space-y-1.5 ${isHidden ? 'opacity-50 border-destructive/50' : ''} ${isUsedByPartnership ? 'border-success/50 bg-success/5' : ''}`}
                             >
                               {/* Row 1: Name */}
                               <div className="flex items-start justify-between gap-2">
