@@ -322,7 +322,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Média por Dia */}
-          <Card className="mobile-dashboard-card p-3 md:p-2 animate-fade-in" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
+          <Card className="mobile-dashboard-card min-w-0 p-3 md:p-2 animate-fade-in" style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}>
             <div className="flex items-center gap-1 mb-0.5">
               <Calendar className="h-3 w-3 text-muted-foreground" />
               <span className="text-[10px] text-muted-foreground">Média/Dia</span>
@@ -335,7 +335,7 @@ export default function Dashboard() {
 
           {/* Meta Mensal */}
           {user?.id && (
-            <div className="mobile-dashboard-goal col-span-2 row-start-1 md:col-span-1 md:row-auto animate-fade-in" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
+            <div className="mobile-dashboard-goal min-w-0 md:col-span-1 animate-fade-in" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
               <MonthlyGoalCard
                 userId={user.id}
                 currentProfit={monthStats.totalLucro}

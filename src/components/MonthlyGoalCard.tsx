@@ -197,11 +197,11 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
   if (compact) {
     return (
       <>
-        <Card className="p-3">
+        <Card className="min-w-0 p-2.5 md:p-3">
           <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-1.5 md:gap-2">
               <Target className="h-3 w-3 text-primary" />
-              <span className="text-xs text-muted-foreground">{cardTitle}</span>
+              <span className="truncate text-[10px] text-muted-foreground md:text-xs">{cardTitle}</span>
             </div>
             {canEdit && (
               <Button 
@@ -215,15 +215,15 @@ export function MonthlyGoalCard({ userId, selectedUserIds, partnershipId, curren
               </Button>
             )}
           </div>
-          <div className="text-[10px] text-muted-foreground mb-1">{capitalizedMonth}</div>
-          <div className="text-xl font-bold">R$ {formatCurrency(goalValue)}</div>
+          <div className="hidden text-[10px] text-muted-foreground mb-1 md:block">{capitalizedMonth}</div>
+          <div className="truncate text-base font-bold md:text-xl">R$ {formatCurrency(goalValue)}</div>
           {goalValue > 0 && (
             <>
               <p className={`text-[10px] font-medium ${remaining > 0 ? 'text-muted-foreground' : 'text-success'}`}>
                 {progressPercent.toFixed(1)}% da meta
               </p>
               {paceInfo && (
-                <p className={`text-[10px] font-medium ${paceInfo.isOnTrack ? 'text-success' : 'text-destructive'}`}>
+                <p className={`hidden text-[10px] font-medium md:block ${paceInfo.isOnTrack ? 'text-success' : 'text-destructive'}`}>
                   {paceInfo.isOnTrack ? `✅ +R$ ${formatCurrency(Math.abs(paceInfo.diff))} acima` : `⚠️ Faltam R$ ${formatCurrency(Math.abs(paceInfo.diff))} p/ dia ${paceInfo.currentDay}`}
                 </p>
               )}
