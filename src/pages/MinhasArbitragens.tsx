@@ -2133,6 +2133,7 @@ export default function MinhasArbitragens() {
               );
             })()}
           </div>
+        </div>
 
         {/* Filtros agrupados */}
         <MobileFilters activeCount={activeFiltersCount} className="mobile-arbitrages-filters">
