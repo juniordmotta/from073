@@ -50,12 +50,12 @@ All colors MUST be HSL.
 
     --radius: 0.5rem;
 
-    --mobile-canvas: 240 10% 3.9%;
-    --mobile-surface: 240 8% 7%;
-    --mobile-elevated: 240 7% 10%;
-    --mobile-border: 240 6% 17%;
-    --mobile-foreground: 0 0% 98%;
-    --mobile-muted: 240 5% 64.9%;
+    --mobile-canvas: 240 20% 98%;
+    --mobile-surface: 0 0% 100%;
+    --mobile-elevated: 240 14% 96%;
+    --mobile-border: 240 8% 86%;
+    --mobile-foreground: 240 10% 3.9%;
+    --mobile-muted: 240 4% 46%;
   }
 
   .dark {
