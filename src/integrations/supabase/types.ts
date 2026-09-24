@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_conversations: {
+        Row: {
+          messages: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          messages?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          messages?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       arbitrage_history: {
         Row: {
           arbitrage_id: string
