@@ -1,0 +1,13 @@
+import { brazilDay, dateRange, summarize, canQueryUser, MAX_ROWS, type Bet } from './metrics.ts';
+const equal = (a: unknown, e: unknown) => { if (JSON.stringify(a) !== JSON.stringify(e)) throw new Error(`Expected ${JSON.stringify(e)}, got ${JSON.stringify(a)}`); };
+const bet = (extra: Partial<Bet> = {}): Bet => ({ id: '1', created_at: '2026-10-16T02:30:00Z', status: 'green', lucro_projetado: 15, lucro_real: 10, casa_01_nome: 'Betnacional', casa_01_valor: 100, casa_01_parceria_id: 'p1', casa_02_nome: 'Betano', casa_02_valor: 100, casa_02_parceria_id: 'p1', casa_03_nome: null, casa_03_valor: null, casa_03_parceria_id: null, ...extra });
+Deno.test('São Paulo day respects UTC-3', () => equal(brazilDay(new Date('2026-10-16T02:30:00Z')), '2026-10-15'));
+Deno.test('inclusive dates end exclusively at next midnight', () => equal(dateRange('2026-10-14', '2026-10-15'), { from: '2026-10-14T00:00:00-03:00', until: '2026-10-16T03:00:00.000Z' }));
+Deno.test('operators cannot query another user', () => equal(canQueryUser('operador', 'self', 'other'), false));
+Deno.test('admins can query permitted users', () => equal(canQueryUser('admin', 'self', 'other'), true));
+Deno.test('record limit is 5000', () => equal(MAX_ROWS, 5000));
+Deno.test('profit excludes invested stakes', () => equal(summarize([bet()], new Map()).lucro_realizado, 10));
+Deno.test('open profit stays separate', () => { const r = summarize([bet(), bet({ id: '2', status: 'aguardando', lucro_real: null })], new Map()); equal([r.lucro_realizado, r.lucro_projetado_abertas, r.abertas], [10, 15, 1]); });
+Deno.test('partnership counted once per arbitrage', () => equal(summarize([bet()], new Map([['p1', 'Parceria A']])).parcerias_mais_usadas, [{ parceria: 'Parceria A', apostas: 1 }]));
+Deno.test('daily average excludes empty days', () => equal(summarize([bet(), bet({ id: '2', created_at: '2026-10-20T13:00:00Z' })], new Map()).media_por_dia_ativo, 10));
+Deno.test('invalid calendar dates rejected', () => { let threw = false; try { dateRange('2026-02-30', null); } catch { threw = true; } equal(threw, true); });
