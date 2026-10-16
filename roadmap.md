@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Concluir assistente IA desktop com histórico individual e consultas seguras
+- [ ] Verificar perguntas, métricas e restauração do histórico
+
 - [x] Aplicar padrão mobile em Parcerias
 - [x] Aplicar padrão mobile em Casas de Apostas
 - [x] Aplicar padrão mobile em Custos Operacionais
