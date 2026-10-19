@@ -1,5 +1,5 @@
-import { createClient } from 'npm:@supabase/supabase-js@2';
-import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { createClient } from 'npm:@supabase/supabase-js@2.118.0';
+import { corsHeaders } from 'npm:@supabase/supabase-js@2.118.0/cors';
 import { latestRates } from '../_shared/currency.ts';
 Deno.serve(async req => {
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
