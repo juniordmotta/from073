@@ -1017,6 +1017,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      adjust_currency_balance: {
+        Args: {
+          p_amount: number
+          p_currency: string
+          p_house_id?: string
+          p_partnership: string
+        }
+        Returns: undefined
+      }
       apply_currency_house_movement: {
         Args: {
           p_currency: string
