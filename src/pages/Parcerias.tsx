@@ -1127,7 +1127,7 @@ const Parcerias = () => {
       'Total de Apostas': data.totalArbitrages,
       'Apostas Green': data.greenCount,
       'Apostas Red': data.redCount,
-      'Lucro Total (R$)': data.totalLucro,
+      [`Lucro Total (${reportCurrency})`]: data.totalLucro,
       'ROI (%)': data.roi.toFixed(2),
     }));
 
@@ -1166,7 +1166,7 @@ const Parcerias = () => {
 
       const totalLucro = partnershipArbitrages.reduce((sum, arb) => {
         const lucro = arb.status === 'aguardando' ? 0 : (arb.lucro_real || 0);
-        return sum + Number(lucro);
+        return sum + convert(Number(lucro), currency(arb.moeda), reportCurrency, exchangeRates ?? null);
       }, 0);
 
       const greenCount = partnershipArbitrages.filter(
@@ -1190,7 +1190,7 @@ const Parcerias = () => {
         alerts.push({
           type: 'negative_performance',
           severity: 'high',
-          message: `${formatUserName(stats.nome)} está com lucro negativo de R$ ${formatCurrency(Math.abs(stats.totalLucro))}`,
+          message: `${formatUserName(stats.nome)} está com lucro negativo de ${reportCurrency} ${formatCurrency(Math.abs(stats.totalLucro))}`,
         });
       }
     });
@@ -1239,7 +1239,7 @@ const Parcerias = () => {
       alerts,
       partnershipStats: Array.from(partnershipStats.values()),
     };
-  }, [partnerships, arbitrages]);
+  }, [partnerships, arbitrages, reportCurrency, exchangeRates]);
 
   return (
     <Layout>
