@@ -77,6 +77,7 @@ interface HistoryEntry {
 }
 
 interface ArbitrageResult {
+  moeda?: string;
   id: string;
   casa_01_parceria_id: string;
   casa_02_parceria_id: string;
@@ -579,7 +580,7 @@ const Parcerias = () => {
       setLoadingData(true);
       let query = supabase
         .from('arbitrages')
-        .select('id, casa_01_parceria_id, casa_02_parceria_id, casa_03_parceria_id, lucro_real, status, created_at, user_id');
+        .select('moeda, id, casa_01_parceria_id, casa_02_parceria_id, casa_03_parceria_id, lucro_real, status, created_at, user_id');
 
       if (!isAdmin) {
         query = query.eq('user_id', user?.id);
@@ -631,7 +632,7 @@ const Parcerias = () => {
         totalLucro,
         greenCount,
         redCount,
-        roi: partnership.valor_banca > 0 ? (totalLucro / partnership.valor_banca) * 100 : 0,
+        roi: partnership.valor_banca > 0 ? (convert(totalLucro, reportCurrency, 'BRL', exchangeRates ?? null) / partnership.valor_banca) * 100 : 0,
       };
     });
 

@@ -78,8 +78,8 @@ interface ReportData {
 
 type PartnershipDetail = NonNullable<ReportData['saldosParceriasAtivas']>[number];
 
-function buildMonthOptions(): { value: string; label: string }[] {
-  const opts: { value: string; label: string }[] = [];
+function buildMonthOptions(): { value: React.ReactNode; label: string }[] {
+  const opts: { value: React.ReactNode; label: string }[] = [];
   const now = new Date();
   for (let i = 0; i < 24; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -341,9 +341,7 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
                   <span className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/5 px-2 py-0.5 text-[11px]">
                     <span className="font-medium text-muted-foreground">Total</span>
                     <span className="font-bold text-primary">
-                      R$ {formatCurrency(
-                        data.saldosParceriasAtivas.reduce((s, p) => s + p.total, 0)
-                      )}
+                      <Money value={data.saldosParceriasAtivas.reduce((s, p) => s + p.total, 0)} code={data.moeda || 'BRL'} />
                     </span>
                   </span>
                 </div>
@@ -364,19 +362,19 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
               <MetricCard
                 icon={<TrendingUp className="h-3.5 w-3.5" />}
                 label="Lucro Bruto + Abertas"
-                value={`R$ ${formatCurrency(data.lucroBruto + (data.lucroAbertas || 0))}`}
+                value={<Money value={data.lucroBruto + (data.lucroAbertas || 0)} code={data.moeda || 'BRL'} />}
                 valueClass={(data.lucroBruto + (data.lucroAbertas || 0)) >= 0 ? 'text-success' : 'text-destructive'}
               />
               <MetricCard
                 icon={<Receipt className="h-3.5 w-3.5" />}
                 label="Despesas"
-                value={`R$ ${formatCurrency(data.despesas)}`}
+                value={<Money value={data.despesas} code={data.moeda || 'BRL'} />}
                 valueClass="text-destructive"
               />
               <MetricCard
                 icon={(data.lucroLiquido + (data.lucroAbertas || 0)) >= 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
                 label="Lucro Líquido + Abertas"
-                value={`R$ ${formatCurrency(data.lucroLiquido + (data.lucroAbertas || 0))}`}
+                value={<Money value={data.lucroLiquido + (data.lucroAbertas || 0)} code={data.moeda || 'BRL'} />}
                 valueClass={(data.lucroLiquido + (data.lucroAbertas || 0)) >= 0 ? 'text-success' : 'text-destructive'}
               />
 
@@ -389,7 +387,7 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
               <MetricCard
                 icon={<DollarSign className="h-3.5 w-3.5" />}
                 label="Total Investido"
-                value={`R$ ${formatCurrency(data.totalInvestido)}`}
+                value={<Money value={data.totalInvestido} code={data.moeda || 'BRL'} />}
               />
               <MetricCard
                 icon={<Target className="h-3.5 w-3.5" />}
@@ -399,7 +397,7 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
               <MetricCard
                 icon={<Clock className="h-3.5 w-3.5" />}
                 label="Em Aberto"
-                value={`${data.apostasAbertas} · R$ ${formatCurrency(data.lucroAbertas || 0)}`}
+                value={<>{data.apostasAbertas} · <Money value={data.lucroAbertas || 0} code={data.moeda || 'BRL'} /></>}
               />
 
               <MetricCard
@@ -415,7 +413,7 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
               <MetricCard
                 icon={<TrendingUp className="h-3.5 w-3.5" />}
                 label="Média/Dia"
-                value={`R$ ${formatCurrency(data.mediaPorDia)}`}
+                value={<Money value={data.mediaPorDia} code={data.moeda || 'BRL'} />}
                 valueClass={data.mediaPorDia >= 0 ? 'text-success' : 'text-destructive'}
               />
             </div>
@@ -570,7 +568,7 @@ function MetricCard({
 }: {
   icon: React.ReactNode;
   label: string;
-  value: string;
+  value: React.ReactNode;
   valueClass?: string;
 }) {
   return (

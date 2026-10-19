@@ -269,6 +269,7 @@ export default function MinhasArbitragens() {
   
   // Estado para prejuízo/lucro avulso
   const [openPrejuizo, setOpenPrejuizo] = useState(false);
+  const [standaloneCurrency, setStandaloneCurrency] = useState<Currency>('BRL');
   const [prejuizoData, setPrejuizoData] = useState({
     descricao: '',
     casa_nome: '',
@@ -1583,6 +1584,8 @@ export default function MinhasArbitragens() {
 
       // Criar uma arbitragem com resultado já fechado
       const arbitrageData = {
+        moeda: standaloneCurrency,
+        currency_ledger: true,
         user_id: user.id,
         // Registrar no dia informado no formulário (não no dia atual)
         created_at: dataEvento,
@@ -1915,6 +1918,7 @@ export default function MinhasArbitragens() {
   };
 
   const handleDuplicate = (arb: Arbitrage) => {
+    setBetCurrency(currency(arb.moeda));
     // Preencher o formulário com os dados da arbitragem
     setFormData({
       data_evento: format(new Date(arb.data_evento), "yyyy-MM-dd'T'HH:mm"),
@@ -2064,11 +2068,11 @@ export default function MinhasArbitragens() {
               const activePartnerships = partnerships.filter(p => p.status === 'ativo');
               
               const addButton = isMobile ? (
-                 <Button size="icon" className="h-9 w-9 shrink-0 md:h-8 md:w-8" onClick={() => setOpenAdd(true)} title="Adicionar arbitragem">
+                 <Button size="icon" className="h-9 w-9 shrink-0 md:h-8 md:w-8" onClick={() => { setBetCurrency('BRL'); setOpenAdd(true); }} title="Adicionar arbitragem">
                   <Plus className="h-4 w-4" />
                 </Button>
               ) : (
-                <Button size="sm" className="h-8 gap-1.5 shrink-0" onClick={() => setOpenAdd(true)}>
+                <Button size="sm" className="h-8 gap-1.5 shrink-0" onClick={() => { setBetCurrency('BRL'); setOpenAdd(true); }}>
                   <Plus className="h-4 w-4" />
                   Adicionar Arbitragem
                 </Button>
@@ -2854,6 +2858,7 @@ export default function MinhasArbitragens() {
                           </div>
                         </div>
                         <ResultadoDropdown
+                          moeda={currency(arb.moeda)}
                           currentResult={arb.casa_01_resultado}
                           currentCashoutValue={arb.casa_01_valor_resultado}
                           valorApostado={arb.casa_01_valor}
@@ -2891,6 +2896,7 @@ export default function MinhasArbitragens() {
                           </div>
                         </div>
                         <ResultadoDropdown
+                          moeda={currency(arb.moeda)}
                           currentResult={arb.casa_02_resultado}
                           currentCashoutValue={arb.casa_02_valor_resultado}
                           valorApostado={arb.casa_02_valor}
@@ -2929,6 +2935,7 @@ export default function MinhasArbitragens() {
                             </div>
                           </div>
                           <ResultadoDropdown
+                          moeda={currency(arb.moeda)}
                             currentResult={arb.casa_03_resultado || 'aguardando'}
                             currentCashoutValue={arb.casa_03_valor_resultado}
                             valorApostado={arb.casa_03_valor || 0}
@@ -3088,6 +3095,7 @@ export default function MinhasArbitragens() {
                           </div>
                         </div>
                         <ResultadoDropdown
+                          moeda={currency(arb.moeda)}
                           currentResult={arb.casa_01_resultado}
                           currentCashoutValue={arb.casa_01_valor_resultado}
                           valorApostado={arb.casa_01_valor}
@@ -3123,6 +3131,7 @@ export default function MinhasArbitragens() {
                           </div>
                         </div>
                         <ResultadoDropdown
+                          moeda={currency(arb.moeda)}
                           currentResult={arb.casa_02_resultado}
                           currentCashoutValue={arb.casa_02_valor_resultado}
                           valorApostado={arb.casa_02_valor}
@@ -3159,6 +3168,7 @@ export default function MinhasArbitragens() {
                             </div>
                           </div>
                           <ResultadoDropdown
+                          moeda={currency(arb.moeda)}
                             currentResult={arb.casa_03_resultado || 'aguardando'}
                             currentCashoutValue={arb.casa_03_valor_resultado}
                             valorApostado={arb.casa_03_valor || 0}
@@ -4337,7 +4347,7 @@ export default function MinhasArbitragens() {
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="prejuizo_valor_apostado">Valor Apostado (R$)</Label>
+                      <div className="flex items-center justify-between gap-2"><Label htmlFor="prejuizo_valor_apostado">Valor Apostado ({standaloneCurrency})</Label><Select value={standaloneCurrency} onValueChange={value => setStandaloneCurrency(currency(value))}><SelectTrigger className="h-8 w-24" aria-label="Moeda da aposta avulsa"><SelectValue /></SelectTrigger><SelectContent>{(['BRL','USD','EUR'] as const).map(code => <SelectItem key={code} value={code}>{code}</SelectItem>)}</SelectContent></Select></div>
                       <Input
                         id="prejuizo_valor_apostado"
                         placeholder="100,00"
@@ -4348,7 +4358,7 @@ export default function MinhasArbitragens() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="prejuizo_valor_encerrado">Valor Encerrado (R$)</Label>
+                      <Label htmlFor="prejuizo_valor_encerrado">Valor Encerrado ({standaloneCurrency})</Label>
                       <Input
                         id="prejuizo_valor_encerrado"
                         placeholder="50,00"
@@ -4368,11 +4378,11 @@ export default function MinhasArbitragens() {
                     }`}>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Valor apostado:</span>
-                        <span>R$ {formatCurrency(valorApostado)}</span>
+                        <span><Money value={valorApostado} code={standaloneCurrency} /></span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Valor encerrado:</span>
-                        <span>R$ {formatCurrency(valorEncerrado)}</span>
+                        <span><Money value={valorEncerrado} code={standaloneCurrency} /></span>
                       </div>
                       <div className={`flex justify-between text-sm pt-2 border-t mt-2 ${
                         isLucro ? 'border-green-500/30' : 'border-destructive/30'
@@ -4383,7 +4393,7 @@ export default function MinhasArbitragens() {
                         <span className={`font-semibold ${
                           isLucro ? 'text-green-500' : 'text-destructive'
                         }`}>
-                          {isLucro ? '+' : '-'} R$ {formatCurrency(Math.abs(resultado))}
+                          {isLucro ? '+' : '-'} <Money value={Math.abs(resultado)} code={standaloneCurrency} />
                         </span>
                       </div>
                     </div>
