@@ -19,6 +19,11 @@ export function useCountUp(
   const factor = useMemo(() => Math.pow(10, decimals), [decimals]);
 
   useEffect(() => {
+    if (!Number.isFinite(endValue) || !Number.isFinite(previousValueRef.current)) {
+      setCount(endValue);
+      previousValueRef.current = endValue;
+      return;
+    }
     // Evitar animação no primeiro render - mostrar valor direto
     if (isFirstRender.current) {
       isFirstRender.current = false;

@@ -654,7 +654,7 @@ export default function MinhasArbitragens() {
           });
         }
       } else if (data) {
-        setArbitragens(data);
+        setArbitragens(data.map(row => ({ ...row, moeda: currency(row.moeda) })));
       }
     } catch (error) {
       console.error('Erro ao carregar arbitragens:', error);
