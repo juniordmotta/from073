@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
     }
     const moeda = displayCurrency(nativeArbs);
     const rates = await latestRates().catch(() => null);
-    if (!rates && nativeArbs.some(row => currency(row.moeda) !== moeda)) return json({ error: 'Cotação indisponível para consolidar moedas diferentes.' }, 503);
+    if (!rates) return json({ error: 'Cotação indisponível. Tente novamente para gerar o relatório com valores completos.' }, 503);
     const arbs = nativeArbs.map(row => monetaryRow(row, moeda, rates));
     const costs = costsRes.data || [];
     const allParts = (partsRes.data || []) as any[];
