@@ -342,7 +342,7 @@ export default function MinhasArbitragens() {
   // Hooks de animação para o card de Lucro do Mês (devem estar no nível superior)
   const animatedMonthLucro = useCountUp(userMonthStats.totalLucro);
   const animatedLucroLiquido = useCountUp(lucroLiquido);
-  const animatedMonthlyCosts = useCountUp(monthlyCosts);
+  const animatedMonthlyCosts = useCountUp(convert(monthlyCosts, 'BRL', monthCurrency, exchangeRates ?? null));
   const animatedMonthInvestido = useCountUp(userMonthStats.totalInvestido);
   const animatedMediaDia = useCountUp(mediaDia);
   const animatedRoiMensal = useCountUp(roiMensal);
@@ -416,8 +416,8 @@ export default function MinhasArbitragens() {
   // Calcular porcentagem de investimento em relação à banca
   const bancaPercentage = useMemo(() => {
     if (totalBanca === 0) return 0;
-    return (totais.totalInvestido / totalBanca) * 100;
-  }, [totais.totalInvestido, totalBanca]);
+    return (convert(totais.totalInvestido, totalsCurrency, 'BRL', exchangeRates ?? null) / totalBanca) * 100;
+  }, [totais.totalInvestido, totalBanca, totalsCurrency, exchangeRates]);
 
   // Calcular lucro para meta (sempre mês atual, sempre do usuário logado, sem filtros)
   const goalProfit = useMemo(() => {
@@ -960,7 +960,7 @@ export default function MinhasArbitragens() {
       // Sempre buscar parcerias do usuário logado, independente dos filtros
       const { data: partnershipsData } = await supabase
         .from('partnerships')
-        .select('id, nome_completo, saldo_bancario')
+        .select('id, nome_completo, saldo_bancario, saldo_bancario_usd, saldo_bancario_eur')
         .eq('status', 'ativo')
         .eq('user_id', user.id);
 
@@ -973,17 +973,17 @@ export default function MinhasArbitragens() {
       const ids = partnershipsData.map(p => p.id);
       const { data: housesData } = await supabase
         .from('partnership_houses')
-        .select('partnership_id, saldo')
+        .select('partnership_id, saldo, saldo_usd, saldo_eur')
         .in('partnership_id', ids);
 
       const houseSumMap = new Map<string, number>();
       (housesData || []).forEach(h => {
         const prev = houseSumMap.get(h.partnership_id) || 0;
-        houseSumMap.set(h.partnership_id, prev + Number(h.saldo || 0));
+        houseSumMap.set(h.partnership_id, prev + Number(h.saldo || 0) + convert(Number(h.saldo_usd || 0), 'USD', 'BRL', exchangeRates ?? null) + convert(Number(h.saldo_eur || 0), 'EUR', 'BRL', exchangeRates ?? null));
       });
 
       const balances = partnershipsData.map(p => {
-        const saldoBancario = Number(p.saldo_bancario || 0);
+        const saldoBancario = Number(p.saldo_bancario || 0) + convert(Number(p.saldo_bancario_usd || 0), 'USD', 'BRL', exchangeRates ?? null) + convert(Number(p.saldo_bancario_eur || 0), 'EUR', 'BRL', exchangeRates ?? null);
         const saldoCasas = houseSumMap.get(p.id) || 0;
         return {
           id: p.id,
@@ -1000,7 +1000,7 @@ export default function MinhasArbitragens() {
     } finally {
       setIsLoadingBalances(false);
     }
-  }, [user?.id]);
+  }, [user?.id, exchangeRates]);
 
   useEffect(() => {
     loadPartnershipBalances();
@@ -2474,7 +2474,7 @@ export default function MinhasArbitragens() {
                       <div className="border-t mt-1 pt-1 flex items-center justify-between">
                         <span className="text-[10px] text-muted-foreground font-medium">Total</span>
                         <span className="text-sm font-bold">
-                          R$ {formatCurrency(partnershipBalances.reduce((s, p) => s + p.total, 0))}
+                          <Money value={partnershipBalances.reduce((s, p) => s + p.total, 0)} />
                         </span>
                       </div>
                     </>
@@ -3541,12 +3541,12 @@ export default function MinhasArbitragens() {
                       viewGanhosArbitrage.casa_01_valor_resultado
                     ) >= 0 ? 'text-success' : 'text-destructive'
                   }`}>
-                    R$ {calcularGanhoPorCasa(
+                    <Money value={calcularGanhoPorCasa(
                       viewGanhosArbitrage.casa_01_valor,
                       viewGanhosArbitrage.casa_01_odd,
                       viewGanhosArbitrage.casa_01_resultado,
                       viewGanhosArbitrage.casa_01_valor_resultado
-                    ).toFixed(2)}
+                    )} code={currency(viewGanhosArbitrage.moeda)} />
                   </div>
                 </div>
               </div>
@@ -3573,12 +3573,12 @@ export default function MinhasArbitragens() {
                       viewGanhosArbitrage.casa_02_valor_resultado
                     ) >= 0 ? 'text-success' : 'text-destructive'
                   }`}>
-                    R$ {formatCurrency(calcularGanhoPorCasa(
+                    <Money value={calcularGanhoPorCasa(
                       viewGanhosArbitrage.casa_02_valor,
                       viewGanhosArbitrage.casa_02_odd,
                       viewGanhosArbitrage.casa_02_resultado,
                       viewGanhosArbitrage.casa_02_valor_resultado
-                    ))}
+                    )} code={currency(viewGanhosArbitrage.moeda)} />
                   </div>
                 </div>
               </div>
@@ -3606,12 +3606,12 @@ export default function MinhasArbitragens() {
                         viewGanhosArbitrage.casa_03_valor_resultado
                       ) >= 0 ? 'text-success' : 'text-destructive'
                     }`}>
-                      R$ {formatCurrency(calcularGanhoPorCasa(
+                      <Money value={calcularGanhoPorCasa(
                         viewGanhosArbitrage.casa_03_valor || 0,
                         viewGanhosArbitrage.casa_03_odd || 0,
                         viewGanhosArbitrage.casa_03_resultado || 'aguardando',
                         viewGanhosArbitrage.casa_03_valor_resultado
-                      ))}
+                      )} code={currency(viewGanhosArbitrage.moeda)} />
                     </div>
                   </div>
                 </div>
@@ -3640,7 +3640,7 @@ export default function MinhasArbitragens() {
                       viewGanhosArbitrage.casa_03_valor_resultado
                     )) >= 0 ? 'text-success' : 'text-destructive'
                   }`}>
-                    R$ {formatCurrency(
+                    <Money value={
                       calcularGanhoPorCasa(
                         viewGanhosArbitrage.casa_01_valor,
                         viewGanhosArbitrage.casa_01_odd,
@@ -3659,7 +3659,7 @@ export default function MinhasArbitragens() {
                         viewGanhosArbitrage.casa_03_resultado || 'aguardando',
                         viewGanhosArbitrage.casa_03_valor_resultado
                       )
-                    )}
+                    } code={currency(viewGanhosArbitrage.moeda)} />
                   </div>
                 </div>
               </div>

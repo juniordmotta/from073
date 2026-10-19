@@ -62,7 +62,7 @@ export default function Dashboard() {
           .from('arbitrages')
           .select('moeda, lucro_projetado, casa_01_valor, casa_02_valor, casa_03_valor')
           .eq('user_id', user.id)
-          .eq('status', 'aguardando')
+          .eq('status', 'aguardando').limit(5000)
       );
 
       const code = displayCurrency(rawData || []);
@@ -171,7 +171,7 @@ export default function Dashboard() {
             lucro_projetado,
             profiles:user_id (name)
           `)
-          .eq('status', 'aguardando')
+          .eq('status', 'aguardando').limit(5000)
           .eq('user_id', user.id)
           .order('data_evento', { ascending: true })
           .limit(50)
@@ -234,8 +234,8 @@ export default function Dashboard() {
 
   const bancaPercentage = useMemo(() => {
     if (totalBanca === 0) return 0;
-    return (openBetsStats.totalInvestido / totalBanca) * 100;
-  }, [openBetsStats.totalInvestido, totalBanca]);
+    return (convert(openBetsStats.totalInvestido, openCurrency, 'BRL', exchangeRates ?? null) / totalBanca) * 100;
+  }, [openBetsStats.totalInvestido, totalBanca, openCurrency, exchangeRates]);
 
   // ROI das apostas abertas
   const roi = useMemo(() => {
@@ -262,6 +262,7 @@ export default function Dashboard() {
   return (
     <Layout>
       <div className="space-y-4 md:space-y-4 pb-2">
+        <ExchangeRateDate />
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div>
             <p className="md:hidden text-[10px] font-medium uppercase text-mobile-muted">Visão geral</p>
@@ -286,7 +287,7 @@ export default function Dashboard() {
               <DollarSign className="h-3 w-3 text-muted-foreground" />
               <span className="text-[10px] text-muted-foreground">Investido (Abertas)</span>
             </div>
-            <div className="text-lg font-bold">R$ {formatCurrency(animatedOpenInvestido)}</div>
+            <div className="text-lg font-bold"><Money value={animatedOpenInvestido} code={openCurrency} /></div>
             {totalBanca > 0 && (
               <>
                 <Progress value={Math.min(animatedBancaPercentage, 100)} className="h-1.5 mt-1" />
@@ -306,7 +307,7 @@ export default function Dashboard() {
             </div>
             <div className="border-t pt-1 flex items-center justify-between">
               <span className="text-[10px] text-muted-foreground">Lucro Proj.</span>
-              <span className="text-sm font-bold text-success">R$ {formatCurrency(animatedOpenLucro)}</span>
+              <span className="text-sm font-bold text-success"><Money value={animatedOpenLucro} code={openCurrency} /></span>
             </div>
             <div className="border-t pt-1 flex items-center justify-between">
               <span className="text-[10px] text-muted-foreground">ROI</span>
@@ -342,7 +343,7 @@ export default function Dashboard() {
               <span className="text-[10px] text-muted-foreground">Média/Dia</span>
             </div>
             <div className={`text-lg font-bold ${mediaPorDia >= 0 ? 'text-success' : 'text-destructive'}`}>
-              R$ {formatCurrency(animatedMediaPorDia)}
+              <Money value={animatedMediaPorDia} code={monthCurrency} />
             </div>
             <p className="text-[9px] text-muted-foreground">{monthStats.diasComApostas} dias com apostas</p>
           </Card>
