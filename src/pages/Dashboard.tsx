@@ -262,7 +262,6 @@ export default function Dashboard() {
   return (
     <Layout>
       <div className="space-y-4 md:space-y-4 pb-2">
-        <ExchangeRateDate />
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div>
             <p className="md:hidden text-[10px] font-medium uppercase text-mobile-muted">Visão geral</p>

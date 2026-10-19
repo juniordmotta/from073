@@ -79,7 +79,7 @@ interface ReportData {
 type PartnershipDetail = NonNullable<ReportData['saldosParceriasAtivas']>[number];
 
 function buildMonthOptions(): { value: string; label: string }[] {
-  const opts: { value: React.ReactNode; label: string }[] = [];
+  const opts: { value: string; label: string }[] = [];
   const now = new Date();
   for (let i = 0; i < 24; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
