@@ -15,6 +15,13 @@
       "when": 1792421357266,
       "tag": "0001_currency_balance_adjustment",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792421680199,
+      "tag": "0002_currency_ledger_atomic_reconciliation",
+      "breakpoints": true
     }
   ]
 }
