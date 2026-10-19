@@ -1,4 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { currency, displayCurrency, monetaryRow, convert, latestRates } from "../_shared/currency.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,8 +19,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!SUPABASE_URL || !SERVICE_KEY) throw new Error("Configuração indisponível");
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
@@ -46,7 +48,7 @@ Deno.serve(async (req) => {
     const isAdmin = role === "admin" || role === "admin_master";
 
     const body = (await req.json()) as ReqBody;
-    if (!body?.month || !/^\d{4}-\d{2}$/.test(body.month)) {
+    if (!body?.month || !/^\d{4}-(0[1-9]|1[0-2])$/.test(body.month)) {
       return json({ error: "Invalid month" }, 400);
     }
 
@@ -72,11 +74,11 @@ Deno.serve(async (req) => {
       admin
         .from("arbitrages")
         .select(
-          "id, status, lucro_real, lucro_projetado, casa_01_nome, casa_02_nome, casa_03_nome, casa_01_valor, casa_02_valor, casa_03_valor, casa_01_valor_resultado, casa_02_valor_resultado, casa_03_valor_resultado, casa_01_resultado, casa_02_resultado, casa_03_resultado, casa_01_parceria_id, casa_02_parceria_id, casa_03_parceria_id, created_at"
+          "id, moeda, status, lucro_real, lucro_projetado, casa_01_nome, casa_02_nome, casa_03_nome, casa_01_valor, casa_02_valor, casa_03_valor, casa_01_valor_resultado, casa_02_valor_resultado, casa_03_valor_resultado, casa_01_resultado, casa_02_resultado, casa_03_resultado, casa_01_parceria_id, casa_02_parceria_id, casa_03_parceria_id, created_at"
         )
         .eq("user_id", effectiveUserId)
         .gte("created_at", first.toISOString())
-        .lt("created_at", last.toISOString()),
+        .lt("created_at", last.toISOString()).order("id").range(0,999),
       admin
         .from("operational_costs")
         .select("valor")
@@ -85,11 +87,22 @@ Deno.serve(async (req) => {
         .lte("data", lastDate),
       admin
         .from("partnerships")
-        .select("id, nome_completo, status, saldo_bancario")
+        .select("id, nome_completo, status, saldo_bancario, saldo_bancario_usd, saldo_bancario_eur")
         .eq("user_id", effectiveUserId),
     ]);
 
-    const arbs = arbsRes.data || [];
+    if (arbsRes.error || costsRes.error || partsRes.error) throw new Error('Não foi possível consultar todos os dados do relatório.');
+    const nativeArbs = arbsRes.data || [];
+    // PostgREST pages are fetched explicitly to avoid silently truncating totals.
+    for (let offset = 1000; nativeArbs.length === offset && offset < 5000; offset += 1000) {
+      const page = await admin.from('arbitrages').select('*').eq('user_id', effectiveUserId).gte('created_at', first.toISOString()).lt('created_at', last.toISOString()).order('id').range(offset, offset + 999);
+      if (page.error) throw page.error;
+      nativeArbs.push(...(page.data || []));
+    }
+    const moeda = displayCurrency(nativeArbs);
+    const rates = await latestRates().catch(() => null);
+    if (!rates) return json({ error: 'Cotação indisponível. Tente novamente para gerar o relatório com valores completos.' }, 503);
+    const arbs = nativeArbs.map(row => monetaryRow(row, moeda, rates));
     const costs = costsRes.data || [];
     const allParts = (partsRes.data || []) as any[];
     const partsMap = new Map(allParts.map((p) => [p.id, p.nome_completo]));
@@ -106,14 +119,14 @@ Deno.serve(async (req) => {
     if (activeIds.length > 0) {
       const { data: housesRows } = await admin
         .from("partnership_houses")
-        .select("partnership_id, house_name, saldo")
+        .select("partnership_id, house_name, saldo, saldo_usd, saldo_eur")
         .in("partnership_id", activeIds);
       for (const h of (housesRows || []) as any[]) {
         if (!housesByPart.has(h.partnership_id)) {
           housesByPart.set(h.partnership_id, new Map());
         }
-        housesByPart.get(h.partnership_id)!.set(h.house_name, {
-          saldo: Number(h.saldo || 0),
+        housesByPart.get(h.partnership_id)?.set(h.house_name, {
+          saldo: convert(Number(h.saldo || 0), 'BRL', moeda, rates) + convert(Number(h.saldo_usd || 0), 'USD', moeda, rates) + convert(Number(h.saldo_eur || 0), 'EUR', moeda, rates),
           lucroLiquido: 0,
         });
       }
@@ -147,7 +160,7 @@ Deno.serve(async (req) => {
           lucroLiquido: v.lucroLiquido,
         }));
         const saldoCasas = housesEntries.reduce((s, h) => s + h.saldo, 0);
-        const saldoBancario = Number(p.saldo_bancario || 0);
+        const saldoBancario = convert(Number(p.saldo_bancario || 0), 'BRL', moeda, rates) + convert(Number(p.saldo_bancario_usd || 0), 'USD', moeda, rates) + convert(Number(p.saldo_bancario_eur || 0), 'EUR', moeda, rates);
         return {
           id: p.id,
           nome: p.nome_completo,
@@ -196,10 +209,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    const despesas = costs.reduce(
+    const despesas = convert(costs.reduce(
       (s: number, c: any) => s + Number(c.valor || 0),
       0
-    );
+    ), 'BRL', moeda, rates);
+    if (!Number.isFinite(despesas)) return json({ error: 'Cotação indisponível para converter despesas em reais.' }, 503);
     const lucroLiquido = lucroBruto - despesas;
     const roi = totalInvestido > 0 ? (lucroBruto / totalInvestido) * 100 : 0;
     const diasTrabalhados = dias.size;
@@ -248,6 +262,8 @@ Deno.serve(async (req) => {
       effectiveUserId,
       enforcedByServer: !isAdmin,
       data: {
+        moeda,
+        cotacao: rates,
         lucroBruto,
         lucroAbertas,
         despesas,

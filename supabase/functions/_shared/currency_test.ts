@@ -1,0 +1,15 @@
+import { currency, displayCurrency, convert, monetaryRow, roundMoney } from './currency.ts';
+const equal = (actual: unknown, expected: unknown) => { if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error(`Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`); };
+const rates = { date: '2026-10-19', source: 'test', brl: { BRL: 1, USD: 5, EUR: 6 } };
+Deno.test('existing bets default to BRL', () => equal(currency(), 'BRL'));
+Deno.test('USD only stays USD', () => equal(displayCurrency([{ moeda: 'USD' }, { moeda: 'USD' }]), 'USD'));
+Deno.test('EUR only stays EUR', () => equal(displayCurrency([{ moeda: 'EUR' }]), 'EUR'));
+Deno.test('BRL and USD consolidate to BRL', () => equal(displayCurrency([{ moeda: 'BRL' }, { moeda: 'USD' }]), 'BRL'));
+Deno.test('USD and EUR consolidate to BRL', () => equal(displayCurrency([{ moeda: 'USD' }, { moeda: 'EUR' }]), 'BRL'));
+Deno.test('mixed investments convert with current rates', () => equal(convert(100, 'USD', 'BRL', rates) + convert(100, 'EUR', 'BRL', rates), 1100));
+Deno.test('native total has BRL equivalent', () => equal(convert(200, 'USD', 'BRL', rates), 1000));
+Deno.test('BRL costs convert to native currency', () => equal(convert(50, 'BRL', 'USD', rates), 10));
+Deno.test('missing rates never imply one to one conversion', () => equal(Number.isNaN(convert(10, 'USD', 'BRL', null)), true));
+Deno.test('native totals do not need rates', () => equal(convert(10, 'USD', 'USD', null), 10));
+Deno.test('profit and investment convert without mutating source', () => { const row = { moeda: 'USD', lucro_real: 20, casa_01_valor: 100 }; equal(monetaryRow(row, 'BRL', rates), { moeda: 'USD', lucro_real: 100, casa_01_valor: 500 }); equal(row.lucro_real, 20); });
+Deno.test('round monetary values to two decimals', () => equal(roundMoney(1.005), 1.01));

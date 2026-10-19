@@ -1,3 +1,5 @@
+import { Money } from '@/components/Money';
+import { formatMoney, type Currency } from '@/lib/currency';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -43,6 +45,7 @@ export const resultOptions = [
 ];
 
 interface ResultadoDropdownProps {
+  moeda?: Currency;
   currentResult: string;
   currentCashoutValue?: number | null;
   valorApostado: number;
@@ -50,6 +53,7 @@ interface ResultadoDropdownProps {
 }
 
 export function ResultadoDropdown({
+  moeda = 'BRL',
   currentResult,
   currentCashoutValue,
   valorApostado,
@@ -81,7 +85,7 @@ export function ResultadoDropdown({
     if (currentResult === 'cashout' && currentCashoutValue !== undefined && currentCashoutValue !== null) {
       const diff = currentCashoutValue - valorApostado;
       const sign = diff >= 0 ? '+' : '';
-      return `CO: ${sign}R$ ${formatCurrency(diff)}`;
+      return `CO: ${sign}${formatMoney(diff, moeda)}`;
     }
     return resultadoMap[currentResult]?.label || 'Definir';
   };
@@ -145,7 +149,7 @@ export function ResultadoDropdown({
             <div className="p-3 rounded-lg bg-muted/50 border">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Valor Apostado</span>
-                <span className="text-base font-semibold">R$ {formatCurrency(valorApostado)}</span>
+                <span className="text-base font-semibold"><Money value={valorApostado} code={moeda} /></span>
               </div>
             </div>
 
@@ -153,7 +157,7 @@ export function ResultadoDropdown({
             <div className="space-y-2">
               <Label htmlFor="cashout-value">Valor recebido no cashout</Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{moeda}</span>
                 <Input
                   id="cashout-value"
                   type="number"
@@ -185,7 +189,7 @@ export function ResultadoDropdown({
                   <span className={`text-base font-bold ${
                     parseFloat(cashoutValue) - valorApostado >= 0 ? 'text-success' : 'text-destructive'
                   }`}>
-                    {parseFloat(cashoutValue) - valorApostado >= 0 ? '+' : ''}R$ {formatCurrency(parseFloat(cashoutValue) - valorApostado)}
+                    {parseFloat(cashoutValue) - valorApostado >= 0 ? '+' : ''}<Money value={parseFloat(cashoutValue) - valorApostado} code={moeda} />
                   </span>
                 </div>
               </div>

@@ -1,4 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { Money, ExchangeRateDate } from '@/components/Money';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { currency, displayCurrency, monetaryRow, convert, type Currency } from '@/lib/currency';
 import { Layout } from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,6 +31,9 @@ interface MonthStats {
 
 export default function Dashboard() {
   const { userRole, user } = useAuth();
+  const { data: exchangeRates } = useExchangeRates();
+  const [openCurrency, setOpenCurrency] = useState<Currency>('BRL');
+  const [monthCurrency, setMonthCurrency] = useState<Currency>('BRL');
   const [openBetsStats, setOpenBetsStats] = useState<OpenBetsStats>({
     totalArbitragens: 0,
     totalInvestido: 0,
@@ -51,14 +57,17 @@ export default function Dashboard() {
     if (!user?.id) return;
     
     try {
-      const { data, error } = await withSupabaseRetry(() =>
+      const { data: rawData, error } = await withSupabaseRetry(() =>
         supabase
           .from('arbitrages')
-          .select('lucro_projetado, casa_01_valor, casa_02_valor, casa_03_valor')
+          .select('moeda, lucro_projetado, casa_01_valor, casa_02_valor, casa_03_valor')
           .eq('user_id', user.id)
-          .eq('status', 'aguardando')
+          .eq('status', 'aguardando').limit(5000)
       );
 
+      const code = displayCurrency(rawData || []);
+      setOpenCurrency(code);
+      const data = rawData?.map(row => monetaryRow(row, code, exchangeRates ?? null));
       if (error) {
         console.warn('Erro ao carregar stats:', error.message);
         return;
@@ -81,7 +90,7 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Erro ao carregar stats:', error);
     }
-  }, [user?.id]);
+  }, [user?.id, exchangeRates]);
 
   const loadMonthStats = useCallback(async () => {
     if (!user?.id) return;
@@ -91,15 +100,18 @@ export default function Dashboard() {
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
       const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-      const { data, error } = await withSupabaseRetry(() =>
+      const { data: rawData, error } = await withSupabaseRetry(() =>
         supabase
           .from('arbitrages')
-          .select('status, lucro_projetado, lucro_real, casa_01_valor, casa_02_valor, casa_03_valor, created_at')
+          .select('moeda, status, lucro_projetado, lucro_real, casa_01_valor, casa_02_valor, casa_03_valor, created_at')
           .eq('user_id', user.id)
           .gte('created_at', firstDayOfMonth.toISOString())
           .lte('created_at', lastDayOfMonth.toISOString())
       );
 
+      const code = displayCurrency(rawData || []);
+      setMonthCurrency(code);
+      const data = rawData?.map(row => monetaryRow(row, code, exchangeRates ?? null));
       if (error) {
         console.warn('Erro ao carregar stats do mês:', error.message);
         return;
@@ -130,7 +142,7 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Erro ao carregar stats do mês:', error);
     }
-  }, [user?.id]);
+  }, [user?.id, exchangeRates]);
 
   const loadOpenBets = useCallback(async () => {
     if (!user?.id) return;
@@ -141,6 +153,7 @@ export default function Dashboard() {
           .from('arbitrages')
           .select(`
             id,
+            moeda,
             descricao,
             data_evento,
             casa_01_nome,
@@ -158,7 +171,7 @@ export default function Dashboard() {
             lucro_projetado,
             profiles:user_id (name)
           `)
-          .eq('status', 'aguardando')
+          .eq('status', 'aguardando').limit(5000)
           .eq('user_id', user.id)
           .order('data_evento', { ascending: true })
           .limit(50)
@@ -221,8 +234,8 @@ export default function Dashboard() {
 
   const bancaPercentage = useMemo(() => {
     if (totalBanca === 0) return 0;
-    return (openBetsStats.totalInvestido / totalBanca) * 100;
-  }, [openBetsStats.totalInvestido, totalBanca]);
+    return (convert(openBetsStats.totalInvestido, openCurrency, 'BRL', exchangeRates ?? null) / totalBanca) * 100;
+  }, [openBetsStats.totalInvestido, totalBanca, openCurrency, exchangeRates]);
 
   // ROI das apostas abertas
   const roi = useMemo(() => {
@@ -253,6 +266,7 @@ export default function Dashboard() {
           <div>
             <p className="md:hidden text-[10px] font-medium uppercase text-mobile-muted">Visão geral</p>
             <h1 className="text-xl md:text-2xl font-bold">Dashboard</h1>
+          <ExchangeRateDate />
           </div>
           <Button size="sm" variant="outline" className="mobile-dashboard-card border-mobile-border bg-mobile-surface/80 md:border-border md:bg-background" onClick={() => setReportOpen(true)}>
             <FileBarChart className="h-4 w-4" />
@@ -272,7 +286,7 @@ export default function Dashboard() {
               <DollarSign className="h-3 w-3 text-muted-foreground" />
               <span className="text-[10px] text-muted-foreground">Investido (Abertas)</span>
             </div>
-            <div className="text-lg font-bold">R$ {formatCurrency(animatedOpenInvestido)}</div>
+            <div className="text-lg font-bold"><Money value={animatedOpenInvestido} code={openCurrency} /></div>
             {totalBanca > 0 && (
               <>
                 <Progress value={Math.min(animatedBancaPercentage, 100)} className="h-1.5 mt-1" />
@@ -292,7 +306,7 @@ export default function Dashboard() {
             </div>
             <div className="border-t pt-1 flex items-center justify-between">
               <span className="text-[10px] text-muted-foreground">Lucro Proj.</span>
-              <span className="text-sm font-bold text-success">R$ {formatCurrency(animatedOpenLucro)}</span>
+              <span className="text-sm font-bold text-success"><Money value={animatedOpenLucro} code={openCurrency} /></span>
             </div>
             <div className="border-t pt-1 flex items-center justify-between">
               <span className="text-[10px] text-muted-foreground">ROI</span>
@@ -313,11 +327,11 @@ export default function Dashboard() {
               <span className="text-[10px] text-muted-foreground">Lucro do Mês</span>
             </div>
             <div className={`text-3xl md:text-lg font-bold ${monthStats.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
-              R$ {formatCurrency(animatedMonthLucro)}
+              <Money value={animatedMonthLucro} code={monthCurrency} />
             </div>
             <div className="border-t pt-1 mt-1 flex items-center justify-between">
               <span className="text-[9px] text-muted-foreground">Investido</span>
-              <span className="text-xs font-medium">R$ {formatCurrency(animatedMonthInvestido)}</span>
+              <span className="text-xs font-medium"><Money value={animatedMonthInvestido} code={monthCurrency} /></span>
             </div>
           </Card>
 
@@ -328,7 +342,7 @@ export default function Dashboard() {
               <span className="text-[10px] text-muted-foreground">Média/Dia</span>
             </div>
             <div className={`text-lg font-bold ${mediaPorDia >= 0 ? 'text-success' : 'text-destructive'}`}>
-              R$ {formatCurrency(animatedMediaPorDia)}
+              <Money value={animatedMediaPorDia} code={monthCurrency} />
             </div>
             <p className="text-[9px] text-muted-foreground">{monthStats.diasComApostas} dias com apostas</p>
           </Card>
@@ -338,7 +352,7 @@ export default function Dashboard() {
             <div className="mobile-dashboard-goal min-w-0 md:col-span-1 animate-fade-in" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
               <MonthlyGoalCard
                 userId={user.id}
-                currentProfit={monthStats.totalLucro}
+                currentProfit={convert(monthStats.totalLucro, monthCurrency, 'BRL', exchangeRates ?? null)}
                 compact
               />
             </div>
@@ -402,30 +416,30 @@ export default function Dashboard() {
                         <TableCell className="text-xs">
                           <div>
                             <div className="font-medium break-words whitespace-normal">{bet.casa_01_nome}</div>
-                            <div className="text-muted-foreground">@{Number(bet.casa_01_odd).toFixed(3)} • R$ {formatCurrency(bet.casa_01_valor)}</div>
+                            <div className="text-muted-foreground">@{Number(bet.casa_01_odd).toFixed(3)} • <Money value={bet.casa_01_valor} code={currency(bet.moeda)} /></div>
                           </div>
                         </TableCell>
                         <TableCell className="text-xs">
                           <div>
                             <div className="font-medium break-words whitespace-normal">{bet.casa_02_nome}</div>
-                            <div className="text-muted-foreground">@{Number(bet.casa_02_odd).toFixed(3)} • R$ {formatCurrency(bet.casa_02_valor)}</div>
+                            <div className="text-muted-foreground">@{Number(bet.casa_02_odd).toFixed(3)} • <Money value={bet.casa_02_valor} code={currency(bet.moeda)} /></div>
                           </div>
                         </TableCell>
                         <TableCell className="text-xs">
                           {bet.casa_03_nome ? (
                             <div>
                               <div className="font-medium break-words whitespace-normal">{bet.casa_03_nome}</div>
-                              <div className="text-muted-foreground">@{Number(bet.casa_03_odd).toFixed(3)} • R$ {formatCurrency(bet.casa_03_valor)}</div>
+                              <div className="text-muted-foreground">@{Number(bet.casa_03_odd).toFixed(3)} • <Money value={bet.casa_03_valor} code={currency(bet.moeda)} /></div>
                             </div>
                           ) : (
                             <span className="text-muted-foreground">-</span>
                           )}
                         </TableCell>
                         <TableCell className="text-right text-xs font-medium">
-                          R$ {formatCurrency(Number(bet.casa_01_valor) + Number(bet.casa_02_valor) + Number(bet.casa_03_valor || 0))}
+                          <Money value={Number(bet.casa_01_valor) + Number(bet.casa_02_valor) + Number(bet.casa_03_valor || 0)} code={currency(bet.moeda)} />
                         </TableCell>
                         <TableCell className="text-right text-xs font-medium text-success">
-                          R$ {formatCurrency(bet.lucro_projetado)}
+                          <Money value={bet.lucro_projetado} code={currency(bet.moeda)} />
                         </TableCell>
                       </TableRow>
                     )})}
@@ -469,7 +483,7 @@ export default function Dashboard() {
                             {format(eventDateTime, 'dd/MM HH:mm')}
                           </div>
                           <div className="text-[10px] font-medium text-success">
-                            +R$ {formatCurrency(bet.lucro_projetado)}
+                            +<Money value={bet.lucro_projetado} code={currency(bet.moeda)} />
                           </div>
                         </div>
                         <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
@@ -482,31 +496,31 @@ export default function Dashboard() {
                             <div className="rounded-md border p-2 text-[10px] space-y-0.5">
                               <div className="font-medium">{bet.casa_01_nome}</div>
                               <div className="text-muted-foreground">Odd: {Number(bet.casa_01_odd).toFixed(3)}</div>
-                              <div className="text-muted-foreground">R$ {formatCurrency(bet.casa_01_valor)}</div>
+                              <div className="text-muted-foreground"><Money value={bet.casa_01_valor} code={currency(bet.moeda)} /></div>
                               {bet.casa_01_mercado && <div className="text-muted-foreground">{bet.casa_01_mercado}</div>}
                             </div>
                             <div className="rounded-md border p-2 text-[10px] space-y-0.5">
                               <div className="font-medium">{bet.casa_02_nome}</div>
                               <div className="text-muted-foreground">Odd: {Number(bet.casa_02_odd).toFixed(3)}</div>
-                              <div className="text-muted-foreground">R$ {formatCurrency(bet.casa_02_valor)}</div>
+                              <div className="text-muted-foreground"><Money value={bet.casa_02_valor} code={currency(bet.moeda)} /></div>
                               {bet.casa_02_mercado && <div className="text-muted-foreground">{bet.casa_02_mercado}</div>}
                             </div>
                           </div>
                           {bet.casa_03_nome && (
                             <div className="rounded-md border p-2 text-[10px] space-y-0.5">
                               <div className="font-medium">{bet.casa_03_nome}</div>
-                              <div className="text-muted-foreground">Odd: {Number(bet.casa_03_odd).toFixed(3)} • R$ {formatCurrency(bet.casa_03_valor)}</div>
+                              <div className="text-muted-foreground">Odd: {Number(bet.casa_03_odd).toFixed(3)} • <Money value={bet.casa_03_valor} code={currency(bet.moeda)} /></div>
                               {bet.casa_03_mercado && <div className="text-muted-foreground">{bet.casa_03_mercado}</div>}
                             </div>
                           )}
                           <div className="flex items-center justify-between text-[10px] pt-1 border-t">
                             <div>
                               <span className="text-muted-foreground">Investido: </span>
-                              <span className="font-medium">R$ {formatCurrency(Number(bet.casa_01_valor) + Number(bet.casa_02_valor) + Number(bet.casa_03_valor || 0))}</span>
+                              <span className="font-medium"><Money value={Number(bet.casa_01_valor) + Number(bet.casa_02_valor) + Number(bet.casa_03_valor || 0)} code={currency(bet.moeda)} /></span>
                             </div>
                             <div>
                               <span className="text-muted-foreground">Lucro Proj.: </span>
-                              <span className="font-bold text-success">R$ {formatCurrency(bet.lucro_projetado)}</span>
+                              <span className="font-bold text-success"><Money value={bet.lucro_projetado} code={currency(bet.moeda)} /></span>
                             </div>
                           </div>
                         </div>

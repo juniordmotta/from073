@@ -1,4 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Money, ExchangeRateDate } from '@/components/Money';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { displayCurrency, monetaryRow, type Currency } from '@/lib/currency';
 import { Layout } from '@/components/Layout';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,6 +31,8 @@ interface CasaStats {
 
 export default function RelatorioCasas() {
   const { user, userRole } = useAuth();
+  const { data: exchangeRates } = useExchangeRates();
+  const [reportCurrency, setReportCurrency] = useState<Currency>('BRL');
   const isAdmin = userRole?.role === 'admin' || userRole?.role === 'admin_master';
 
   const [casasStats, setCasasStats] = useState<CasaStats[]>([]);
@@ -48,7 +53,7 @@ export default function RelatorioCasas() {
 
   useEffect(() => {
     loadData();
-  }, [user, debouncedDataInicio, debouncedDataFim, debouncedUsuarioFiltro, debouncedStatusFiltro]);
+  }, [user, debouncedDataInicio, debouncedDataFim, debouncedUsuarioFiltro, debouncedStatusFiltro, exchangeRates]);
 
   useEffect(() => {
     if (isAdmin) {
@@ -82,6 +87,7 @@ export default function RelatorioCasas() {
       let query = supabase
         .from('arbitrages')
         .select(`
+          moeda,
           casa_01_nome,
           casa_01_valor,
           casa_01_resultado,
@@ -131,7 +137,9 @@ export default function RelatorioCasas() {
       // Processar dados por casa de aposta
       const casasMap = new Map<string, CasaStats>();
 
-      data?.forEach((arb: any) => {
+      const code = displayCurrency(data || []);
+      setReportCurrency(code);
+      data?.map(row => monetaryRow(row, code, exchangeRates ?? null)).forEach((arb: any) => {
         // Casa 01
         processarCasa(casasMap, arb.casa_01_nome, arb.casa_01_valor, arb.casa_01_resultado || 'aguardando', arb.casa_01_valor_resultado);
         
@@ -153,7 +161,7 @@ export default function RelatorioCasas() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, isAdmin, debouncedDataInicio, debouncedDataFim, debouncedUsuarioFiltro, debouncedStatusFiltro]);
+  }, [user?.id, isAdmin, debouncedDataInicio, debouncedDataFim, debouncedUsuarioFiltro, debouncedStatusFiltro, exchangeRates]);
 
   const processarCasa = (
     casasMap: Map<string, CasaStats>,
@@ -183,7 +191,8 @@ export default function RelatorioCasas() {
       });
     }
 
-    const stats = casasMap.get(nome)!;
+    const stats = casasMap.get(nome);
+    if (!stats) return;
     stats.totalApostas++;
     stats.valorApostado += valorApostado;
 
@@ -226,6 +235,7 @@ export default function RelatorioCasas() {
       <div className="space-y-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">Relatório por Casa</h1>
+          <ExchangeRateDate />
           <p className="text-sm text-muted-foreground">Performance por casa de apostas</p>
         </div>
 
@@ -280,13 +290,13 @@ export default function RelatorioCasas() {
         <div className="hidden md:grid gap-2 grid-cols-3">
           <div className="rounded-lg border bg-card p-3">
             <p className="text-xs text-muted-foreground">Total Apostado</p>
-            <p className="text-lg font-bold">R$ {formatCurrency(totalGeralApostado)}</p>
+            <p className="text-lg font-bold"><Money value={totalGeralApostado} code={reportCurrency} /></p>
             <p className="text-xs text-muted-foreground">{totalApostas} apostas</p>
           </div>
           <div className="rounded-lg border bg-card p-3">
             <p className="text-xs text-muted-foreground">Lucro Total</p>
             <p className={`text-lg font-bold ${totalGeralLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
-              R$ {formatCurrency(totalGeralLucro)}
+              <Money value={totalGeralLucro} code={reportCurrency} />
             </p>
             <p className="text-xs text-muted-foreground">
               {totalGeralApostado > 0 ? `${formatCurrency((totalGeralLucro / totalGeralApostado) * 100)}% ROI` : '0% ROI'}
@@ -301,12 +311,12 @@ export default function RelatorioCasas() {
         <div className="md:hidden space-y-1.5">
           <div className="rounded-lg border bg-card px-3 py-2 flex items-center justify-between">
             <span className="text-xs text-muted-foreground">Total Apostado ({totalApostas} apostas)</span>
-            <span className="text-sm font-bold">R$ {formatCurrency(totalGeralApostado)}</span>
+            <span className="text-sm font-bold"><Money value={totalGeralApostado} code={reportCurrency} /></span>
           </div>
           <div className="rounded-lg border bg-card px-3 py-2 flex items-center justify-between">
             <span className="text-xs text-muted-foreground">Lucro Total</span>
             <div className="flex items-center gap-2">
-              <span className={`text-sm font-bold ${totalGeralLucro >= 0 ? 'text-success' : 'text-destructive'}`}>R$ {formatCurrency(totalGeralLucro)}</span>
+              <span className={`text-sm font-bold ${totalGeralLucro >= 0 ? 'text-success' : 'text-destructive'}`}><Money value={totalGeralLucro} code={reportCurrency} /></span>
               <span className={`text-xs ${totalGeralLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
                 {totalGeralApostado > 0 ? `${formatCurrency((totalGeralLucro / totalGeralApostado) * 100)}%` : '0%'}
               </span>
@@ -347,11 +357,11 @@ export default function RelatorioCasas() {
                       <TableRow key={casa.nome}>
                         <TableCell className="font-medium">{casa.nome}</TableCell>
                         <TableCell className="text-right">{casa.totalApostas}</TableCell>
-                        <TableCell className="text-right">R$ {formatCurrency(casa.valorApostado)}</TableCell>
+                        <TableCell className="text-right"><Money value={casa.valorApostado} code={reportCurrency} /></TableCell>
                         <TableCell className="text-right">
                           <div className={`flex items-center justify-end gap-1 font-semibold ${casa.lucroReal >= 0 ? 'text-success' : 'text-destructive'}`}>
                             {casa.lucroReal >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-                            R$ {formatCurrency(casa.lucroReal)}
+                            <Money value={casa.lucroReal} code={reportCurrency} />
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
@@ -410,7 +420,7 @@ export default function RelatorioCasas() {
                   <span className="font-semibold text-sm">{casa.nome}</span>
                   <div className={`flex items-center gap-1 text-sm font-bold ${casa.lucroReal >= 0 ? 'text-success' : 'text-destructive'}`}>
                     {casa.lucroReal >= 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
-                    R$ {formatCurrency(casa.lucroReal)}
+                    <Money value={casa.lucroReal} code={reportCurrency} />
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-xs">
@@ -420,7 +430,7 @@ export default function RelatorioCasas() {
                   </div>
                   <div>
                     <span className="text-muted-foreground">Investido</span>
-                    <p className="font-medium">R$ {formatCurrency(casa.valorApostado)}</p>
+                    <p className="font-medium"><Money value={casa.valorApostado} code={reportCurrency} /></p>
                   </div>
                   <div>
                     <span className="text-muted-foreground">ROI</span>

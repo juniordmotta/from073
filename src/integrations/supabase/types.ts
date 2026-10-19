@@ -117,12 +117,14 @@ export type Database = {
           casa_03_valor: number | null
           casa_03_valor_resultado: number | null
           created_at: string
+          currency_ledger: boolean
           data_evento: string
           descricao: string
           esporte_liga: string | null
           id: string
           lucro_projetado: number
           lucro_real: number | null
+          moeda: string
           porcentagem: number
           retorno_previsto: number
           saldo_descontado: boolean
@@ -160,12 +162,14 @@ export type Database = {
           casa_03_valor?: number | null
           casa_03_valor_resultado?: number | null
           created_at?: string
+          currency_ledger?: boolean
           data_evento?: string
           descricao: string
           esporte_liga?: string | null
           id?: string
           lucro_projetado: number
           lucro_real?: number | null
+          moeda?: string
           porcentagem: number
           retorno_previsto: number
           saldo_descontado?: boolean
@@ -203,12 +207,14 @@ export type Database = {
           casa_03_valor?: number | null
           casa_03_valor_resultado?: number | null
           created_at?: string
+          currency_ledger?: boolean
           data_evento?: string
           descricao?: string
           esporte_liga?: string | null
           id?: string
           lucro_projetado?: number
           lucro_real?: number | null
+          moeda?: string
           porcentagem?: number
           retorno_previsto?: number
           saldo_descontado?: boolean
@@ -252,6 +258,7 @@ export type Database = {
           created_at: string
           descricao: string | null
           id: string
+          moeda: string
           partnership_id: string
           referencia_id: string | null
           saldo_anterior: number
@@ -264,6 +271,7 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           id?: string
+          moeda?: string
           partnership_id: string
           referencia_id?: string | null
           saldo_anterior?: number
@@ -276,6 +284,7 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           id?: string
+          moeda?: string
           partnership_id?: string
           referencia_id?: string | null
           saldo_anterior?: number
@@ -692,6 +701,8 @@ export type Database = {
           id: string
           partnership_id: string
           saldo: number
+          saldo_eur: number
+          saldo_usd: number
           status: string
           updated_at: string
         }
@@ -701,6 +712,8 @@ export type Database = {
           id?: string
           partnership_id: string
           saldo?: number
+          saldo_eur?: number
+          saldo_usd?: number
           status?: string
           updated_at?: string
         }
@@ -710,6 +723,8 @@ export type Database = {
           id?: string
           partnership_id?: string
           saldo?: number
+          saldo_eur?: number
+          saldo_usd?: number
           status?: string
           updated_at?: string
         }
@@ -733,6 +748,8 @@ export type Database = {
           id: string
           nome_completo: string
           saldo_bancario: number
+          saldo_bancario_eur: number
+          saldo_bancario_usd: number
           status: string
           updated_at: string
           user_id: string
@@ -747,6 +764,8 @@ export type Database = {
           id?: string
           nome_completo: string
           saldo_bancario?: number
+          saldo_bancario_eur?: number
+          saldo_bancario_usd?: number
           status?: string
           updated_at?: string
           user_id: string
@@ -761,6 +780,8 @@ export type Database = {
           id?: string
           nome_completo?: string
           saldo_bancario?: number
+          saldo_bancario_eur?: number
+          saldo_bancario_usd?: number
           status?: string
           updated_at?: string
           user_id?: string
@@ -996,6 +1017,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      adjust_currency_balance: {
+        Args: {
+          p_amount: number
+          p_currency: string
+          p_house_id?: string
+          p_partnership: string
+        }
+        Returns: undefined
+      }
+      apply_currency_house_movement: {
+        Args: {
+          p_currency: string
+          p_delta: number
+          p_house: string
+          p_partnership: string
+          p_reference: string
+        }
+        Returns: undefined
+      }
       ensure_user_profile: { Args: { user_uuid: string }; Returns: undefined }
       get_user_role: {
         Args: { user_uuid: string }

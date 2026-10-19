@@ -1,5 +1,9 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { CurrencyBalances } from '@/components/CurrencyBalances';
+import { Money, ExchangeRateDate } from '@/components/Money';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { currency, displayCurrency, monetaryRow, convert, type Currency } from '@/lib/currency';
 import { Layout } from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -73,6 +77,7 @@ interface HistoryEntry {
 }
 
 interface ArbitrageResult {
+  moeda?: string;
   id: string;
   casa_01_parceria_id: string;
   casa_02_parceria_id: string;
@@ -109,6 +114,9 @@ const maskEndereco = (endereco: string) => {
 
 const Parcerias = () => {
   const { user, userRole } = useAuth();
+  const { data: exchangeRates } = useExchangeRates();
+  const [detailCurrency, setDetailCurrency] = useState<Currency>('BRL');
+  const [reportCurrency, setReportCurrency] = useState<Currency>('BRL');
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -572,7 +580,7 @@ const Parcerias = () => {
       setLoadingData(true);
       let query = supabase
         .from('arbitrages')
-        .select('id, casa_01_parceria_id, casa_02_parceria_id, casa_03_parceria_id, lucro_real, status, created_at, user_id');
+        .select('moeda, id, casa_01_parceria_id, casa_02_parceria_id, casa_03_parceria_id, lucro_real, status, created_at, user_id');
 
       if (!isAdmin) {
         query = query.eq('user_id', user?.id);
@@ -583,6 +591,7 @@ const Parcerias = () => {
       const { data, error } = await query;
 
       if (error) throw error;
+      setReportCurrency(displayCurrency(data || []));
       setArbitrages(data || []);
     } catch (error) {
       console.error('Erro ao carregar arbitragens:', error);
@@ -607,7 +616,7 @@ const Parcerias = () => {
       );
 
       const totalArbitrages = relatedArbitrages.length;
-      const closedArbitrages = relatedArbitrages.filter(arb => arb.status !== 'aguardando');
+      const closedArbitrages = relatedArbitrages.map(row => monetaryRow(row, reportCurrency, exchangeRates ?? null)).filter(arb => arb.status !== 'aguardando');
       const totalLucro = closedArbitrages.reduce((sum, arb) => sum + (arb.lucro_real || 0), 0);
       const greenCount = closedArbitrages.filter(arb => 
         arb.status === 'green' || arb.status === 'parcial_green' || arb.status === 'devolvido'
@@ -623,12 +632,12 @@ const Parcerias = () => {
         totalLucro,
         greenCount,
         redCount,
-        roi: partnership.valor_banca > 0 ? (totalLucro / partnership.valor_banca) * 100 : 0,
+        roi: partnership.valor_banca > 0 ? (convert(totalLucro, reportCurrency, 'BRL', exchangeRates ?? null) / partnership.valor_banca) * 100 : 0,
       };
     });
 
     return partnershipStats;
-  }, [arbitrages, partnerships]);
+  }, [arbitrages, partnerships, reportCurrency, exchangeRates]);
 
   const handleViewHistory = () => {
     setViewMode('history');
@@ -666,13 +675,16 @@ const Parcerias = () => {
       if (partnershipError) throw partnershipError;
 
       // Buscar arbitragens relacionadas
-      const { data: arbs, error: arbsError } = await supabase
+      const { data: nativeArbs, error: arbsError } = await supabase
         .from('arbitrages')
         .select('*')
         .or(`casa_01_parceria_id.eq.${partnershipId},casa_02_parceria_id.eq.${partnershipId},casa_03_parceria_id.eq.${partnershipId}`);
 
       if (requestId !== detailsRequestRef.current) return;
       if (arbsError) throw arbsError;
+      const code = displayCurrency(nativeArbs || []);
+      setDetailCurrency(code);
+      const arbs = nativeArbs?.map(row => monetaryRow(row, code, exchangeRates ?? null));
 
       // Buscar status das casas
       const { data: houseStatuses, error: housesError } = await supabase
@@ -829,7 +841,7 @@ const Parcerias = () => {
       });
 
       // Calcular totais
-      const totalCustos = costs?.reduce((sum, cost) => sum + Number(cost.valor), 0) || 0;
+      const totalCustos = convert(costs?.reduce((sum, cost) => sum + Number(cost.valor), 0) || 0, 'BRL', code, exchangeRates ?? null);
       const lucroBruto = arbs?.reduce((sum, arb) => {
         if (arb.status === 'aguardando') return sum;
         return sum + (arb.lucro_real || 0);
@@ -858,6 +870,8 @@ const Parcerias = () => {
       }
     }
   };
+
+  useEffect(() => { if (selectedPartnershipId) loadPartnershipDetails(selectedPartnershipId); }, [exchangeRates]);
 
   const handlePartnershipClick = (partnershipId: string) => {
     setSelectedPartnershipId(partnershipId);
@@ -1113,7 +1127,7 @@ const Parcerias = () => {
       'Total de Apostas': data.totalArbitrages,
       'Apostas Green': data.greenCount,
       'Apostas Red': data.redCount,
-      'Lucro Total (R$)': data.totalLucro,
+      [`Lucro Total (${reportCurrency})`]: data.totalLucro,
       'ROI (%)': data.roi.toFixed(2),
     }));
 
@@ -1152,7 +1166,7 @@ const Parcerias = () => {
 
       const totalLucro = partnershipArbitrages.reduce((sum, arb) => {
         const lucro = arb.status === 'aguardando' ? 0 : (arb.lucro_real || 0);
-        return sum + Number(lucro);
+        return sum + convert(Number(lucro), currency(arb.moeda), reportCurrency, exchangeRates ?? null);
       }, 0);
 
       const greenCount = partnershipArbitrages.filter(
@@ -1176,7 +1190,7 @@ const Parcerias = () => {
         alerts.push({
           type: 'negative_performance',
           severity: 'high',
-          message: `${formatUserName(stats.nome)} está com lucro negativo de R$ ${formatCurrency(Math.abs(stats.totalLucro))}`,
+          message: `${formatUserName(stats.nome)} está com lucro negativo de ${reportCurrency} ${formatCurrency(Math.abs(stats.totalLucro))}`,
         });
       }
     });
@@ -1225,7 +1239,7 @@ const Parcerias = () => {
       alerts,
       partnershipStats: Array.from(partnershipStats.values()),
     };
-  }, [partnerships, arbitrages]);
+  }, [partnerships, arbitrages, reportCurrency, exchangeRates]);
 
   return (
     <Layout>
@@ -1823,7 +1837,7 @@ const Parcerias = () => {
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">Lucro Total:</span>
                               <span className={`font-medium ${data.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
-                                R$ {formatCurrency(data.totalLucro)}
+                                <Money value={data.totalLucro} code={reportCurrency} />
                               </span>
                             </div>
                             <div className="flex justify-between">
@@ -1958,7 +1972,7 @@ const Parcerias = () => {
                           <span className="text-xs text-muted-foreground">Custos do Mês</span>
                         </div>
                         <p className="text-xl font-bold text-destructive">
-                          R$ {formatCurrency(partnershipDetails.custosMes)}
+                          <Money value={partnershipDetails.custosMes} code={detailCurrency} />
                         </p>
                       </Card>
 
@@ -1968,7 +1982,7 @@ const Parcerias = () => {
                           <span className="text-xs text-muted-foreground">Lucro Bruto</span>
                         </div>
                         <p className={`text-xl font-bold ${partnershipDetails.lucroBruto >= 0 ? 'text-success' : 'text-destructive'}`}>
-                          R$ {formatCurrency(partnershipDetails.lucroBruto)}
+                          <Money value={partnershipDetails.lucroBruto} code={detailCurrency} />
                         </p>
                       </Card>
 
@@ -1978,7 +1992,7 @@ const Parcerias = () => {
                           <span className="text-xs text-muted-foreground">Lucro Líquido</span>
                         </div>
                         <p className={`text-xl font-bold ${partnershipDetails.lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
-                          R$ {formatCurrency(partnershipDetails.lucroLiquido)}
+                          <Money value={partnershipDetails.lucroLiquido} code={detailCurrency} />
                         </p>
                       </Card>
 
@@ -2025,7 +2039,7 @@ const Parcerias = () => {
                               <span className="text-xs text-muted-foreground">Lucro Líquido (Casas)</span>
                             </div>
                             <p className={`text-xl font-bold ${positivo ? 'text-success' : 'text-destructive'}`}>
-                              R$ {formatCurrency(somaLucroCasas)}
+                              <Money value={somaLucroCasas} code={reportCurrency} />
                             </p>
                             <p className="text-[10px] text-muted-foreground">
                               {positivo ? 'Parceria ativa no geral' : 'Parceria negativa no geral'}
@@ -2042,21 +2056,21 @@ const Parcerias = () => {
                           <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
                           <span className="text-xs text-muted-foreground">Custos do Mês</span>
                         </div>
-                        <span className="text-sm font-bold text-destructive">R$ {formatCurrency(partnershipDetails.custosMes)}</span>
+                        <span className="text-sm font-bold text-destructive"><Money value={partnershipDetails.custosMes} code={detailCurrency} /></span>
                       </div>
                       <div className="mobile-dashboard-card rounded-lg border px-3 py-2 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
                           <span className="text-xs text-muted-foreground">Lucro Bruto</span>
                         </div>
-                        <span className={`text-sm font-bold ${partnershipDetails.lucroBruto >= 0 ? 'text-success' : 'text-destructive'}`}>R$ {formatCurrency(partnershipDetails.lucroBruto)}</span>
+                        <span className={`text-sm font-bold ${partnershipDetails.lucroBruto >= 0 ? 'text-success' : 'text-destructive'}`}><Money value={partnershipDetails.lucroBruto} code={detailCurrency} /></span>
                       </div>
                       <div className="mobile-dashboard-card rounded-lg border px-3 py-2 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Target className="h-3.5 w-3.5 text-muted-foreground" />
                           <span className="text-xs text-muted-foreground">Lucro Líquido</span>
                         </div>
-                        <span className={`text-sm font-bold ${partnershipDetails.lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>R$ {formatCurrency(partnershipDetails.lucroLiquido)}</span>
+                        <span className={`text-sm font-bold ${partnershipDetails.lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}><Money value={partnershipDetails.lucroLiquido} code={detailCurrency} /></span>
                       </div>
                       <div className="rounded-lg border bg-card px-3 py-2 flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -2098,7 +2112,7 @@ const Parcerias = () => {
                             </div>
                             <div className="text-right">
                               <span className={`text-sm font-bold ${positivo ? 'text-success' : 'text-destructive'}`}>
-                                R$ {formatCurrency(somaLucroCasas)}
+                                <Money value={somaLucroCasas} code={reportCurrency} />
                               </span>
                               <span className="text-[10px] text-muted-foreground ml-1.5">
                                 {positivo ? 'ativa' : 'negativa'}
@@ -2117,7 +2131,7 @@ const Parcerias = () => {
                             <Building2 className="h-3 w-3 text-muted-foreground" />
                             <span className="text-xs text-muted-foreground">Conta Bancária</span>
                           </div>
-                          {selectedPartnershipId && <BalanceMovements partnershipId={selectedPartnershipId} />}
+                          {selectedPartnershipId && <div className="flex flex-wrap gap-1"><CurrencyBalances partnershipId={selectedPartnershipId} /><BalanceMovements partnershipId={selectedPartnershipId} /></div>}
                         </div>
                         <div className="flex items-center gap-1">
                           <span className="text-sm font-bold">R$</span>
@@ -2190,7 +2204,7 @@ const Parcerias = () => {
                             <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
                             <span className="text-xs text-muted-foreground">Conta Bancária</span>
                           </div>
-                          {selectedPartnershipId && <BalanceMovements partnershipId={selectedPartnershipId} />}
+                          {selectedPartnershipId && <div className="flex flex-wrap gap-1"><CurrencyBalances partnershipId={selectedPartnershipId} /><BalanceMovements partnershipId={selectedPartnershipId} /></div>}
                         </div>
                         <div className="flex items-center justify-end gap-1">
                           <span className="text-sm font-bold">R$</span>
@@ -2543,18 +2557,18 @@ const Parcerias = () => {
                                   </TableCell>
                                   <TableCell className="text-right">{casa.totalApostas}</TableCell>
                                   <TableCell className="text-right text-success">
-                                    R$ {formatCurrency(casa.ganhos)}
+                                    <Money value={casa.ganhos} code={detailCurrency} />
                                   </TableCell>
                                   <TableCell className="text-right text-destructive">
-                                    R$ {formatCurrency(casa.perdas)}
+                                    <Money value={casa.perdas} code={detailCurrency} />
                                   </TableCell>
                                   <TableCell className="text-right">{casa.devolvidos}</TableCell>
                                   <TableCell className="text-right text-muted-foreground">{casa.aguardando}</TableCell>
                                   <TableCell className={`text-right font-semibold ${casa.lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
-                                    R$ {formatCurrency(casa.lucroLiquido)}
+                                    <Money value={casa.lucroLiquido} code={detailCurrency} />
                                   </TableCell>
                                   <TableCell className={`text-right font-semibold ${casa.lucroEnvolvido >= 0 ? 'text-success' : 'text-destructive'}`}>
-                                    R$ {formatCurrency(casa.lucroEnvolvido)}
+                                    <Money value={casa.lucroEnvolvido} code={detailCurrency} />
                                   </TableCell>
                                   <TableCell>
                                     {casa.totalApostas === 0 && (
@@ -2698,13 +2712,13 @@ const Parcerias = () => {
                                 <div>
                                   <span className="text-muted-foreground">Lucro Líquido</span>
                                   <p className={`font-bold mt-0.5 ${casa.lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
-                                    R$ {formatCurrency(casa.lucroLiquido)}
+                                    <Money value={casa.lucroLiquido} code={detailCurrency} />
                                   </p>
                                 </div>
                                 <div>
                                   <span className="text-muted-foreground">Lucro Envolvido</span>
                                   <p className={`font-medium mt-0.5 ${casa.lucroEnvolvido >= 0 ? 'text-success' : 'text-destructive'}`}>
-                                    R$ {formatCurrency(casa.lucroEnvolvido)}
+                                    <Money value={casa.lucroEnvolvido} code={detailCurrency} />
                                   </p>
                                 </div>
                               </div>
@@ -2840,7 +2854,7 @@ const Parcerias = () => {
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">Lucro:</span>
                               <span className={`font-medium ${stat.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
-                                R$ {formatCurrency(stat.totalLucro)}
+                                <Money value={stat.totalLucro} code={reportCurrency} />
                               </span>
                             </div>
                             <div className="flex justify-between">

@@ -1,3 +1,5 @@
+import { Money } from '@/components/Money';
+import { currency, type Currency } from '@/lib/currency';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -10,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Movement {
+  moeda?: Currency;
   id: string;
   tipo: string;
   valor: number;
@@ -69,7 +72,7 @@ export function BalanceMovements({ partnershipId }: BalanceMovementsProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <History className="h-4 w-4" />
-            Extrato Bancário
+            Extrato de Saldos
           </DialogTitle>
         </DialogHeader>
         <ScrollArea className="max-h-[60vh]">
@@ -110,10 +113,10 @@ export function BalanceMovements({ partnershipId }: BalanceMovementsProps) {
                     </div>
                     <div className="text-right shrink-0">
                       <p className={`text-sm font-bold ${config.color}`}>
-                        {mov.tipo === 'debito' ? '-' : '+'}R$ {formatCurrency(Math.abs(mov.valor))}
+                        {mov.tipo === 'debito' || mov.valor < 0 ? '-' : '+'}<Money value={Math.abs(mov.valor)} code={currency(mov.moeda)} />
                       </p>
                       <p className="text-[10px] text-muted-foreground">
-                        Saldo: R$ {formatCurrency(mov.saldo_novo)}
+                        Saldo: <Money value={mov.saldo_novo} code={currency(mov.moeda)} />
                       </p>
                     </div>
                   </div>

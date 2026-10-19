@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792421260743,
+      "tag": "0000_multi_currency_arbitrages_and_balances",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792421357266,
+      "tag": "0001_currency_balance_adjustment",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792421680199,
+      "tag": "0002_currency_ledger_atomic_reconciliation",
+      "breakpoints": true
+    }
+  ]
+}

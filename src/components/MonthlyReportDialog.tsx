@@ -1,3 +1,5 @@
+import { Money } from '@/components/Money';
+import { formatMoney, convert, type Currency, type Rates } from '@/lib/currency';
 import { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -40,6 +42,8 @@ interface ProfileOption {
 
 
 interface ReportData {
+  moeda?: Currency;
+  cotacao?: Rates | null;
   lucroBruto: number;
   lucroAbertas?: number;
   despesas: number;
@@ -92,6 +96,7 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
   const [selectedUserId, setSelectedUserId] = useState(userId);
   const [profiles, setProfiles] = useState<ProfileOption[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const [data, setData] = useState<ReportData | null>(null);
   const [detailPart, setDetailPart] = useState<PartnershipDetail | null>(null);
 
@@ -127,6 +132,8 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
 
     const load = async () => {
       setLoading(true);
+      setData(null);
+      setLoadError('');
       try {
         // Chamada via edge function — o backend revalida o papel pelo JWT
         // e força effectiveUserId = callerId quando o papel for operador,
@@ -145,6 +152,7 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
         if (resp?.data) setData(resp.data as ReportData);
       } catch (e) {
         console.error('Erro ao gerar relatório:', e);
+        setLoadError('Não foi possível gerar o relatório. Verifique a disponibilidade das cotações e tente novamente.');
       } finally {
         setLoading(false);
       }
@@ -161,13 +169,14 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
   const exportPdf = () => {
     if (!data) return;
     const doc = new jsPDF();
-    const fc = (v: number) => `R$ ${formatCurrency(v)}`;
+    const fc = (v: number) => formatMoney(v, data.moeda || 'BRL') + (data.moeda && data.moeda !== 'BRL' && data.cotacao ? ` (aprox. ${formatMoney(convert(v, data.moeda, 'BRL', data.cotacao))})` : '');
 
     doc.setFontSize(16);
     doc.text('Relatório Mensal', 14, 18);
     doc.setFontSize(11);
     doc.setTextColor(100);
     doc.text(`Período: ${monthLabel}`, 14, 26);
+    if (data.cotacao) { doc.setFontSize(8); doc.text(`Cotação: ${data.cotacao.date} | ${data.moeda || 'BRL'}`, 14, 36); doc.setFontSize(11); }
     if (selectedUserName) doc.text(`Usuário: ${selectedUserName}`, 14, 32);
     doc.setTextColor(0);
 
@@ -213,6 +222,15 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
       styles: { fontSize: 10 },
       headStyles: { fillColor: [30, 41, 59] },
     });
+
+    if (data.saldosParceriasAtivas?.length) {
+      autoTable(doc, {
+        startY: (doc as any).lastAutoTable.finalY + 8,
+        head: [['Parceria ativa', 'Banco', 'Casas', 'Total']],
+        body: data.saldosParceriasAtivas.map(p => [p.nome, fc(p.saldoBancario), fc(p.saldoCasas), fc(p.total)]),
+        styles: { fontSize: 8 },
+      });
+    }
 
     const fileName = `relatorio-${selectedMonth}${selectedUserName ? '-' + selectedUserName.replace(/\s+/g, '_') : ''}.pdf`;
     doc.save(fileName);
@@ -272,6 +290,7 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
         </div>
 
 
+        {loadError && <p role="alert" className="text-sm text-destructive">{loadError}</p>}
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {Array.from({ length: 8 }).map((_, i) => (
@@ -281,6 +300,7 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
         ) : data ? (
           <div className="space-y-4 animate-fade-in">
             <h3 className="text-base font-semibold">{monthLabel}</h3>
+            {data.cotacao && <p className="text-[10px] text-muted-foreground">Cotação {data.cotacao.date} · {data.cotacao.source}</p>}
 
             {/* Saldo total das parcerias ativas (banco + casas) */}
             <Card className="p-2.5 bg-muted/30">
@@ -314,16 +334,14 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
                       <span
                         className={`font-semibold ${p.total >= 0 ? 'text-success' : 'text-destructive'}`}
                       >
-                        R$ {formatCurrency(p.total)}
+                        <Money value={p.total} code={data?.moeda || 'BRL'} />
                       </span>
                     </button>
                   ))}
                   <span className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/5 px-2 py-0.5 text-[11px]">
                     <span className="font-medium text-muted-foreground">Total</span>
                     <span className="font-bold text-primary">
-                      R$ {formatCurrency(
-                        data.saldosParceriasAtivas.reduce((s, p) => s + p.total, 0)
-                      )}
+                      <Money value={data.saldosParceriasAtivas.reduce((s, p) => s + p.total, 0)} code={data.moeda || 'BRL'} />
                     </span>
                   </span>
                 </div>
@@ -344,19 +362,19 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
               <MetricCard
                 icon={<TrendingUp className="h-3.5 w-3.5" />}
                 label="Lucro Bruto + Abertas"
-                value={`R$ ${formatCurrency(data.lucroBruto + (data.lucroAbertas || 0))}`}
+                value={<Money value={data.lucroBruto + (data.lucroAbertas || 0)} code={data.moeda || 'BRL'} />}
                 valueClass={(data.lucroBruto + (data.lucroAbertas || 0)) >= 0 ? 'text-success' : 'text-destructive'}
               />
               <MetricCard
                 icon={<Receipt className="h-3.5 w-3.5" />}
                 label="Despesas"
-                value={`R$ ${formatCurrency(data.despesas)}`}
+                value={<Money value={data.despesas} code={data.moeda || 'BRL'} />}
                 valueClass="text-destructive"
               />
               <MetricCard
                 icon={(data.lucroLiquido + (data.lucroAbertas || 0)) >= 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
                 label="Lucro Líquido + Abertas"
-                value={`R$ ${formatCurrency(data.lucroLiquido + (data.lucroAbertas || 0))}`}
+                value={<Money value={data.lucroLiquido + (data.lucroAbertas || 0)} code={data.moeda || 'BRL'} />}
                 valueClass={(data.lucroLiquido + (data.lucroAbertas || 0)) >= 0 ? 'text-success' : 'text-destructive'}
               />
 
@@ -369,7 +387,7 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
               <MetricCard
                 icon={<DollarSign className="h-3.5 w-3.5" />}
                 label="Total Investido"
-                value={`R$ ${formatCurrency(data.totalInvestido)}`}
+                value={<Money value={data.totalInvestido} code={data.moeda || 'BRL'} />}
               />
               <MetricCard
                 icon={<Target className="h-3.5 w-3.5" />}
@@ -379,7 +397,7 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
               <MetricCard
                 icon={<Clock className="h-3.5 w-3.5" />}
                 label="Em Aberto"
-                value={`${data.apostasAbertas} · R$ ${formatCurrency(data.lucroAbertas || 0)}`}
+                value={<>{data.apostasAbertas} · <Money value={data.lucroAbertas || 0} code={data.moeda || 'BRL'} /></>}
               />
 
               <MetricCard
@@ -395,7 +413,7 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
               <MetricCard
                 icon={<TrendingUp className="h-3.5 w-3.5" />}
                 label="Média/Dia"
-                value={`R$ ${formatCurrency(data.mediaPorDia)}`}
+                value={<Money value={data.mediaPorDia} code={data.moeda || 'BRL'} />}
                 valueClass={data.mediaPorDia >= 0 ? 'text-success' : 'text-destructive'}
               />
             </div>
@@ -477,19 +495,19 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
                 <Card className="p-2">
                   <div className="text-[10px] text-muted-foreground">Banco</div>
                   <div className={`text-sm font-bold ${detailPart.saldoBancario >= 0 ? 'text-success' : 'text-destructive'}`}>
-                    R$ {formatCurrency(detailPart.saldoBancario)}
+                    <Money value={detailPart.saldoBancario} code={data?.moeda || 'BRL'} />
                   </div>
                 </Card>
                 <Card className="p-2">
                   <div className="text-[10px] text-muted-foreground">Casas</div>
                   <div className={`text-sm font-bold ${detailPart.saldoCasas >= 0 ? 'text-success' : 'text-destructive'}`}>
-                    R$ {formatCurrency(detailPart.saldoCasas)}
+                    <Money value={detailPart.saldoCasas} code={data?.moeda || 'BRL'} />
                   </div>
                 </Card>
                 <Card className="p-2 border-primary/40 bg-primary/5">
                   <div className="text-[10px] text-muted-foreground">Total</div>
                   <div className={`text-sm font-bold ${detailPart.total >= 0 ? 'text-success' : 'text-destructive'}`}>
-                    R$ {formatCurrency(detailPart.total)}
+                    <Money value={detailPart.total} code={data?.moeda || 'BRL'} />
                   </div>
                 </Card>
               </div>
@@ -519,10 +537,10 @@ export function MonthlyReportDialog({ open, onOpenChange, userId, isAdmin = fals
                       >
                         <span className="truncate font-medium">{c.nome}</span>
                         <span className={`text-right w-20 font-semibold ${c.saldo >= 0 ? 'text-success' : 'text-destructive'}`}>
-                          R$ {formatCurrency(c.saldo)}
+                          <Money value={c.saldo} code={data?.moeda || 'BRL'} />
                         </span>
                         <span className={`text-right w-20 font-semibold ${c.lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
-                          R$ {formatCurrency(c.lucroLiquido)}
+                          <Money value={c.lucroLiquido} code={data?.moeda || 'BRL'} />
                         </span>
                       </div>
                     ))}
@@ -550,7 +568,7 @@ function MetricCard({
 }: {
   icon: React.ReactNode;
   label: string;
-  value: string;
+  value: React.ReactNode;
   valueClass?: string;
 }) {
   return (
