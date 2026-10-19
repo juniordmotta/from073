@@ -22,12 +22,12 @@ export function formatMoney(value: number, code: Currency = 'BRL'): string {
 }
 export const MONEY_FIELDS = ['casa_01_valor', 'casa_02_valor', 'casa_03_valor', 'casa_01_valor_resultado', 'casa_02_valor_resultado', 'casa_03_valor_resultado', 'lucro_projetado', 'lucro_real', 'retorno_previsto'] as const;
 export function monetaryRow<T extends { moeda?: string | null }>(row: T, to: Currency, rates: Rates | null): T {
-  const result = { ...row } as T & Record<string, unknown>;
+  const result: Record<string, unknown> = { ...row };
   const source = row as T & Record<string, unknown>;
   for (const key of MONEY_FIELDS) {
     if (source[key] !== null && source[key] !== undefined) result[key] = convert(Number(source[key]), currency(row.moeda), to, rates);
   }
-  return result;
+  return result as T;
 }
 let cached: { at: number; rates: Rates } | null = null;
 export async function latestRates(): Promise<Rates> {
