@@ -1,4 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { Money, ExchangeRateDate } from '@/components/Money';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { currency, displayCurrency, monetaryRow, convert, type Currency } from '@/lib/currency';
 import { Layout } from '@/components/Layout';
 import { MobileFilters } from '@/components/MobileFilters';
 import { useAuth } from '@/contexts/AuthContext';
@@ -54,6 +57,8 @@ import { BettingHouseInput } from '@/components/BettingHouseInput';
 import { bettingHouseGroups } from '@/data/bettingHousesData';
 
 interface Arbitrage {
+  moeda?: Currency;
+  currency_ledger?: boolean;
   id: string;
   descricao: string;
   data_evento: string;
@@ -123,6 +128,9 @@ const getConsolidatedStatus = (status: string, lucroReal: number) => {
 export default function MinhasArbitragens() {
   const { user, userRole } = useAuth();
   const { toast } = useToast();
+  const { data: exchangeRates } = useExchangeRates();
+  const [betCurrency, setBetCurrency] = useState<Currency>('BRL');
+  const [monthCurrency, setMonthCurrency] = useState<Currency>('BRL');
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [arbitragens, setArbitragens] = useState<Arbitrage[]>([]);
@@ -321,7 +329,7 @@ export default function MinhasArbitragens() {
   };
 
   // Valores derivados para animação do card de Lucro do Mês
-  const lucroLiquido = useMemo(() => userMonthStats.totalLucro - monthlyCosts, [userMonthStats.totalLucro, monthlyCosts]);
+  const lucroLiquido = useMemo(() => userMonthStats.totalLucro - convert(monthlyCosts, 'BRL', monthCurrency, exchangeRates ?? null), [userMonthStats.totalLucro, monthlyCosts, monthCurrency, exchangeRates]);
   const mediaDia = useMemo(() => 
     userMonthStats.diasComApostas > 0 ? lucroLiquido / userMonthStats.diasComApostas : 0,
     [lucroLiquido, userMonthStats.diasComApostas]
@@ -386,8 +394,9 @@ export default function MinhasArbitragens() {
   const paginatedArbitragens = filteredArbitragens.slice(startIndex, endIndex);
 
   // Calcular totais baseado nos filtros (memoizado)
+  const totalsCurrency = displayCurrency(filteredArbitragens);
   const totais = useMemo(() => {
-    return filteredArbitragens.reduce(
+    return filteredArbitragens.map(row => monetaryRow(row, totalsCurrency, exchangeRates ?? null)).reduce(
       (acc, arb) => {
         const lucro = arb.status === 'aguardando' ? Number(arb.lucro_projetado) : Number(arb.lucro_real);
         return {
@@ -397,7 +406,7 @@ export default function MinhasArbitragens() {
       },
       { totalInvestido: 0, totalLucro: 0 }
     );
-  }, [filteredArbitragens]);
+  }, [filteredArbitragens, totalsCurrency, exchangeRates]);
 
   // Verificar se o filtro de status é apenas "aguardando"
   const isOnlyAguardando = useMemo(() => {
@@ -432,9 +441,9 @@ export default function MinhasArbitragens() {
     // Calcular lucro total (incluindo aguardando e fechados)
     return filtered.reduce((sum, arb) => {
       const lucro = arb.status === 'aguardando' ? Number(arb.lucro_projetado) : Number(arb.lucro_real);
-      return sum + lucro;
+      return sum + convert(lucro, currency(arb.moeda), 'BRL', exchangeRates ?? null);
     }, 0);
-  }, [arbitragens, user?.id]);
+  }, [arbitragens, user?.id, exchangeRates]);
 
   const applyFilters = useCallback(() => {
     let filtered = [...arbitragens];
@@ -573,6 +582,8 @@ export default function MinhasArbitragens() {
       
       let query = supabase.from('arbitrages').select(`
         id,
+        moeda,
+        currency_ledger,
         descricao,
         data_evento,
         created_at,
@@ -853,7 +864,7 @@ export default function MinhasArbitragens() {
 
       let query = supabase
         .from('arbitrages')
-        .select('status, lucro_projetado, lucro_real, casa_01_valor, casa_02_valor, casa_03_valor, created_at, casa_01_parceria_id, casa_02_parceria_id, casa_03_parceria_id')
+        .select('moeda, status, lucro_projetado, lucro_real, casa_01_valor, casa_02_valor, casa_03_valor, created_at, casa_01_parceria_id, casa_02_parceria_id, casa_03_parceria_id')
         .in('user_id', targetUserIds)
         .gte('created_at', firstDayOfMonth.toISOString())
         .lte('created_at', lastDayOfMonth.toISOString());
@@ -879,6 +890,9 @@ export default function MinhasArbitragens() {
           });
         }
 
+        const code = displayCurrency(filtered);
+        setMonthCurrency(code);
+        filtered = filtered.map(row => monetaryRow(row, code, exchangeRates ?? null));
         const totalLucro = filtered.reduce((sum, arb) => {
           const lucro = arb.status === 'aguardando' ? Number(arb.lucro_projetado) : Number(arb.lucro_real);
           return sum + lucro;
@@ -903,7 +917,7 @@ export default function MinhasArbitragens() {
     } catch (error) {
       console.error('Erro ao carregar stats do mês:', error);
     }
-  }, [user?.id, isAdmin, debouncedFilterUser, debouncedFilterPartnership]);
+  }, [user?.id, isAdmin, debouncedFilterUser, debouncedFilterPartnership, exchangeRates]);
 
   // Carregar custos operacionais do mês
   const loadMonthlyCosts = useCallback(async () => {
@@ -1345,6 +1359,8 @@ export default function MinhasArbitragens() {
 
       const arbitrageData: any = {
         user_id: user.id,
+        moeda: betCurrency,
+        currency_ledger: true,
         descricao: formData.descricao,
         data_evento: dataEvento,
         esporte_liga: formData.esporte_liga || null,
@@ -1425,6 +1441,8 @@ export default function MinhasArbitragens() {
         .insert(arbitrageData)
         .select(`
           id,
+          moeda,
+          currency_ledger,
           descricao,
           data_evento,
           created_at,
@@ -1469,7 +1487,7 @@ export default function MinhasArbitragens() {
       }
 
       // Auto-debitar saldos das casas e ajustar saldo bancário (se marcado)
-      if (descontarSaldo) {
+      if (descontarSaldo && !arbitrageData.currency_ledger) {
         await autoDebitHouseBalances([
           { partnershipId: selectedPartnership01, houseName: formData.casa_01_nome, valor: parseFloat(formData.casa_01_valor) },
           { partnershipId: selectedPartnership02, houseName: formData.casa_02_nome, valor: parseFloat(formData.casa_02_valor) },
@@ -1991,6 +2009,7 @@ export default function MinhasArbitragens() {
             <div className="w-full md:w-auto">
               <p className="md:hidden text-[10px] font-medium uppercase text-mobile-muted">Gestão de apostas</p>
               <h1 className="text-xl font-bold md:text-3xl">Minhas Arbitragens</h1>
+          <ExchangeRateDate />
             </div>
             {activeFiltersCount > 0 && (
               <>
@@ -2324,7 +2343,7 @@ export default function MinhasArbitragens() {
                 <div className="flex items-center gap-1 mb-0.5">
                   <span className="text-[10px] text-muted-foreground">Total Investido</span>
                 </div>
-                <div className="text-base md:text-lg font-bold truncate">R$ {formatCurrency(totais.totalInvestido)}</div>
+                <div className="text-base md:text-lg font-bold truncate"><Money value={totais.totalInvestido} code={totalsCurrency} /></div>
                 {isOnlyAguardando && totalBanca > 0 && (
                   <>
                     <Progress 
@@ -2347,7 +2366,7 @@ export default function MinhasArbitragens() {
                 <div className="border-t pt-1 flex items-center justify-between">
                   <span className="text-[10px] text-muted-foreground">Lucro</span>
                   <span className={`text-xs font-bold truncate ml-1 ${totais.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
-                    R$ {formatCurrency(totais.totalLucro)}
+                    <Money value={totais.totalLucro} code={totalsCurrency} />
                   </span>
                 </div>
                 <div className="border-t pt-1 flex items-center justify-between">
@@ -2373,31 +2392,31 @@ export default function MinhasArbitragens() {
                     <div>
                       <span className="text-[9px] text-muted-foreground block">Bruto</span>
                       <span className={`text-sm font-bold ${userMonthStats.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
-                        R$ {formatCurrency(animatedMonthLucro)}
+                        <Money value={animatedMonthLucro} code={monthCurrency} />
                       </span>
                     </div>
                     <div className="border-t pt-1">
                       <span className="text-[9px] text-muted-foreground block">Custos</span>
                       <span className="text-sm font-bold text-destructive">
-                        - R$ {formatCurrency(animatedMonthlyCosts)}
+                        - <Money value={animatedMonthlyCosts} code={monthCurrency} />
                       </span>
                     </div>
                   </div>
                   <div className="flex flex-col items-center justify-center border-l border-r px-2">
                     <span className="text-[9px] text-muted-foreground">Líquido</span>
                     <span className={`text-lg font-bold ${lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
-                      R$ {formatCurrency(animatedLucroLiquido)}
+                      <Money value={animatedLucroLiquido} code={monthCurrency} />
                     </span>
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
                       <span className="text-[9px] text-muted-foreground">Investido</span>
-                      <span className="text-xs font-medium">R$ {formatCurrency(animatedMonthInvestido)}</span>
+                      <span className="text-xs font-medium"><Money value={animatedMonthInvestido} code={monthCurrency} /></span>
                     </div>
                     <div className="border-t pt-1 flex items-center justify-between">
                       <span className="text-[9px] text-muted-foreground">Média/Dia</span>
                       <span className={`text-xs font-medium ${mediaDia >= 0 ? 'text-success' : 'text-destructive'}`}>
-                        R$ {formatCurrency(animatedMediaDia)}
+                        <Money value={animatedMediaDia} code={monthCurrency} />
                       </span>
                     </div>
                     <div className="border-t pt-1 flex items-center justify-between">
@@ -2476,7 +2495,7 @@ export default function MinhasArbitragens() {
                   <div className="min-w-0">
                     <span className="block text-[10px] text-muted-foreground">Lucro líquido do mês</span>
                     <span className={`block truncate text-lg font-bold ${lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
-                      R$ {formatCurrency(animatedLucroLiquido)}
+                      <Money value={animatedLucroLiquido} code={monthCurrency} />
                     </span>
                   </div>
                 </div>
@@ -2497,23 +2516,23 @@ export default function MinhasArbitragens() {
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-muted-foreground">Bruto</span>
                   <span className={`text-xs font-medium ${userMonthStats.totalLucro >= 0 ? 'text-success' : 'text-destructive'}`}>
-                    R$ {formatCurrency(animatedMonthLucro)}
+                    <Money value={animatedMonthLucro} code={monthCurrency} />
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-muted-foreground">Custos</span>
                   <span className="text-xs font-medium text-destructive">
-                    - R$ {formatCurrency(animatedMonthlyCosts)}
+                    - <Money value={animatedMonthlyCosts} code={monthCurrency} />
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-muted-foreground">Investido</span>
-                  <span className="text-xs font-medium">R$ {formatCurrency(animatedMonthInvestido)}</span>
+                  <span className="text-xs font-medium"><Money value={animatedMonthInvestido} code={monthCurrency} /></span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-muted-foreground">Média/Dia ({userMonthStats.diasComApostas} dias)</span>
                   <span className={`text-xs font-medium ${mediaDia >= 0 ? 'text-success' : 'text-destructive'}`}>
-                    R$ {formatCurrency(animatedMediaDia)}
+                    <Money value={animatedMediaDia} code={monthCurrency} />
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -2623,7 +2642,7 @@ export default function MinhasArbitragens() {
                           {format(eventDateTime, 'dd/MM HH:mm')}
                         </div>
                         <div className={`text-[10px] font-medium ${(arb.status === 'aguardando' ? arb.lucro_projetado : (arb.lucro_real ?? 0)) >= 0 ? 'text-success' : 'text-destructive'}`}>
-                          R$ {formatCurrency(arb.status === 'aguardando' ? arb.lucro_projetado : (arb.lucro_real ?? 0))}
+                          <Money value={arb.status === 'aguardando' ? arb.lucro_projetado : (arb.lucro_real ?? 0)} code={currency(arb.moeda)} />
                         </div>
                       </div>
                       
@@ -2667,14 +2686,14 @@ export default function MinhasArbitragens() {
                             <div className="font-medium">{arb.casa_01_nome}</div>
                             <div className="text-primary">{formatUserName(arb.partnerships_casa_01?.nome_completo || 'Não informada')}</div>
                             <div className="text-muted-foreground">Odd: {Number(arb.casa_01_odd).toFixed(3)}</div>
-                            <div className="text-muted-foreground">Valor: R$ {formatCurrency(arb.casa_01_valor)}</div>
+                            <div className="text-muted-foreground">Valor: <Money value={arb.casa_01_valor} code={currency(arb.moeda)} /></div>
                             {arb.casa_01_mercado && <div className="text-muted-foreground">{arb.casa_01_mercado}</div>}
                           </div>
                           <div className="rounded-md border p-2 text-[10px] space-y-0.5">
                             <div className="font-medium">{arb.casa_02_nome}</div>
                             <div className="text-primary">{formatUserName(arb.partnerships_casa_02?.nome_completo || 'Não informada')}</div>
                             <div className="text-muted-foreground">Odd: {Number(arb.casa_02_odd).toFixed(3)}</div>
-                            <div className="text-muted-foreground">Valor: R$ {formatCurrency(arb.casa_02_valor)}</div>
+                            <div className="text-muted-foreground">Valor: <Money value={arb.casa_02_valor} code={currency(arb.moeda)} /></div>
                             {arb.casa_02_mercado && <div className="text-muted-foreground">{arb.casa_02_mercado}</div>}
                           </div>
                         </div>
@@ -2682,7 +2701,7 @@ export default function MinhasArbitragens() {
                           <div className="rounded-md border p-2 text-[10px] space-y-0.5">
                             <div className="font-medium">{arb.casa_03_nome}</div>
                             <div className="text-primary">{formatUserName(arb.partnerships_casa_03?.nome_completo || 'Não informada')}</div>
-                            <div className="text-muted-foreground">Odd: {Number(arb.casa_03_odd || 0).toFixed(3)} • Valor: R$ {formatCurrency(arb.casa_03_valor || 0)}</div>
+                            <div className="text-muted-foreground">Odd: {Number(arb.casa_03_odd || 0).toFixed(3)} • Valor: <Money value={arb.casa_03_valor || 0} code={currency(arb.moeda)} /></div>
                             {arb.casa_03_mercado && <div className="text-muted-foreground">{arb.casa_03_mercado}</div>}
                           </div>
                         )}
@@ -2691,12 +2710,12 @@ export default function MinhasArbitragens() {
                         <div className="flex items-center justify-between text-[10px] pt-1 border-t">
                           <div>
                             <span className="text-muted-foreground">Investido: </span>
-                            <span className="font-medium">R$ {formatCurrency(Number(arb.casa_01_valor) + Number(arb.casa_02_valor) + Number(arb.casa_03_valor || 0))}</span>
+                            <span className="font-medium"><Money value={Number(arb.casa_01_valor) + Number(arb.casa_02_valor) + Number(arb.casa_03_valor || 0)} code={currency(arb.moeda)} /></span>
                           </div>
                           <div>
                             <span className="text-muted-foreground">Lucro: </span>
                             <span className={`font-bold ${(arb.status === 'aguardando' ? arb.lucro_projetado : arb.lucro_real) >= 0 ? 'text-success' : 'text-destructive'}`}>
-                              R$ {formatCurrency(arb.status === 'aguardando' ? arb.lucro_projetado : arb.lucro_real)}
+                              <Money value={arb.status === 'aguardando' ? arb.lucro_projetado : arb.lucro_real} code={currency(arb.moeda)} />
                             </span>
                           </div>
                         </div>
@@ -2831,7 +2850,7 @@ export default function MinhasArbitragens() {
                             <div className="text-xs text-muted-foreground">{arb.casa_01_mercado}</div>
                           )}
                           <div className="text-sm text-muted-foreground">
-                            {Number(arb.casa_01_odd).toFixed(3)}x • R$ {formatCurrency(arb.casa_01_valor)}
+                            {Number(arb.casa_01_odd).toFixed(3)}x • <Money value={arb.casa_01_valor} code={currency(arb.moeda)} />
                           </div>
                         </div>
                         <ResultadoDropdown
@@ -2868,7 +2887,7 @@ export default function MinhasArbitragens() {
                             <div className="text-xs text-muted-foreground">{arb.casa_02_mercado}</div>
                           )}
                           <div className="text-sm text-muted-foreground">
-                            {Number(arb.casa_02_odd).toFixed(3)}x • R$ {formatCurrency(arb.casa_02_valor)}
+                            {Number(arb.casa_02_odd).toFixed(3)}x • <Money value={arb.casa_02_valor} code={currency(arb.moeda)} />
                           </div>
                         </div>
                         <ResultadoDropdown
@@ -2906,7 +2925,7 @@ export default function MinhasArbitragens() {
                               <div className="text-xs text-muted-foreground">{arb.casa_03_mercado}</div>
                             )}
                             <div className="text-sm text-muted-foreground">
-                              {Number(arb.casa_03_odd).toFixed(3)}x • R$ {formatCurrency(arb.casa_03_valor)}
+                              {Number(arb.casa_03_odd).toFixed(3)}x • <Money value={arb.casa_03_valor} code={currency(arb.moeda)} />
                             </div>
                           </div>
                           <ResultadoDropdown
@@ -2927,7 +2946,7 @@ export default function MinhasArbitragens() {
                     <div>
                       <div className="text-xs text-muted-foreground mb-1">Lucro Real</div>
                       <div className={`text-lg font-semibold ${arb.lucro_real >= 0 ? 'text-success' : 'text-destructive'}`}>
-                        R$ {formatCurrency(arb.lucro_real)}
+                        <Money value={arb.lucro_real} code={currency(arb.moeda)} />
                       </div>
                       <Button
                         variant="link"
@@ -2940,9 +2959,9 @@ export default function MinhasArbitragens() {
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground mb-1">Lucro Projetado</div>
-                      <div className="text-lg font-medium">R$ {formatCurrency(arb.lucro_projetado)}</div>
+                      <div className="text-lg font-medium"><Money value={arb.lucro_projetado} code={currency(arb.moeda)} /></div>
                       <div className="text-xs text-muted-foreground">
-                        {arb.porcentagem.toFixed(2)}% • R$ {formatCurrency(arb.retorno_previsto)}
+                        {arb.porcentagem.toFixed(2)}% • <Money value={arb.retorno_previsto} code={currency(arb.moeda)} />
                       </div>
                     </div>
                   </div>
@@ -3065,7 +3084,7 @@ export default function MinhasArbitragens() {
                             <div className="text-muted-foreground text-[10px]">{arb.casa_01_mercado}</div>
                           )}
                           <div className="text-muted-foreground">
-                            {Number(arb.casa_01_odd).toFixed(3)}x • R$ {formatCurrency(arb.casa_01_valor)}
+                            {Number(arb.casa_01_odd).toFixed(3)}x • <Money value={arb.casa_01_valor} code={currency(arb.moeda)} />
                           </div>
                         </div>
                         <ResultadoDropdown
@@ -3100,7 +3119,7 @@ export default function MinhasArbitragens() {
                             <div className="text-muted-foreground text-[10px]">{arb.casa_02_mercado}</div>
                           )}
                           <div className="text-muted-foreground">
-                            {Number(arb.casa_02_odd).toFixed(3)}x • R$ {formatCurrency(arb.casa_02_valor)}
+                            {Number(arb.casa_02_odd).toFixed(3)}x • <Money value={arb.casa_02_valor} code={currency(arb.moeda)} />
                           </div>
                         </div>
                         <ResultadoDropdown
@@ -3136,7 +3155,7 @@ export default function MinhasArbitragens() {
                               <div className="text-muted-foreground text-[10px]">{arb.casa_03_mercado}</div>
                             )}
                             <div className="text-muted-foreground">
-                              {Number(arb.casa_03_odd).toFixed(3)}x • R$ {formatCurrency(arb.casa_03_valor)}
+                              {Number(arb.casa_03_odd).toFixed(3)}x • <Money value={arb.casa_03_valor} code={currency(arb.moeda)} />
                             </div>
                           </div>
                           <ResultadoDropdown
@@ -3159,13 +3178,13 @@ export default function MinhasArbitragens() {
                             arb.lucro_real >= 0 ? 'text-success' : 'text-destructive'
                           }`}
                         >
-                          R$ {formatCurrency(arb.lucro_real)}
+                          <Money value={arb.lucro_real} code={currency(arb.moeda)} />
                         </div>
                         <div className="text-muted-foreground">
-                          {arb.porcentagem.toFixed(2)}% • R$ {formatCurrency(arb.retorno_previsto)}
+                          {arb.porcentagem.toFixed(2)}% • <Money value={arb.retorno_previsto} code={currency(arb.moeda)} />
                         </div>
                         <div className="text-muted-foreground">
-                          Proj: R$ {formatCurrency(arb.lucro_projetado)}
+                          Proj: <Money value={arb.lucro_projetado} code={currency(arb.moeda)} />
                         </div>
                         <Button
                           variant="link"
@@ -3466,7 +3485,7 @@ export default function MinhasArbitragens() {
                       />
                     </div>
                     <div>
-                      <Label>Lucro Projetado (R$)</Label>
+                      <Label>Lucro Projetado ({editArbitrage.moeda || 'BRL'})</Label>
                       <Input
                         type="number"
                         step="0.01"
@@ -3504,7 +3523,7 @@ export default function MinhasArbitragens() {
                 <h3 className="font-semibold">{viewGanhosArbitrage.casa_01_nome}</h3>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div className="text-muted-foreground">Aposta:</div>
-                  <div>R$ {formatCurrency(viewGanhosArbitrage.casa_01_valor)}</div>
+                  <div><Money value={viewGanhosArbitrage.casa_01_valor} code={currency(viewGanhosArbitrage.moeda)} /></div>
                   <div className="text-muted-foreground">Odd:</div>
                   <div>{viewGanhosArbitrage.casa_01_odd}x</div>
                   <div className="text-muted-foreground">Resultado:</div>
@@ -3536,7 +3555,7 @@ export default function MinhasArbitragens() {
                 <h3 className="font-semibold">{viewGanhosArbitrage.casa_02_nome}</h3>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div className="text-muted-foreground">Aposta:</div>
-                  <div>R$ {formatCurrency(viewGanhosArbitrage.casa_02_valor)}</div>
+                  <div><Money value={viewGanhosArbitrage.casa_02_valor} code={currency(viewGanhosArbitrage.moeda)} /></div>
                   <div className="text-muted-foreground">Odd:</div>
                   <div>{viewGanhosArbitrage.casa_02_odd}x</div>
                   <div className="text-muted-foreground">Resultado:</div>
@@ -3569,7 +3588,7 @@ export default function MinhasArbitragens() {
                   <h3 className="font-semibold">{viewGanhosArbitrage.casa_03_nome}</h3>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="text-muted-foreground">Aposta:</div>
-                    <div>R$ {formatCurrency(viewGanhosArbitrage.casa_03_valor || 0)}</div>
+                    <div><Money value={viewGanhosArbitrage.casa_03_valor || 0} code={currency(viewGanhosArbitrage.moeda)} /></div>
                     <div className="text-muted-foreground">Odd:</div>
                     <div>{viewGanhosArbitrage.casa_03_odd}x</div>
                     <div className="text-muted-foreground">Resultado:</div>
@@ -3921,7 +3940,7 @@ export default function MinhasArbitragens() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="casa_01_valor_add">Valor Apostado (R$)</Label>
+                      <Label htmlFor="casa_01_valor_add">Valor Apostado ({betCurrency})</Label>
                       <Input
                         id="casa_01_valor_add"
                         type="number"
@@ -4028,7 +4047,7 @@ export default function MinhasArbitragens() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="casa_02_valor_add">Valor Apostado (R$)</Label>
+                      <Label htmlFor="casa_02_valor_add">Valor Apostado ({betCurrency})</Label>
                       <Input
                         id="casa_02_valor_add"
                         type="number"
@@ -4136,7 +4155,7 @@ export default function MinhasArbitragens() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="casa_03_valor_add">Valor Apostado (R$)</Label>
+                        <Label htmlFor="casa_03_valor_add">Valor Apostado ({betCurrency})</Label>
                         <Input
                           id="casa_03_valor_add"
                           type="number"
@@ -4185,7 +4204,7 @@ export default function MinhasArbitragens() {
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2">
-                      <Label htmlFor="retorno_previsto_add">Retorno Previsto (R$)</Label>
+                      <Label htmlFor="retorno_previsto_add">Retorno Previsto ({betCurrency})</Label>
                       <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
                         <Checkbox
                           checked={calculoAutomatico}
@@ -4206,7 +4225,13 @@ export default function MinhasArbitragens() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="lucro_projetado_add">Lucro Projetado (R$)</Label>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor="lucro_projetado_add">Lucro Projetado ({betCurrency})</Label>
+                      <Select value={betCurrency} onValueChange={value => setBetCurrency(currency(value))}>
+                        <SelectTrigger aria-label="Moeda da aposta" className="h-8 w-24"><SelectValue /></SelectTrigger>
+                        <SelectContent>{(['BRL', 'USD', 'EUR'] as const).map(code => <SelectItem key={code} value={code}>{code}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
                     <Input
                       id="lucro_projetado_add"
                       type="text"
